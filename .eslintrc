@@ -1,0 +1,32 @@
+{
+  "overrides": [
+    {
+      "files": ["*.vue"],
+      "extends": ["@nuxtjs/eslint-config-typescript", "prettier"],
+      "rules": {
+        "vue/first-attribute-linebreak": [
+          "error",
+          {
+            "singleline": "ignore",
+            "multiline": "below"
+          }
+        ]
+      }
+    },
+    {
+      "files": ["*.ts"],
+      "extends": ["@nuxtjs/eslint-config-typescript", "prettier"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": ["*.js"],
+      "extends": ["eslint:recommended", "prettier"],
+      "env": {
+        "node": true
+      }
+    }
+  ],
+  "ignorePatterns": ["node_modules/", ".output/"]
+}

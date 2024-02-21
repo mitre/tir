@@ -15,24 +15,68 @@ Tir is a Armenian god of wisdom and the namesake of the TIR (Test Ingest Resposi
 * Import automated test tool results
 * Export compliance data
 
-### Requirements
+## Dev Setup
 
-Postgres Database
+### Prerequisites:
 
-### NOTICE
+- node v18+
 
-© 2022 The MITRE Corporation.
+### Clone repo
+```bash
+git clone <cloneurl>
+cd tir
+```
 
-Approved for Public Release; Distribution Unlimited. Case Number 18-3678.
+### Install dependencies:
 
-### NOTICE
+```bash
+npm install
+```
 
-MITRE hereby grants express written permission to use, reproduce, distribute, modify, and otherwise leverage this software to the extent permitted by the licensed terms provided in the LICENSE.md file included with this project.
 
-### NOTICE
+#### `.env` for SQLite config
+```ini
+SQLITE=true
+JWT_KEY= //Required: Key that TIR will use for JWT
+INIT_PASSWORD= //Required:  Initial Password for initial TIR admin Account
+```
 
-This software was produced for the U. S. Government under Contract Number HHSM-500-2012-00008I, and is subject to Federal Acquisition Regulation Clause 52.227-14, Rights in Data-General.
+#### `.env` for Postgres config
+```ini
+PORT= //Optional: Dev Web Server Port Defaults to 3000
+DATABASE_HOST= //Required: Postgres Database IP/FQDN
+DATABASE_PORT= //Optional: Defaults to 5432
+DATABASE_USER= //Required: Postgres User
+DATABASE_PASSWORD= //Required: Postgres User INIT_PASSWORD
+DATABASE_NAME= //Required: Database Name for TIR
+JWT_KEY= //Required: Key that TIR will use for JWT
+INIT_PASSWORD= //Required:  Initial Password for initial TIR admin Account
+```
 
-No other use other than that granted to the U. S. Government, or to those acting on behalf of the U. S. Government under that Clause is authorized without the express written permission of The MITRE Corporation.
+#### Initialize Database
 
-For further information, please contact The MITRE Corporation, Contracts Management Office, 7515 Colshire Drive, McLean, VA 22102-7539, (703) 983-6000.
+```bash
+npm run dbinit
+```
+
+## Start local server
+
+### Start development server
+
+```bash
+npm run dev
+```
+
+### Start production build server (HTTP)
+
+```bash
+npm run build;
+node .output/server/index.mjs
+```
+
+## Nuxt Modules included:
+
+- [eslint](https://nuxt.com/modules/eslint)
+- [pinia](https://nuxt.com/modules/pinia)
+- [tailwindcss](https://nuxt.com/modules/tailwindcss)
+- [devtools](https://nuxt.com/modules/devtools)
