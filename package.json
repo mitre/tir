@@ -9,7 +9,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "dbinit": "node db/migrate.js up && node db/seed.js up"
+    "dbinit": "tsx db/migrate.js up && tsx db/seed.js up"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
@@ -57,7 +57,7 @@
     "postgres": "~3.3.5",
     "sequelize": "~6.32.1",
     "sqlite3": "~5.1.6",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.7.1",
     "umzug": "~3.4.0",
     "winston": "~3.11.0",
     "winston-syslog": "~2.7.0",
