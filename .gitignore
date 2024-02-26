@@ -28,6 +28,7 @@ tmp
 
 # database
 db/*.sqlite
+db/tirdb.sqlite-journal
 
 # internal test
 test
