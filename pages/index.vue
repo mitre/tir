@@ -87,9 +87,9 @@ const open = ref(false);
     <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
       <form class="space-y-6" @submit.prevent>
         <div>
-          <label for="username" class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"
-            >Username</label
-          >
+          <label for="username" class="block text-sm font-medium leading-6 text-gray-800 dark:text-white">
+            Username
+          </label>
           <div class="mt-2">
             <input
               v-model="userInput.username"
