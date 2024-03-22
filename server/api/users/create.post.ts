@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Now create the user and associate it with the timezone using the found ID
-    await User.create({
+    return await User.create({
       firstName,
       lastName,
       email,
@@ -37,7 +37,6 @@ export default defineEventHandler(async (event) => {
     });
   } catch (error) {
     console.error("Error creating user:", error);
+    return null;
   }
-
-  return `User ${firstName} ${lastName} created successfully`;
 });
