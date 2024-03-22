@@ -1,26 +1,15 @@
 <script setup>
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
-import LoginFailed from "../components/LoginFailed.vue";
+import LoginFailed from "../components/login/LoginFailed.vue";
 
 definePageMeta({
   layout: false,
 });
 
-const user = ref();
-
-const { isFetching, error, data } = await useFetch("/api/users");
-
-import { useUserListStore } from "~~/stores/UserList";
-
-const store = useUserListStore();
-
-const currentDate = new Date().toLocaleString();
-
 const isAuthenticated = useCookie("is-authenticated");
 const currentUser = useCookie("current-user");
 
 const router = useRouter();
-const test = ref("HELLO@.com");
 
 const userInput = ref({
   username: "",
@@ -32,7 +21,6 @@ const dialogOpen = ref(false);
 
 const loginUser = async () => {
   console.log("Starting Login");
-  console.log(test.value.toLowerCase());
   console.log(userInput.value.username.toLowerCase());
   if (
     userInput.value.username.length > 0 &&
@@ -42,7 +30,7 @@ const loginUser = async () => {
     console.log("Login: Fields filled");
     try {
       console.log("Calling login api");
-      const { data: apiData, error: apiError } = await useFetch("/api/auth/login", {
+      const { error: apiError } = await useFetch("/api/auth/login", {
         method: "POST",
         body: {
           email: userInput.value.username.toLowerCase(),
@@ -55,9 +43,6 @@ const loginUser = async () => {
         dialogOpen.value = true;
       } else {
         console.log("Login successful");
-        // console.log(apiData.value)
-        // document.cookie = `token=${apiData.value.token}; Secure; HttpOnly;`;
-        // document.cookie = `userId=${apiData.value.userId};`;
 
         isAuthenticated.value = "true";
         currentUser.value = userInput.value.username;
@@ -92,8 +77,8 @@ const open = ref(false);
           </label>
           <div class="mt-2">
             <input
-              v-model="userInput.username"
               id="text"
+              v-model="userInput.username"
               name="text"
               type="text"
               autocomplete="text"
@@ -111,8 +96,8 @@ const open = ref(false);
           </div>
           <div class="mt-2">
             <input
-              v-model="userInput.passwordField"
               id="password"
+              v-model="userInput.passwordField"
               name="password"
               type="password"
               autocomplete="current-password"
@@ -126,8 +111,8 @@ const open = ref(false);
             <div class="relative flex items-start">
               <div class="flex h-6 items-center">
                 <input
-                  v-model="userInput.agree"
                   id="comments"
+                  v-model="userInput.agree"
                   aria-describedby="comments-description"
                   required
                   name="comments"
@@ -139,8 +124,8 @@ const open = ref(false);
                 <label for="comments" class="font-medium text-gray-500">
                   I agree to the terms of the
                   <a
-                    @click="open = true"
                     class="cursor-pointer font-semibold leading-6 text-indigo-400 hover:text-indigo-300"
+                    @click="open = true"
                     >IS User Agreement</a
                   >
                 </label>
@@ -208,15 +193,15 @@ const open = ref(false);
         </TransitionRoot>
         <div>
           <button
-            @click="loginUser"
             type="submit"
             class="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+            @click="loginUser"
           >
             Sign in
           </button>
           <Footer />
         </div>
-        <LoginFailed :show="dialogOpen" :dialogOpen="dialogOpen" @change="dialogOpen = false" />
+        <LoginFailed :show="dialogOpen" :dialog-open="dialogOpen" @change="dialogOpen = false" />
       </form>
     </div>
   </div>
