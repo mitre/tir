@@ -17,7 +17,6 @@ export default defineNuxtConfig({
     temp_folder: process.env.TEMP_FOLDER || "./tmp",
     jwt_key: process.env.JWT_KEY,
     usesqlite: process.env.SQLITE,
-    ldap_enabled: process.env.LDAP_ENABLED || 'false',
     ldap_host: process.env.LDAP_HOST,
     ldap_port: process.env.LDAP_PORT || '389',
     ldap_binddn: process.env.LDAP_BINDDN,
@@ -28,7 +27,10 @@ export default defineNuxtConfig({
     ldap_mailfield: process.env.LDAP_MAILFIELD || 'mail',
     ldap_ssl: process.env.LDAP_SSL || 'false',
     ldap_ssl_insecure: process.env.LDAP_SSL_INSECURE || 'false',
-    ldap_ssl_ca: process.env.LDAP_SSL_CA
+    ldap_ssl_ca: process.env.LDAP_SSL_CA,
+    public: {
+      ldap_enabled: process.env.LDAP_ENABLED || 'false',
+    },
   },
   telemetry: false,
   alias: {
