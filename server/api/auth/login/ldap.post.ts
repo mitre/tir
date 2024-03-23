@@ -1,8 +1,7 @@
 import fs from "fs";
 import ldap from "ldapjs";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { User } from "../../../db/models";
+import { User } from "../../../../db/models";
 
 const config = useRuntimeConfig();
 
@@ -39,13 +38,15 @@ function getSSLConfig(): false | { rejectUnauthorized: boolean; ca: string | Buf
 }
 
 export default defineEventHandler(async (event) => {
+    console.log("entering ldap flow");
   const body = await readBody(event);
-  const email = body.email;
+  const username = body.username;
   const password = body.password;
 
+  let propagatedError = null;
   let user: User | null = null;
 
-  let inLDAPCallbacks = config.ldap_enabled === "true" && email !== "admin@tir.local";
+  let inLDAPCallbacks = config.public.ldap_enabled === "true";
   const inLDAPCallbacksPromise = new Promise<void>((resolve) => {
     const intervalTimeout = setInterval(() => {
       if (!inLDAPCallbacks) {
@@ -59,69 +60,76 @@ export default defineEventHandler(async (event) => {
   });
   console.log(`initial state of inldapcallbacks: ${inLDAPCallbacks}`);
 
-  if (config.ldap_enabled === "true" && email !== "admin@tir.local") {
-    console.log("entering ldap flow");
-    const sslConfig = getSSLConfig();
+  if (config.public.ldap_enabled === "true") {
+    console.log('entering ldap enabled flow');
+    let sslConfig;
+    try{
+    sslConfig = getSSLConfig();
+    } catch (e) {
+      propagatedError ??= createError({statusCode: 500, statusMessage: e instanceof Error ? e.message : `LDAP SSL configuration failed: ${e}`});
+      inLDAPCallbacks = false;
+    }
     console.log("created sslconfig");
-    const client = ldap.createClient({
+
+    const searchClient = ldap.createClient({
       url: `${sslConfig ? "ldaps" : "ldap"}://${config.ldap_host}:${config.ldap_port}`,
       ...(sslConfig && { tlsOptions: { ...sslConfig } }),
     });
-    const client2 = ldap.createClient({
+    const userClient = ldap.createClient({
       url: `${sslConfig ? "ldaps" : "ldap"}://${config.ldap_host}:${config.ldap_port}`,
       ...(sslConfig && { tlsOptions: { ...sslConfig } }),
     });
-    console.log("attempted to create client");
+    console.log("attempted to create clients");
 
-    client.on("error", (err) => {
+    searchClient.on("error", (err) => {
+      propagatedError ??= createError({statusCode: 500, statusMessage: err instanceof Error ? err.message : `Search client errored out: ${err}`});
+      searchClient.unbind();
+      userClient.unbind();
+      console.log(`Search client errored out: ${err}`);
       inLDAPCallbacks = false;
-      console.log(`LDAP server err: ${err}`);
-      client.unbind((err) => {
-        if (err) {
-          console.log(`LDAP server unbind err: ${err}`);
-          // throw createError({statusCode: 401, statusMessage: `LDAP server unbind err: ${err}`});
-        }
-      });
-      // throw createError({statusCode: 401, statusMessage: `LDAP server connection err: ${err}`});
     });
-    client2.on("error", (err) => {
-      console.log(`LDAP server err: ${err}`);
-      client2.unbind((err) => {
-        if (err) {
-          console.log(`LDAP server unbind err: ${err}`);
-          // throw createError({statusCode: 401, statusMessage: `LDAP server unbind err: ${err}`});
-        }
-      });
-      // throw createError({statusCode: 401, statusMessage: `LDAP server connection err: ${err}`});
-    });
-
-    client.on("close", () => {
+    userClient.on("error", (err) => {
+      propagatedError ??= createError({statusCode: 500, statusMessage: err instanceof Error ? err.message : `User client errored out: ${err}`});
+      searchClient.unbind();
+      userClient.unbind();
+      console.log(`User client errored out: ${err}`);
       inLDAPCallbacks = false;
-      console.log(`LDAP server connection closed`);
     });
 
-    client.on("connect", () => {
-      console.log("in connected event ");
-      client.bind(config.ldap_binddn, config.ldap_password, (err) => {
+    searchClient.on("close", () => {
+      console.log(`Search server connection closed`);
+      inLDAPCallbacks = false;
+    });
+    userClient.on("close", () => {
+      console.log(`User server connection closed`);
+      inLDAPCallbacks = false;
+    });
+
+    searchClient.on("connect", () => {
+      console.log("Search client connected to the server");
+
+      searchClient.bind(config.ldap_binddn, config.ldap_password, (err) => {
         if (err) {
-          console.log(`LDAP server bind err: ${err}`);
-          // throw createError({statusCode: 401, statusMessage: `LDAP server bind err: ${err}`});
+          propagatedError ??= createError({statusCode: 500, statusMessage: err instanceof Error ? err.message : `Search client bind failed: ${err}`});
+          searchClient.unbind();
+          userClient.unbind();
+          console.log(`Search client bind err: ${err}`);
         }
-        client.search(
+
+        searchClient.search(
           config.ldap_searchbase,
-          { scope: "sub", filter: config.ldap_searchfilter.replace("{{username}}", email) },
+          { scope: "sub", filter: config.ldap_searchfilter.replace("{{username}}", username) },
           (err, res) => {
-            console.log("attempted to do a search");
+            console.log("Attempted to do a search");
             if (err) {
-              console.log(`LDAP server search err: ${err}`);
-              // throw createError({statusCode: 401, statusMessage: `LDAP server search err: ${err}`});
+          propagatedError ??= createError({statusCode: 500, statusMessage: err instanceof Error ? err.message : `Search client search failed: ${err}`});
+          searchClient.unbind();
+          userClient.unbind();
+          console.log(`Search client bind err: ${err}`);
             }
 
-            console.log(JSON.stringify(res, null, 2));
-
             res.on("searchEntry", (entry) => {
-              console.log("entry: " + entry.json);
-              console.log("entryv2: " + entry);
+              console.log("entry: " + entry.pojo);
               console.log("entry bindproperty: " + entry.dn);
               console.log("entry id: " + entry.id);
 
@@ -211,29 +219,12 @@ export default defineEventHandler(async (event) => {
 
   await inLDAPCallbacksPromise;
 
-  if (user === null) {
-    console.log("entered local flow");
-    user = await User.findOne({ where: { email } });
-    if (!user) {
-      console.log("couldn't find user");
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Unknown User.",
-      });
-    }
-
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      console.log("invalid password");
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Bad Password",
-      });
-    }
+  if(propagatedError !== null) {
+    throw propagatedError;
   }
 
   if (user === null) {
-    console.log("last minute user check - can probs delete this block");
+    console.log("no user found");
     throw createError({
       statusCode: 401,
       statusMessage: "Login Failed",
