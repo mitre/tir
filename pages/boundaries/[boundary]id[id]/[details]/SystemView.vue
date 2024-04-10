@@ -65,6 +65,7 @@
                     <td class="relative whitespace-nowrap py-4 pl-3 text-right text-sm font-medium">
                       <Menu as="div" class="relative">
                         <MenuButton
+                          :id="id"
                           class="z-10 -m-2.5 block p-2.5 text-right text-gray-800 hover:text-gray-500 dark:text-gray-100"
                           @click.stop=""
                         >
@@ -111,6 +112,12 @@
         </div>
       </div>
     </div>
+    <ErrorNotification
+      v-if="showErrorNotification"
+      :show="showErrorNotification"
+      :msg="errorMsg"
+      @show="showErrorNotification = false"
+    />
   </div>
 </template>
 
@@ -119,9 +126,11 @@ import { storeToRefs } from "pinia";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
 import { EllipsisVerticalIcon, TrashIcon } from "@heroicons/vue/20/solid";
 import { useIdStorageStore } from "~~/stores/IdStorage";
-
+const id = useId();
 const router = useRouter();
 const route = useRoute();
+const showErrorNotification = ref(false);
+const errorMsg = ref();
 
 const store = useIdStorageStore();
 const { BoundaryId } = storeToRefs(store);
@@ -139,13 +148,17 @@ async function refreshSummary() {
 
 async function deleteSystem(id) {
   try {
-    await useFetch("/api/systems/delete", {
+    await $fetch("/api/systems/delete", {
       method: "POST",
-      body: { SystemId: id },
+      body: { SystemId: id, BoundaryId: BoundaryId.value },
     });
+    location.reload();
+  } catch (err) {
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
   } finally {
     refreshSummary();
-    location.reload();
   }
 }
 </script>

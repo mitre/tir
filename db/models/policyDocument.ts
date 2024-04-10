@@ -1,13 +1,12 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
 } from "sequelize";
 
-// order of InferAttributes & InferCreationAttributes is important.
 export class PolicyDocument extends Model<
   InferAttributes<PolicyDocument>,
   InferCreationAttributes<PolicyDocument>

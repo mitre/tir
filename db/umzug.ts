@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import { type Options, Sequelize, Model } from "sequelize";
+import { Options, Sequelize, Model } from "sequelize";
 import * as dotenv from "dotenv";
 import { DateTime } from "luxon";
 import { Umzug, SequelizeStorage } from "../node_modules/umzug/lib/index";

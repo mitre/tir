@@ -5,10 +5,10 @@ import {
   Boundary,
   Stig,
   StigData,
-  StigLibrary,
   System,
   SystemInterface,
 } from "../../db/models";
+import { findStigByStigId } from "./stigLibrary";
 
 export async function importXccdf(xmlContent: string, systemId: number) {
   const jsonObj = await parseStringPromise(xmlContent, { explicitArray: false });
@@ -25,21 +25,9 @@ export async function importXccdf(xmlContent: string, systemId: number) {
   const xccdfStigId = jsonObj[`${ns}Benchmark`].$.id;
   const stigId = xccdfStigId.replace("xccdf_mil.disa.stig_benchmark_", "");
 
-  const stigMatch = await Stig.findOne({
-    where: {
-      stigid: stigId,
-    },
-    include: [
-      {
-        model: StigLibrary,
-        where: {
-          id: stigLibraryId,
-        },
-      },
-    ],
-  });
+  const stigMatch = await findStigByStigId(stigId, stigLibraryId);
 
-  if (stigMatch === null) {
+  if (!stigMatch) {
     throw createError({
       statusCode: 415,
       statusMessage: `No STIG matching id "${stigId}" found in system's assigned Library`,
@@ -62,14 +50,11 @@ export async function importXccdf(xmlContent: string, systemId: number) {
   if (foundAssessment) {
     assessmentToPopulate = foundAssessment;
   } else {
-    const newAssessment = await Assessment.create({
-      SystemId: systemId,
-      StigId: stigMatch.dataValues.id,
-      comment: "", // stigFromCkl.$['comment'],  xml2js cannot read commnets outside root tag
-      classification: "", // Can be found in SCC rear-matter but not in OSCAP
-      customname: "",
-      uuid: "",
-    });
+    const newAssessment = await findOrCreateAssessment(
+      systemId,
+      stigMatch.dataValues.id,
+      // classification can be found in SCC rear-matter but not in OSCAP?
+    );
     assessmentToPopulate = newAssessment;
   }
 
@@ -88,23 +73,20 @@ export async function importXccdf(xmlContent: string, systemId: number) {
       check.dataValues.rule_id,
     );
 
-    const [assessmentItemToUpdate] = await AssessmentItem.findOrBuild({
+    const assessmentItemToUpdate = await AssessmentItem.findOne({
       where: {
         AssessmentId: assessmentToPopulate.dataValues.id,
         StigDatumId: check.dataValues.id,
       },
     });
 
-    if (elementMatched) {
+    if (elementMatched && assessmentItemToUpdate) {
       assessmentItemToUpdate.setDataValue("status", resultToStatus(elementMatched[`${ns}result`]));
-      assessmentItemToUpdate.setDataValue("finding_details", elementMatched[`${ns}message`]._);
+      if (elementMatched[`${ns}message`]) {
+        assessmentItemToUpdate.setDataValue("finding_details", elementMatched[`${ns}message`]._);
+      }
+      await assessmentItemToUpdate.save();
     }
-
-    if (!elementMatched) {
-      assessmentItemToUpdate.setDataValue("status", "Not_Reviewed");
-    }
-
-    await assessmentItemToUpdate.save();
   }
 }
 

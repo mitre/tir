@@ -1,17 +1,20 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
   Association,
-  ForeignKey,
-  NonAttribute,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+  type ForeignKey,
+  type NonAttribute,
+  type BelongsToManyAddAssociationMixin,
+  type BelongsToManyRemoveAssociationMixin,
 } from "sequelize";
 
 import { Boundary } from "./boundary";
 import { Stig } from "./stig";
+import type { Assessment } from ".";
 
 export class System extends Model<InferAttributes<System>, InferCreationAttributes<System>> {
   declare id: CreationOptional<number>;
@@ -22,10 +25,17 @@ export class System extends Model<InferAttributes<System>, InferCreationAttribut
 
   declare BoundaryId: ForeignKey<Boundary["id"]>;
   declare Stigs?: NonAttribute<Stig[]>;
+  declare Boundary?: NonAttribute<Boundary>;
+  declare Assessments?: NonAttribute<Assessment[]>;
+
+  declare addStig: BelongsToManyAddAssociationMixin<Stig, number>;
+  declare removeStig: BelongsToManyRemoveAssociationMixin<Stig, number>;
 
   declare static associations: {
     BoundaryId: Association<System, Boundary>;
+    Boundary: Association<System, Boundary>;
     Stigs: Association<System, Stig>;
+    Assessments: Association<System, Assessment>;
   };
 }
 

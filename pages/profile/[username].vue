@@ -204,7 +204,7 @@
                 <div class="col-span-full">
                   <dt class="block text-sm font-medium leading-6 text-black dark:text-white">Expiration Date</dt>
                   <dd class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
-                    <input required id="date" type="date" v-model="dateToken" class="w-full rounded-lg" />
+                    <input required id="date" type="date" v-model="expirationDate" class="w-full rounded-lg" />
                   </dd>
                 </div>
                 <div
@@ -433,7 +433,7 @@ const confirmNewPassword = ref("");
 const tokenName = ref("");
 let showPopup = ref(false);
 let myTokenName = ref("");
-const dateToken = ref("");
+const expirationDate = ref("");
 const confirmTimeZone = ref(timeZones.at(currentUser.value.TimezoneId - 1));
 /// Change User Theme Preference
 async function setTheme(ThemeId) {
@@ -518,7 +518,7 @@ const sortedTokens = computed(() => {
 
 async function generateToken() {
   try {
-    if (!tokenName || !dateToken) {
+    if (!tokenName || !expirationDate) {
       console.log("TokenName and date are required!");
       return;
     }
@@ -527,7 +527,7 @@ async function generateToken() {
       body: {
         UserId: currentUser.value.id,
         name: tokenName,
-        date: dateToken,
+        date: expirationDate,
       },
       headers: {
         "Content-Type": "application/json",
@@ -540,7 +540,7 @@ async function generateToken() {
     } else {
       changeSuccessful.value = true;
       setTimeout(() => {
-        if (tokenName && dateToken) {
+        if (tokenName && expirationDate) {
           location.reload();
         }
       }, 30000);

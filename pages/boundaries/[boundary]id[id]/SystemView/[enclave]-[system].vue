@@ -196,6 +196,7 @@
                         <tbody class="divide-y divide-gray-800 bg-gray-200 dark:bg-gray-900">
                           <tr
                             v-for="stig in systemStigList"
+                            :key="stig.id"
                             class="cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-950 sm:rounded-lg"
                             @click="
                               [
@@ -233,8 +234,8 @@
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-800 dark:text-gray-200">
                               <span
                                 v-if="getStatus(stig.finding_status)"
-                                class=""
                                 v-for="(find, index) in getStatus(stig.finding_status)"
+                                :key="find"
                               >
                                 <span
                                   :class="[
@@ -456,7 +457,7 @@
                             <button
                               type="submit"
                               class="ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                              @click="[addStig(stigData), reloadNuxtApp({ ttl: 100 })]"
+                              @click="[addStig(stigData), (open = false)]"
                             >
                               Save
                             </button>
@@ -588,6 +589,12 @@
         </TransitionRoot>
       </div>
     </div>
+    <ErrorNotification
+      v-if="showErrorNotification"
+      :show="showErrorNotification"
+      :msg="errorMsg"
+      @show="showErrorNotification = false"
+    />
   </div>
 
   <!-- :openStig="openStig" -->
@@ -618,19 +625,16 @@ import {
   ArchiveBoxArrowDownIcon,
 } from "@heroicons/vue/24/outline";
 import { ArrowUturnLeftIcon, MagnifyingGlassIcon, PlusIcon } from "@heroicons/vue/20/solid";
-import { onUnmounted } from "vue";
+import { storeToRefs } from "pinia";
+import { useTempStigListStore } from "~~/stores/TempStigList";
+import { useIdStorageStore } from "~~/stores/IdStorage";
 const route = useRoute();
 const loading = ref(false);
-let loadingCKL = ref(false);
-// import { useEnclaveInfoStore } from '~~/stores/EnclaveInfo';
-import { useTempStigListStore } from "~~/stores/TempStigList";
-import { storeToRefs } from "pinia";
+const loadingCKL = ref(false);
 const tempStore = useTempStigListStore();
 const { TempStigList } = tempStore;
-const { deleteTempStigList } = tempStore;
-////////////
-import { useIdStorageStore } from "~~/stores/IdStorage";
-
+const showErrorNotification = ref(false);
+const errorMsg = ref();
 const store = useIdStorageStore();
 const { BoundaryId } = storeToRefs(store);
 const { StigLibraryId } = storeToRefs(store);
@@ -693,7 +697,7 @@ const searchId = systemInfo.value[systemValue].id;
 
 function addTempStig(stigID, stigName) {
   console.log("LOGGING");
-  if (TempStigList.findIndex((o) => o.StigId === stigID) === -1) {
+  if (tempStore.TempStigList.findIndex((o) => o.StigId === stigID) === -1) {
     tempStore.addTempStigList(stigID, searchId, stigName);
   }
 }
@@ -725,63 +729,70 @@ function addStig() {
     stigData = {
       StigId: tempStore.TempStigList[i].StigId,
       SystemId: tempStore.TempStigList[i].SystemId,
+      BoundaryId: BoundaryId.value,
     };
     addStigApi(stigData);
   }
-  location.reload();
-  reloadNuxtApp();
+  tempStore.TempStigList.length = 0;
 }
 
 async function addStigApi(stigData) {
   try {
     // console.log("Staring Stig")
-    await useFetch("/api/systems/stig/add", {
+    await $fetch("/api/systems/stig/add", {
       method: "POST",
       body: stigData,
     });
-  } catch {
-    console.log("ERROR");
+  } catch (err) {
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
+  } finally {
+    await refreshNuxtData("SystemStigList");
   }
 }
 
 async function removeStigApi(stigId, systemId) {
   try {
-    await useFetch("/api/systems/stig/remove", {
+    await $fetch("/api/systems/stig/remove", {
       method: "POST",
-      body: { StigId: stigId, SystemId: systemId },
+      body: { StigId: stigId, SystemId: systemId, BoundaryId: BoundaryId.value },
     });
+  } catch (err) {
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
   } finally {
-    location.reload();
+    await refreshNuxtData("SystemStigList");
   }
 }
-////////// Import Checklist
-// const fileInputS = ref<HTMLInputElement | null>(null)
+///  Import Checklist
 
 async function handleChecklistChangeFolder() {
   loadingCKL.value = true;
   const fileInputS = document.getElementById("uploadFolder");
-  // console.log(fileInputS)
   const selectedFiles = fileInputS.files;
-  // var filename = fileInputS.files[0].name;
-  // console.log('File Name', selectedFiles)
-
-  // displayNotification("Checklist Uploading", "Starting upload of STIG library.",false);
   const formdata = new FormData();
-  // formdata.append('file', fileInputS.files[0]);
-  // formdata.append('SystemId', currentSystem.SystemId);
+
   for (let i = 0; i < selectedFiles.length; i++) {
     formdata.append("files", selectedFiles[i]);
     formdata.append("SystemId", currentSystem.SystemId);
+    formdata.append("BoundaryId", BoundaryId.value);
   }
-
-  // console.log('Form Data', ...formdata)
-  // const result = await useFetch("/api/import/checklist", { method: "POST", body: formdata });
-  const result = await useFetch("/api/import/results", { method: "POST", body: formdata });
-  await refreshNuxtData("SystemStigList");
-  console.log("Checklist Done");
-  location.reload();
-  // displayNotification("STIG Library Upload", "Completed upload of STIG library.",false);
-  loadingCKL.value = false;
+  try {
+    await $fetch("/api/import/results", { method: "POST", body: formdata });
+    await refreshNuxtData("SystemStigList");
+    console.log("Checklist Done");
+    location.reload();
+  } catch (err) {
+    loadingCKL.value = false;
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
+  } finally {
+    // displayNotification("STIG Library Upload", "Completed upload of STIG library.",false);
+    loadingCKL.value = false;
+  }
 }
 
 async function handleZip() {
@@ -793,13 +804,23 @@ async function handleZip() {
 
   formdata.append("files", selectedFiles[0]);
   formdata.append("SystemId", currentSystem.SystemId);
+  formdata.append("BoundaryId", BoundaryId.value);
 
   //   const result = await useFetch("/api/import/checklist", { method: "POST", body: formdata });
-  const result = await useFetch("/api/import/results", { method: "POST", body: formdata });
-  await refreshNuxtData("SystemStigList");
-
-  location.reload();
-  loadingCKL.value = false;
+  try {
+    await $fetch("/api/import/results", { method: "POST", body: formdata });
+    await refreshNuxtData("SystemStigList");
+    console.log("Zip Done");
+    location.reload();
+  } catch (err) {
+    loadingCKL.value = false;
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
+  } finally {
+    // displayNotification("STIG Library Upload", "Completed upload of STIG library.",false);
+    loadingCKL.value = false;
+  }
 }
 
 async function handleChecklistChange() {
@@ -818,13 +839,23 @@ async function handleChecklistChange() {
     formdata.append("files", selectedFiles[i]);
   }
   formdata.append("SystemId", currentSystem.SystemId);
+  formdata.append("BoundaryId", BoundaryId.value);
   // console.log('Form Data', ...formdata)
   //   const result = await useFetch("/api/import/checklist", { method: "POST", body: formdata });
-  const result = await useFetch("/api/import/results", { method: "POST", body: formdata });
-  await refreshNuxtData("SystemStigList");
-  console.log("Checklist Done");
-  location.reload();
-  loadingCKL.value = false;
+  try {
+    await $fetch("/api/import/results", { method: "POST", body: formdata });
+    await refreshNuxtData("SystemStigList");
+    console.log("Checklist Done");
+    location.reload();
+  } catch (err) {
+    loadingCKL.value = false;
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
+  } finally {
+    // displayNotification("STIG Library Upload", "Completed upload of STIG library.",false);
+    loadingCKL.value = false;
+  }
 }
 
 ///////// Finding Status

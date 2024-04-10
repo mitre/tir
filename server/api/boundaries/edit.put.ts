@@ -10,7 +10,7 @@ type UpdateBoundaryRequest = {
   StigLibraryId?: number;
   PolicyDocumentId?: number;
   ClassificationId?: number;
-  cavaets?: string;
+  caveats?: string;
 };
 
 export default defineEventHandler(async (event) => {
@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
   if (rawToken) {
     userId = decodeToken(rawToken);
   } else {
+    logger.error("Unknown User.");
     throw createError({
       statusCode: 401,
       statusMessage: "Unknown User.",
@@ -28,7 +29,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = await User.findByPk(userId, {
-    attributes: [],
+    attributes: ["email"],
     include: [
       {
         model: UserRole,
@@ -36,8 +37,8 @@ export default defineEventHandler(async (event) => {
       },
     ],
   });
-
   if (!body.id) {
+    logger.error("Missing required parameter: id.");
     throw createError({
       statusCode: 400,
       statusMessage: "Missing required parameter: id.",
@@ -51,11 +52,12 @@ export default defineEventHandler(async (event) => {
       },
     ],
   });
-
+  const originalBoundary = boundary?.name;
   if (!boundary) {
+    logger.error(`No Boundary found for id: ${body.id}.`);
     throw createError({
       statusCode: 404,
-      statusMessage: `No Boundary foound for id: ${body.id}.`,
+      statusMessage: `No Boundary found for id: ${body.id}.`,
     });
   }
 
@@ -66,11 +68,11 @@ export default defineEventHandler(async (event) => {
     "ownerId",
     "StigLibraryId",
     "TierId",
-    "StigLibraryId",
     "PolicyDocumentId",
     "ClassificationId",
     "caveats",
   ];
+  let editMsg = "Changed:";
 
   if (boundary?.dataValues.ownerId !== userId && user?.dataValues.UserRole.id !== 1) {
     if (boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId)) {
@@ -86,14 +88,24 @@ export default defineEventHandler(async (event) => {
         });
 
         boundary.save();
+        logger.info({
+          service: "Boundary",
+          message: `User: ${user?.email} Edited Boundary:"${originalBoundary}" ${editMsg}`,
+        });
         return boundary;
       } else {
+        logger.error(
+          `${user?.email} must be an Admin, Owner, or Co-Owner of ${boundary.name} to Edit.`,
+        );
         throw createError({
           statusCode: 401,
           statusMessage: "Must be an Admin, Owner, or Co-Owner of this Enclave to Edit.",
         });
       }
     } else {
+      logger.error(
+        `${user?.email} must be an Admin, Owner, or Co-Owner of ${boundary.name} to Edit.`,
+      );
       throw createError({
         statusCode: 401,
         statusMessage: "Must be an Admin, Owner, or Co-Owner of this Enclave to Edit.",
@@ -103,11 +115,18 @@ export default defineEventHandler(async (event) => {
     attributesToUpdate.forEach((attr) => {
       const value = body[attr as keyof UpdateBoundaryRequest];
       if (value !== undefined) {
+        if (value !== boundary.dataValues[`${attr}`] && attr !== "TierId") {
+          editMsg += attr + " to " + value + ", ";
+        }
         boundary.setDataValue(attr, value);
       }
     });
 
     boundary.save();
+    logger.info({
+      service: "Boundary",
+      message: `User: ${user?.email} Edited Boundary:"${originalBoundary}" ${editMsg}`,
+    });
     return boundary;
   }
 });

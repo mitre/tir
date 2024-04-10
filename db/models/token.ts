@@ -1,10 +1,19 @@
-import { DataTypes, Model } from "sequelize";
+/* eslint-disable no-use-before-define */
+import {
+  Model,
+  DataTypes,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+} from "sequelize";
 
-export class Token extends Model {
-  declare id: number;
+export class Token extends Model<InferAttributes<Token>, InferCreationAttributes<Token>> {
+  declare id: CreationOptional<number>;
   declare name: string;
   declare token: string;
   declare date: string;
+  declare lastUpdate: CreationOptional<string>;
+  declare creationDate: CreationOptional<string>;
 }
 
 Token.init(

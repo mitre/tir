@@ -1,12 +1,12 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
   Association,
-  ForeignKey,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+  type ForeignKey,
   type NonAttribute,
 } from "sequelize";
 

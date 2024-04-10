@@ -4,16 +4,16 @@
 
 TIR is a web application to dynamically manage compliance data for a system.
 
-Tir is a Armenian god of wisdom and the namesake of the TIR (Test Ingest Respository).  TIR will help manage a system's STIG/SRG/SCTM content from a myriad of test tool formats.
+Tir is a Armenian god of wisdom and the namesake of the TIR (Test Ingest Respository). TIR will help manage a system's STIG/SRG/SCTM content from a myriad of test tool formats.
 
 ## Features
 
-* Group system compliance data
-* Store STIG results files and their hsitory for a system .
-* Store Quarterly DISA STIG libraries.
-* Streamline Quarterly STIG Update Process
-* Import automated test tool results
-* Export compliance data
+- Group system compliance data
+- Store STIG results files and their hsitory for a system .
+- Store Quarterly DISA STIG libraries.
+- Streamline Quarterly STIG Update Process
+- Import automated test tool results
+- Export compliance data
 
 ## Dev Setup
 
@@ -22,6 +22,7 @@ Tir is a Armenian god of wisdom and the namesake of the TIR (Test Ingest Resposi
 - node v18+
 
 ### Clone repo
+
 ```bash
 git clone <cloneurl>
 cd tir
@@ -33,15 +34,17 @@ cd tir
 npm install
 ```
 
-
 #### `.env` for SQLite config
+
 ```ini
 SQLITE=true
 JWT_KEY= //Required: Key that TIR will use for JWT
+SECRET_KEY= //Required
 INIT_PASSWORD= //Required:  Initial Password for initial TIR admin Account
 ```
 
 #### `.env` for Postgres config
+
 ```ini
 PORT= //Optional: Dev Web Server Port Defaults to 3000
 DATABASE_HOST= //Required: Postgres Database IP/FQDN

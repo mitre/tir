@@ -35,7 +35,7 @@ export const up: MigrationFn = async () => {
       type: DataTypes.STRING(256),
     },
     Scheduled_Completion_Date: {
-      type: DataTypes.DATE,
+      type: DataTypes.STRING(DATETIME_LENGTH),
     },
     Milestone_Changes: {
       type: DataTypes.STRING(256),

@@ -1,11 +1,22 @@
 import * as dotenv from "dotenv";
-import { hash } from "bcryptjs";
 import { DateTime } from "luxon";
 import type { Seeder } from "../umzug";
+import { generateSalt, hashPassword } from "../../server/utils/hash";
 
 dotenv.config();
 
 const now = DateTime.now().toISO();
+if (!process.env.INIT_PASSWORD) {
+  throw new Error("INIT_PASSWORD environment variable not set.");
+}
+if (!process.env.SECRET_KEY) {
+  throw new Error("SECRET_KEY environment variable not set.");
+}
+const userSalt = generateSalt();
+const adminSalt = generateSalt();
+
+const userPassword = hashPassword(process.env.INIT_PASSWORD, userSalt, process.env.SECRET_KEY);
+const adminPassword = hashPassword(process.env.INIT_PASSWORD, adminSalt, process.env.SECRET_KEY);
 
 const users = [
   {
@@ -13,22 +24,26 @@ const users = [
     firstName: "Tir",
     lastName: "Admin",
     email: "admin@tir.local",
-    password: "",
+    password: adminPassword,
     UserRoleId: 1,
     creationDate: now,
     lastUpdate: now,
+    salt: adminSalt,
+  },
+  {
+    id: 2,
+    firstName: "Tir",
+    lastName: "User",
+    email: "user@tir.local",
+    password: userPassword,
+    UserRoleId: 2,
+    creationDate: now,
+    lastUpdate: now,
+    salt: userSalt,
   },
 ];
 
 export const up: Seeder = async ({ context: sequelize }) => {
-  if (!process.env.INIT_PASSWORD) {
-    throw new Error("INIT_PASSWORD environment variable not set.");
-  }
-
-  const initialPassword = await hash(process.env.INIT_PASSWORD, 10);
-
-  users[0].password = initialPassword;
-
   await sequelize.getQueryInterface().bulkInsert("Users", users);
 };
 

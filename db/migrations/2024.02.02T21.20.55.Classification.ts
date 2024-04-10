@@ -18,6 +18,10 @@ export const up: MigrationFn = async () => {
       type: DataTypes.STRING(5),
       allowNull: false,
     },
+    color: {
+      type: DataTypes.STRING(6),
+      allowNull: false,
+    },
     lastUpdate: {
       type: DataTypes.STRING(DATETIME_LENGTH),
       allowNull: false,
@@ -47,6 +51,7 @@ export const up: MigrationFn = async () => {
 export const down: MigrationFn = async () => {
   if (sequelize.getDialect() !== "sqlite") {
     await sequelize.getQueryInterface().removeColumn("Boundaries", "ClassificationId");
+    await sequelize.getQueryInterface().removeColumn("Boundaries", "caveats");
   } else {
     await sequelize.query(
       "CREATE TABLE `Boundaries_backup` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` VARCHAR(255) NOT NULL UNIQUE, `lastUpdate` VARCHAR(29) NOT NULL, `creationDate` VARCHAR(29) NOT NULL, `ownerId` INTEGER REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `TierId` INTEGER NOT NULL REFERENCES `Tiers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `StigLibraryId` INTEGER REFERENCES `StigLibraries` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE, `PolicyDocumentId` INTEGER NOT NULL REFERENCES `PolicyDocuments` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE);",

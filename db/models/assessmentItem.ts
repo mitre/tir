@@ -1,16 +1,17 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
+  type InferAttributes,
+  type InferCreationAttributes,
   DataTypes,
-  CreationOptional,
+  type CreationOptional,
   Association,
-  ForeignKey,
-  NonAttribute,
+  type ForeignKey,
+  type NonAttribute,
 } from "sequelize";
 
 import { Assessment } from "./assessment";
+import { StigData } from "./stigData";
 
 export class AssessmentItem extends Model<
   InferAttributes<AssessmentItem>,
@@ -20,18 +21,22 @@ export class AssessmentItem extends Model<
   declare status: string;
   declare finding_details: string;
   declare comments: string;
-  declare severity_override: string;
-  declare severity_justification: string;
-  declare current: string;
-  declare previousId: string;
+  declare severity_override: CreationOptional<string>;
+  declare severity_justification: CreationOptional<string>;
+  declare current: CreationOptional<string>;
+  declare previousId: CreationOptional<number>;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
 
   declare AssessmentId: ForeignKey<Assessment["id"]>;
   declare Assessment?: NonAttribute<Assessment>;
+  declare StigDatumId?: ForeignKey<StigData["id"]>;
+  declare StigDatum?: NonAttribute<StigData>;
 
   declare static associations: {
     Assessment: Association<Assessment, AssessmentItem>;
+    StigDatumId: Association<AssessmentItem, StigData>;
+    StigDatam: Association<AssessmentItem, StigData>;
   };
 }
 

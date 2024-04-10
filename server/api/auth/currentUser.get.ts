@@ -1,5 +1,5 @@
-import { User, UserRole, Theme } from "../../../db/models";
 import jwt from "jsonwebtoken";
+import { User, UserRole, Theme } from "../../../db/models";
 
 // import TokenExpiredError from 'jsonwebtoken'
 

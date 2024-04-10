@@ -186,6 +186,9 @@ export async function getEvaluationSummary(
               {
                 model: Assessment,
                 attributes: ["id"],
+                where: {
+                  succeededByAssessmentId: { [Op.is]: null },
+                },
                 required: true,
                 include: [
                   {
@@ -245,6 +248,7 @@ export async function getEvaluationSummary(
   const evalSummary: EvalSummary[] = [];
 
   perfTimer.start("New Findings Object");
+  console.log(results);
   if (results?.length > 0) {
     for (const stig of results) {
       const evalSummaryItem: EvalSummary = {

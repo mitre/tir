@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--TIR :: {{tirversion}}-->
+<CHECKLIST>
+    <ASSET>
+        <ROLE>{{role}}</ROLE>
+        <ASSET_TYPE>{{asset_type}}</ASSET_TYPE>
+        <MARKING>{{marking}}</MARKING>
+        <HOST_NAME>{{host_name}}</HOST_NAME>
+        <HOST_IP>{{host_ip}}</HOST_IP>
+        <HOST_MAC>{{host_mac}}</HOST_MAC>
+        <HOST_FQDN>{{host_fqdn}}</HOST_FQDN>
+        <TARGET_COMMENT>{{target_comment}}</TARGET_COMMENT>
+        <TECH_AREA>{{tech_area}}</TECH_AREA>
+        <TARGET_KEY>{{target_key}}</TARGET_KEY>
+        <WEB_OR_DATABASE>{{web_or_database}}</WEB_OR_DATABASE>
+        <WEB_DB_SITE>SampleSite</WEB_DB_SITE>
+		<WEB_DB_INSTANCE>SampleInstance</WEB_DB_INSTANCE>
+    </ASSET>
+    <STIGS>
+        {{#stigs}}
+        <iSTIG>
+            <STIG_INFO>
+                {{#sidata}}
+                <SI_DATA>
+                    <SID_NAME>{{sid_name}}</SID_NAME>
+                    <SID_DATA>{{sid_data}}</SID_DATA>
+                </SI_DATA>
+                {{/sidata}}
+            </STIG_INFO>
+            {{#vulns}}
+            <VULN>
+                {{#stig_data}}
+                <STIG_DATA>
+                    <VULN_ATTRIBUTE>{{vuln_attribute}}</VULN_ATTRIBUTE>
+                    <ATTRIBUTE_DATA>{{attribute_data}}</ATTRIBUTE_DATA>
+                </STIG_DATA>
+                {{/stig_data}}
+                <STATUS>{{status}}</STATUS>
+                <FINDING_DETAILS>{{findingDetails}}</FINDING_DETAILS>
+				<COMMENTS>{{comments}}</COMMENTS>
+				<SEVERITY_OVERRIDE>{{severityOverride}}</SEVERITY_OVERRIDE>
+				<SEVERITY_JUSTIFICATION>{{OverrideJustification}}</SEVERITY_JUSTIFICATION>
+            </VULN>
+            {{/vulns}}
+        </iSTIG>
+        {{/stigs}}
+    </STIGS>
+</CHECKLIST>
