@@ -206,6 +206,10 @@ async function loginUser() {
       >
         Sign in
       </button>
+<<<<<<< HEAD
+=======
+      <Footer />
+>>>>>>> main
     </div>
     <LoginFailed :show="dialogOpen" :dialog-open="dialogOpen" @change="dialogOpen = false" />
   </form>

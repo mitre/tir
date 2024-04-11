@@ -7,11 +7,6 @@ const ldapEnabled = config.public.ldap_enabled === "true" || config.public.ldap_
 const ldapEnabledRaw = config.public.ldap_enabled;
 const ldaphost = config.ldap_host;
 
-console.log(`Type of ldapEnabledRaw: ${typeof ldapEnabledRaw}`);
-console.log(`ldapEnabledRaw: ${ldapEnabledRaw}`);
-console.log(`ldapEnabled: ${ldapEnabled}`);
-console.log(`ldapHost: ${ldaphost}`);
-
 definePageMeta({
   layout: false,
 });

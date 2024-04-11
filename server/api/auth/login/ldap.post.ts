@@ -34,34 +34,36 @@ function getSSLConfig(): false | { rejectUnauthorized: boolean; ca: string | Buf
   }
 
   return {
-    rejectUnauthorized: !config.ldap_ssl_insecure,
+    rejectUnauthorized: !ldapSSL,
     ca: sslCA,
   };
 }
 
 export default defineEventHandler(async (event) => {
-  console.log("entering ldap flow");
+  logger.debug({ service: "auth", message: `entering ldap flow` });
   const body = await readBody(event);
   const username = body.username;
   const password = body.password;
 
   let propagatedError = null;
-  // let user: User | null = null;
   let userFound = false;
 
   let inLDAPCallbacks = ldapEnabled;
   const inLDAPCallbacksPromise = new Promise<void>((resolve) => {
     const intervalTimeout = setInterval(() => {
       if (!inLDAPCallbacks) {
-        console.log("Out of ldap callbacks");
+        logger.debug({ service: "auth", message: `Out of ldap callbacks` });
         clearInterval(intervalTimeout);
         resolve();
       } else {
-        console.log("Still in ldap callbacks");
+        logger.debug({ service: "auth", message: `Still in ldap callbacks` });
       }
     }, 1000);
   });
-  console.log(`initial state of inldapcallbacks: ${inLDAPCallbacks}`);
+  logger.debug({
+    service: "auth",
+    message: `initial state of inldapcallbacks: ${inLDAPCallbacks}`,
+  });
 
   let userPromiseResolve: (value: User | PromiseLike<User> | null) => void;
   const userPromise = new Promise<User | null>((resolve) => {
@@ -69,7 +71,7 @@ export default defineEventHandler(async (event) => {
   });
 
   if (ldapEnabled) {
-    console.log("entering ldap enabled flow");
+    logger.debug({ service: "auth", message: `entering ldap enabled flow` });
     let sslConfig;
     try {
       sslConfig = getSSLConfig();
