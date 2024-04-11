@@ -1,9 +1,6 @@
 import jwt from "jsonwebtoken";
 import { User } from "../../../../db/models";
-<<<<<<< HEAD
 import { verifyPassword } from "~/server/utils/hash";
-=======
->>>>>>> main
 
 const config = useRuntimeConfig();
 
