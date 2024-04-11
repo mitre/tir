@@ -1,8 +1,7 @@
 import fs from "fs";
 import ldap from "ldapjs";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { User } from "../../../db/models";
+import { User } from "../../../../db/models";
 
 const config = useRuntimeConfig();
 
@@ -10,13 +9,15 @@ if (!config.jwt_key) {
   throw new Error("jwt_key is not set.");
 }
 
+const ldapEnabled = config.public.ldap_enabled === "true" || config.public.ldap_enabled === true;
+const ldapSSL = config.ldap_ssl_insecure === "true" || config.ldap_ssl_insecure === true;
+
 const SECRET_KEY = config.jwt_key as string;
 
 function getSSLConfig(): false | { rejectUnauthorized: boolean; ca: string | Buffer } {
   if (config.ldap_ssl !== "true") {
     return false;
   }
-
   let sslCA: string | Buffer | undefined = config.ldap_ssl_ca;
   if (!sslCA) {
     throw new Error("SSL CA file or path to file not provided");
@@ -33,105 +34,137 @@ function getSSLConfig(): false | { rejectUnauthorized: boolean; ca: string | Buf
   }
 
   return {
-    rejectUnauthorized: config.ldap_ssl_insecure !== "true",
+    rejectUnauthorized: !ldapSSL,
     ca: sslCA,
   };
 }
 
 export default defineEventHandler(async (event) => {
+  logger.debug({ service: "auth", message: `entering ldap flow` });
   const body = await readBody(event);
-  const email = body.email;
+  const username = body.username;
   const password = body.password;
 
-  let user: User | null = null;
+  let propagatedError = null;
+  let userFound = false;
 
-  let inLDAPCallbacks = config.ldap_enabled === "true" && email !== "admin@tir.local";
+  let inLDAPCallbacks = ldapEnabled;
   const inLDAPCallbacksPromise = new Promise<void>((resolve) => {
     const intervalTimeout = setInterval(() => {
       if (!inLDAPCallbacks) {
-        console.log("Out of ldap callbacks");
+        logger.debug({ service: "auth", message: `Out of ldap callbacks` });
         clearInterval(intervalTimeout);
         resolve();
       } else {
-        console.log("Still in ldap callbacks");
+        logger.debug({ service: "auth", message: `Still in ldap callbacks` });
       }
     }, 1000);
   });
-  console.log(`initial state of inldapcallbacks: ${inLDAPCallbacks}`);
+  logger.debug({
+    service: "auth",
+    message: `initial state of inldapcallbacks: ${inLDAPCallbacks}`,
+  });
 
-  if (config.ldap_enabled === "true" && email !== "admin@tir.local") {
-    console.log("entering ldap flow");
-    const sslConfig = getSSLConfig();
+  let userPromiseResolve: (value: User | PromiseLike<User> | null) => void;
+  const userPromise = new Promise<User | null>((resolve) => {
+    userPromiseResolve = resolve;
+  });
+
+  if (ldapEnabled) {
+    logger.debug({ service: "auth", message: `entering ldap enabled flow` });
+    let sslConfig;
+    try {
+      sslConfig = getSSLConfig();
+    } catch (e) {
+      propagatedError ??= createError({
+        statusCode: 500,
+        statusMessage: e instanceof Error ? e.message : `LDAP SSL configuration failed: ${e}`,
+      });
+      inLDAPCallbacks = false;
+    }
     console.log("created sslconfig");
-    const client = ldap.createClient({
+
+    const searchClient = ldap.createClient({
       url: `${sslConfig ? "ldaps" : "ldap"}://${config.ldap_host}:${config.ldap_port}`,
       ...(sslConfig && { tlsOptions: { ...sslConfig } }),
     });
-    const client2 = ldap.createClient({
+    const userClient = ldap.createClient({
       url: `${sslConfig ? "ldaps" : "ldap"}://${config.ldap_host}:${config.ldap_port}`,
       ...(sslConfig && { tlsOptions: { ...sslConfig } }),
     });
-    console.log("attempted to create client");
+    console.log("attempted to create clients");
 
-    client.on("error", (err) => {
-      inLDAPCallbacks = false;
-      console.log(`LDAP server err: ${err}`);
-      client.unbind((err) => {
-        if (err) {
-          console.log(`LDAP server unbind err: ${err}`);
-          // throw createError({statusCode: 401, statusMessage: `LDAP server unbind err: ${err}`});
-        }
+    searchClient.on("error", (err) => {
+      propagatedError ??= createError({
+        statusCode: 500,
+        statusMessage: err instanceof Error ? err.message : `Search client errored out: ${err}`,
       });
-      // throw createError({statusCode: 401, statusMessage: `LDAP server connection err: ${err}`});
-    });
-    client2.on("error", (err) => {
-      console.log(`LDAP server err: ${err}`);
-      client2.unbind((err) => {
-        if (err) {
-          console.log(`LDAP server unbind err: ${err}`);
-          // throw createError({statusCode: 401, statusMessage: `LDAP server unbind err: ${err}`});
-        }
-      });
-      // throw createError({statusCode: 401, statusMessage: `LDAP server connection err: ${err}`});
-    });
-
-    client.on("close", () => {
+      searchClient.unbind();
+      userClient.unbind();
+      console.log(`Search client errored out: ${err}`);
       inLDAPCallbacks = false;
-      console.log(`LDAP server connection closed`);
+    });
+    userClient.on("error", (err) => {
+      propagatedError ??= createError({
+        statusCode: 500,
+        statusMessage: err instanceof Error ? err.message : `User client errored out: ${err}`,
+      });
+      searchClient.unbind();
+      userClient.unbind();
+      console.log(`User client errored out: ${err}`);
+      inLDAPCallbacks = false;
     });
 
-    client.on("connect", () => {
-      console.log("in connected event ");
-      client.bind(config.ldap_binddn, config.ldap_password, (err) => {
+    searchClient.on("close", () => {
+      console.log(`Search server connection closed`);
+      inLDAPCallbacks = false;
+    });
+    userClient.on("close", () => {
+      console.log(`User server connection closed`);
+      inLDAPCallbacks = false;
+    });
+
+    searchClient.on("connect", () => {
+      console.log("Search client connected to the server");
+
+      searchClient.bind(config.ldap_binddn, config.ldap_password, (err) => {
         if (err) {
-          console.log(`LDAP server bind err: ${err}`);
-          // throw createError({statusCode: 401, statusMessage: `LDAP server bind err: ${err}`});
+          propagatedError ??= createError({
+            statusCode: 500,
+            statusMessage: err instanceof Error ? err.message : `Search client bind failed: ${err}`,
+          });
+          searchClient.unbind();
+          userClient.unbind();
+          console.log(`Search client bind err: ${err}`);
         }
-        client.search(
+
+        searchClient.search(
           config.ldap_searchbase,
-          { scope: "sub", filter: config.ldap_searchfilter.replace("{{username}}", email) },
+          { scope: "sub", filter: config.ldap_searchfilter.replace("{{username}}", username) },
           (err, res) => {
-            console.log("attempted to do a search");
+            console.log("Attempted to do a search");
             if (err) {
-              console.log(`LDAP server search err: ${err}`);
-              // throw createError({statusCode: 401, statusMessage: `LDAP server search err: ${err}`});
+              propagatedError ??= createError({
+                statusCode: 500,
+                statusMessage:
+                  err instanceof Error ? err.message : `Search client search failed: ${err}`,
+              });
+              searchClient.unbind();
+              userClient.unbind();
+              console.log(`Search client bind err: ${err}`);
             }
-
-            console.log(JSON.stringify(res, null, 2));
+            console.log(`res on search: ${res}`);
 
             res.on("searchEntry", (entry) => {
-              console.log("entry: " + entry.json);
-              console.log("entryv2: " + entry);
+              userFound = true;
+              console.log("entry: " + entry.pojo);
               console.log("entry bindproperty: " + entry.dn);
               console.log("entry id: " + entry.id);
 
-              console.log("entry.dn.tostring typeof: " + typeof entry.dn.toString());
-              console.log("typeof password: " + typeof password);
-              // console.log("password: " + password);
-
-              client2.bind(entry.dn.toString(), password, async (err) => {
+              userClient.bind(entry.dn.toString(), password, async (err) => {
                 console.log("in interior bind");
                 if (err) {
+                  userPromiseResolve(null);
                   console.log(`LDAP user password validation err: ${err}`);
                   // should be valid to throw an error here for the try ldap -> local auth here so that we can say that found an ldap user but they got the password wrong
                   throw createError({
@@ -144,8 +177,9 @@ export default defineEventHandler(async (event) => {
                 const userEmail = entry.attributes.find(
                   (attr) => attr.type === config.ldap_mailfield,
                 )?.values[0]; // assuming that everyone has at least one email but should probs throw an error if this assumption is false
+
                 console.log(`useremail: ${userEmail}`);
-                user = await User.findOne({ where: { email: userEmail } });
+                const user = await User.findOne({ where: { email: userEmail } });
                 console.log(`user exists? ${user}`);
                 if (!user) {
                   console.log("entered user creation process");
@@ -159,28 +193,35 @@ export default defineEventHandler(async (event) => {
                     UserRoleId: 2, // normal user - should replace this with api call probably?
                     TimezoneName: "America/New_York",
                   };
-                  user = await $fetch("/api/users/create", { method: "POST", body: userData });
+                  const user: User | null = await $fetch("/api/users/create", {
+                    method: "POST",
+                    body: userData,
+                  });
                   console.log("attempted to create user");
-                  if (!user) {
+                  if (user) {
+                    userPromiseResolve(user);
+                  } else {
                     console.log("failed at creating user");
                     throw createError({
                       statusCode: 401,
                       statusMessage: "Couldn't create TIR user based off of LDAP user",
                     });
                   }
+                } else {
+                  userPromiseResolve(user);
                 }
               });
             });
             res.on("error", (err) => {
               console.error("error: " + err.message);
               // presumably handle this error
-              client.unbind((err) => {
+              searchClient.unbind((err) => {
                 if (err) {
                   console.log(`LDAP server unbind err: ${err}`);
                   // throw createError({statusCode: 401, statusMessage: `LDAP server unbind err: ${err}`});
                 }
               });
-              client2.unbind((err) => {
+              userClient.unbind((err) => {
                 if (err) {
                   console.log(`LDAP server unbind err: ${err}`);
                   // throw createError({statusCode: 401, statusMessage: `LDAP server unbind err: ${err}`});
@@ -189,14 +230,23 @@ export default defineEventHandler(async (event) => {
             });
             res.on("end", (result) => {
               // will need to add logic here for if we end without having found any search results
+              // doesnt' seem to be a way to get that information from result.
               console.log("status: " + result?.status);
-              client.unbind((err) => {
+              console.log(`result: ${result}`);
+              if (!userFound) {
+                logger.info({
+                  service: "auth",
+                  message: `Non-existing ldap user login attempt.  Username: ${username}`,
+                });
+                userPromiseResolve(null);
+              }
+              searchClient.unbind((err) => {
                 if (err) {
                   console.log(`LDAP server unbind err: ${err}`);
                   // throw createError({statusCode: 401, statusMessage: `LDAP server unbind err: ${err}`});
                 }
               });
-              client2.unbind((err) => {
+              userClient.unbind((err) => {
                 if (err) {
                   console.log(`LDAP server unbind err: ${err}`);
                   // throw createError({statusCode: 401, statusMessage: `LDAP server unbind err: ${err}`});
@@ -211,33 +261,19 @@ export default defineEventHandler(async (event) => {
 
   await inLDAPCallbacksPromise;
 
-  if (user === null) {
-    console.log("entered local flow");
-    user = await User.findOne({ where: { email } });
-    if (!user) {
-      console.log("couldn't find user");
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Unknown User.",
-      });
-    }
+  const user = await userPromise;
 
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      console.log("invalid password");
+  if (!user) {
+    if (user === null) {
       throw createError({
         statusCode: 401,
-        statusMessage: "Bad Password",
+        statusMessage: "Invalid Username or Password",
       });
     }
   }
 
-  if (user === null) {
-    console.log("last minute user check - can probs delete this block");
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Login Failed",
-    });
+  if (propagatedError !== null) {
+    throw propagatedError;
   }
 
   const cookieName = "tirtoken";
@@ -253,6 +289,5 @@ export default defineEventHandler(async (event) => {
     token: jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: "2h" }),
     userId: user.id,
   };
-
   return results;
 });
