@@ -46,7 +46,6 @@ export default defineEventHandler(async (event) => {
   const password = body.password;
 
   let propagatedError = null;
-  // let user: User | null = null;
   let userFound = false;
 
   let inLDAPCallbacks = ldapEnabled;
