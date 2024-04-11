@@ -17,10 +17,24 @@ export default defineNuxtConfig({
     temp_folder: process.env.TEMP_FOLDER || "./tmp",
     jwt_key: process.env.JWT_KEY,
     usesqlite: process.env.SQLITE,
+    ldap_host: process.env.LDAP_HOST,
+    ldap_port: process.env.LDAP_PORT || '389',
+    ldap_binddn: process.env.LDAP_BINDDN,
+    ldap_password: process.env.LDAP_PASSWORD,
+    ldap_searchbase: process.env.LDAP_SEARCHBASE,
+    ldap_searchfilter: process.env.LDAP_SEARCHFILTER || 'sAMAccountName={{username}}',
+    ldap_namefield: process.env.LDAP_NAMEFIELD || 'name',
+    ldap_mailfield: process.env.LDAP_MAILFIELD || 'mail',
+    ldap_ssl: process.env.LDAP_SSL || 'false',
+    ldap_ssl_insecure: process.env.LDAP_SSL_INSECURE || 'false',
+    ldap_ssl_ca: process.env.LDAP_SSL_CA,
+    public: {
+      ldap_enabled: process.env.LDAP_ENABLED || 'false',
+    },
   },
   telemetry: false,
   alias: {
-    //pinia: "/node_modules/@pinia/nuxt/node_modules/pinia/dist/pinia.mjs"
+    // pinia: "/node_modules/@pinia/nuxt/node_modules/pinia/dist/pinia.mjs"
   },
   nitro: {
     experimental: { openAPI: true },
