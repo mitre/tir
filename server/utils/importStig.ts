@@ -2,23 +2,46 @@ import * as fs from "fs";
 import { readFileSync } from "fs";
 import path from "path";
 import { parseStringPromise } from "xml2js";
-import { UniqueConstraintError } from "sequelize";
-import { Stig, StigLibrary, StigLibraryInterface } from "../../db/models";
-import { hashFile } from "./hash";
+import { Transaction, UniqueConstraintError } from "sequelize";
+import { Stig, StigIdent, StigLibrary, StigReference, StigResponsibility } from "../../db/models";
+// import { hashFile } from "./hash";
+
+export type ParseStigResults = {
+  newStig: boolean;
+  checksProcessed: number;
+  newCheckCount: number;
+  updatedCheckCount: number;
+  unchangedCheckCount: number;
+  errorCheckCount: number;
+};
 
 export async function parseXmlStig(
   xmlFilePath: string,
-  stigLibraryId: number,
-): Promise<{ error: boolean; new: boolean }> {
-  const fileHash = await hashFile(xmlFilePath);
+  stigLibrary: StigLibrary,
+): Promise<ParseStigResults> {
+  // const fileHash = await hashFile(xmlFilePath);
   const xmlContent = readFileSync(xmlFilePath, "utf8");
+
+  const parseResults: ParseStigResults = {
+    newStig: false,
+    checksProcessed: 0,
+    newCheckCount: 0,
+    updatedCheckCount: 0,
+    unchangedCheckCount: 0,
+    errorCheckCount: 0,
+  };
+
   let jsonObj;
 
   try {
     jsonObj = await parseStringPromise(xmlContent, { explicitArray: false });
   } catch (error) {
     logger.error(`Error parsing STIG xmlContent: ${path.basename(xmlFilePath)}`);
+    throw new Error(`Error parsing STIG xmlContent: ${path.basename(xmlFilePath)}`, {
+      cause: error,
+    });
   }
+  const stigImportTransaction = await sequelize.transaction({ type: Transaction.TYPES.IMMEDIATE });
 
   const [newStig, created] = await Stig.findOrBuild({
     where: { filename: path.basename(xmlFilePath) },
@@ -26,30 +49,49 @@ export async function parseXmlStig(
 
   try {
     if (created) {
+      parseResults.newStig = true;
       populateStigModel(newStig, jsonObj);
       newStig.dataValues.filename = path.basename(xmlFilePath);
-      newStig.dataValues.hash = fileHash;
-      // console.log("Trying to save to db");
+      // newStig.dataValues.hash = fileHash;
       try {
-        await newStig.save();
+        await newStig.save({ transaction: stigImportTransaction });
       } catch (error) {
         console.log("Error saving the model instance:", error);
         logger.error(`Error saving the model instance`, { error });
       }
     }
 
-    const addRequestResult = await addStigToLibrary(newStig.dataValues.id, stigLibraryId);
-    console.log(addRequestResult);
+    await stigLibrary.addStig(newStig, { transaction: stigImportTransaction });
+    // const addRequestResult = await addStigToLibrary(newStig.dataValues.id, stigLibraryId);
+    // console.log(addRequestResult);
 
     let groupArray = jsonObj.Benchmark.Group;
     if (!Array.isArray(groupArray)) {
       groupArray = [groupArray];
     }
     console.log("Starting Group processing for :", newStig.dataValues.title);
+    const perfTimer = new PerfTimer();
+    perfTimer.enable();
+
+    const currentStigResponsibilities = await StigResponsibility.findAll();
+    const currentStigReferences = await StigReference.findAll();
+    const currentStigIdents = await StigIdent.findAll();
+
     for (const stigData of groupArray) {
-      await parseStigData(stigData, newStig);
+      await parseStigData(
+        stigData,
+        newStig,
+        currentStigResponsibilities,
+        currentStigReferences,
+        currentStigIdents,
+        stigImportTransaction,
+        perfTimer,
+      );
     }
 
+    stigImportTransaction.commit();
+
+    perfTimer.globalSummaryPrint();
     fs.rm(xmlFilePath, (err) => {
       if (err) {
         console.log(`Error deleting file: ${err}`);
@@ -59,6 +101,7 @@ export async function parseXmlStig(
     return { error: false, new: true };
   } catch (error) {
     const returnStatus = { error: true, new: true };
+    stigImportTransaction.rollback();
 
     if (error instanceof UniqueConstraintError) {
       error.errors.forEach((element) => {
@@ -76,15 +119,15 @@ export async function parseXmlStig(
 
         if (stig) {
           console.log(`Found unique match on ${[errorKey]}`);
-          console.log(`Adding stig: ${stig.dataValues.id} to library: ${stigLibraryId}`);
+          console.log(`Adding stig: ${stig.dataValues.id} to library: ${stigLibrary.id}`);
 
-          const addResult = addStigToLibrary(stig.dataValues.id, stigLibraryId);
-          if ((await addResult).error) {
-            returnStatus.error = true;
-            console.log(`[ERROR] Error found duplicate to library ${(await addResult).errorMsg}`);
-          } else {
-            returnStatus.error = false;
-          }
+          // const addResult = addStigToLibrary(stig.dataValues.id, stigLibraryId);
+          // if ((await addResult).error) {
+          //   returnStatus.error = true;
+          //   console.log(`[ERROR] Error found duplicate to library ${(await addResult).errorMsg}`);
+          // } else {
+          //   returnStatus.error = false;
+          // }
           returnStatus.new = false;
         }
       }
@@ -92,7 +135,7 @@ export async function parseXmlStig(
       console.log(error);
     }
 
-    const errorLibraryDirName = "ErrorLibraryID" + stigLibraryId.toString(10);
+    const errorLibraryDirName = "ErrorLibraryID" + stigLibrary.id.toString(10);
     const errorLibraryDirPath = path.join(path.dirname(xmlFilePath), errorLibraryDirName);
     if (!fs.existsSync(errorLibraryDirPath)) {
       fs.mkdirSync(errorLibraryDirPath, { recursive: true });

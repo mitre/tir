@@ -1,12 +1,14 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
-  NonAttribute,
   Association,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+  type NonAttribute,
+  type BelongsToManyAddAssociationMixin,
+  type BelongsToManyRemoveAssociationMixin,
 } from "sequelize";
 import type { StigData } from ".";
 
@@ -52,6 +54,10 @@ export class Stig extends Model<InferAttributes<Stig>, InferCreationAttributes<S
   declare creationDate: CreationOptional<string>;
 
   declare StigData?: NonAttribute<StigData[]>;
+
+  declare addStigData: BelongsToManyAddAssociationMixin<StigData, number>;
+  declare removeStigData: BelongsToManyRemoveAssociationMixin<StigData, number>;
+  declare getStigDatum: () => Promise<StigData[]>;
 
   declare static associations: {
     StigData: Association<Stig, StigData>;

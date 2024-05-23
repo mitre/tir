@@ -7,12 +7,14 @@ export default defineEventHandler(async (event) => {
 
   if (!user || !boundary) {
     if (!user) {
+      logger.error(`Unable to find UserId`);
       return {
         success: false,
         error: "Unable to find UserId",
         id: body.UserId,
       };
     } else {
+      logger.error(`Unable to find BoundaryId`);
       return {
         success: false,
         error: "Unable to find BoundaryId",
@@ -21,6 +23,9 @@ export default defineEventHandler(async (event) => {
     }
   }
   await boundary.addUser(user, { through: { BoundaryRoleId: body.BoundaryRoleId } });
-
+  logger.info({
+    service: "Boundary",
+    message: `${user?.email} Successfully Added to: ${boundary.name}`,
+  });
   return { success: true };
 });

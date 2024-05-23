@@ -1,18 +1,17 @@
-import * as fs from 'fs';
-import { DateTime } from 'luxon';
+import * as fs from "fs";
+import { DateTime } from "luxon";
 
 export default defineEventHandler(async (event) => {
+  const filePath = "config/alertTest.json";
 
-  const filePath = 'config/alertTest.json';
-  
   let alertArray: any[] = [];
 
   if (fs.existsSync(filePath)) {
     // Read the existing JSON file
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    const fileContent = fs.readFileSync(filePath, "utf-8");
     alertArray = JSON.parse(fileContent);
   }
-  
+
   const body = await readBody(event);
   const userId = body.userId;
   const category = body.category;
@@ -24,23 +23,24 @@ export default defineEventHandler(async (event) => {
 
   const newId = maxId + 1;
   const newObj = {
-    "id": newId, 
-    "userId": userId, 
-    "category": body.category, 
-    "message": body.message, 
-    "read": false,
-    "date": DateTime.now().toISO()
+    id: newId,
+    userId: userId,
+    category: body.category,
+    message: body.message,
+    read: false,
+    date: DateTime.now().toISO(),
+    dueDate: body.dueDate,
+    daysLeft: body.daysLeft,
   };
   alertArray.push(newObj);
 
   const jsonString = JSON.stringify(alertArray, null, 2);
 
-  try{
-    const fileWriteResult = fs.writeFileSync(filePath, jsonString, 'utf8');
-  
-    return {success: true}
-  }catch{
-    return {success: false}
+  try {
+    const fileWriteResult = fs.writeFileSync(filePath, jsonString, "utf8");
+
+    return { success: true };
+  } catch {
+    return { success: false };
   }
-  
 });

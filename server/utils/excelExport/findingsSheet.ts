@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { getFindingsSheet, FindingSheetOptions, catFromSeverity } from "../findings";
+import { Boundary, Classification } from "../../../db/models";
 
 export async function generateFindings(
   boundaryId: number,
@@ -200,6 +201,24 @@ export async function generateFindings(
     ];
     poamArray.push(newRow);
   }
+
+  interface BoundaryWithClassification extends Boundary {
+    Classification?: Classification;
+  }
+
+  const boundary = (await Boundary.findOne({
+    where: { id: boundaryId },
+    include: { model: Classification },
+  })) as BoundaryWithClassification;
+
+  //export color in per classification, header, and fotter
+  let classificationString = `${boundary?.Classification?.dataValues.name}`;
+  if (boundary?.caveats) {
+    classificationString += `// ${boundary?.caveats}`;
+  }
+
+  sheet.headerFooter.oddHeader = classificationString;
+  sheet.headerFooter.oddFooter = classificationString;
 
   sheet.insertRows(2, poamArray, "o");
 

@@ -1,11 +1,11 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
   Association,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
 } from "sequelize";
 
 import { Boundary } from "./boundary";
@@ -17,6 +17,7 @@ export class Classification extends Model<
   declare id: CreationOptional<number>;
   declare name: string;
   declare abbreviation: string;
+  declare color: string;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
 
@@ -39,6 +40,10 @@ Classification.init(
     },
     abbreviation: {
       type: DataTypes.STRING(5),
+      allowNull: false,
+    },
+    color: {
+      type: DataTypes.STRING(6),
       allowNull: false,
     },
     lastUpdate: {

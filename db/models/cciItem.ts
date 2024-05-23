@@ -1,15 +1,15 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
-  HasManyAddAssociationMixin,
-  HasManyHasAssociationMixin,
-  ForeignKey,
-  NonAttribute,
   Association,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+  type HasManyAddAssociationMixin,
+  type HasManyHasAssociationMixin,
+  type ForeignKey,
+  type NonAttribute,
 } from "sequelize";
 import { CciReference } from "./cciReferences";
 import { CciList } from "./cciList";

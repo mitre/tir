@@ -1,6 +1,23 @@
-import { DataTypes, Model } from "sequelize";
+/* eslint-disable no-use-before-define */
+import {
+  Model,
+  DataTypes,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+} from "sequelize";
 
-export class Evaluation extends Model {}
+export class Evaluation extends Model<
+  InferAttributes<Evaluation>,
+  InferCreationAttributes<Evaluation>
+> {
+  declare id: CreationOptional<number>;
+  declare classification: string;
+  declare customname: string;
+  declare comment: string;
+  declare lastUpdate: CreationOptional<string>;
+  declare creationDate: CreationOptional<string>;
+}
 
 Evaluation.init(
   {

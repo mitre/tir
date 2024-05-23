@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
-import { Boundary, CciItem, CciReference, User } from "../../../db/models";
+import { Boundary, CciItem, CciReference, User, Classification } from "../../../db/models";
 import { getIndexesByCciIds } from "../cci";
+import { text } from "stream/consumers";
 
 export async function generatePoam(
   boundaryId: number,
@@ -9,6 +10,7 @@ export async function generatePoam(
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Sheet1");
   sheet.views = [{ zoomScale: 80 }];
+
   // const baseFont = {name: 'Calibri', size: 10};
   // sheet.columns.forEach(column => {
   //     column.style = {
@@ -304,8 +306,10 @@ export async function generatePoam(
   const dateCell = sheet.getCell("D2");
   dateCell.value = new Date();
   dateCell.style = { numFmt: "DD-MMM-YYYY", alignment: { horizontal: "left", vertical: "top" } };
-  sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "007A3D" } };
+  // sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "007A33" } };
 
+  // sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "007A33" } };
+  // CUI, classified, unclassified, confidential, secret, top secret
   sheet.getCell("A2").value = "Date Exported:";
   sheet.getCell("A2").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "C0C0C0" } };
   sheet.getCell("A3").value = "Exported By:";
@@ -374,7 +378,31 @@ export async function generatePoam(
   const recommendations = 20;
 
   const results = await getEvaluationSummary(boundaryId, undefined, true);
-  const boundary = await Boundary.findByPk(boundaryId);
+
+  interface BoundaryWithClassification extends Boundary {
+    Classification?: Classification;
+  }
+
+  const boundary = (await Boundary.findOne({
+    where: { id: boundaryId },
+    include: { model: Classification },
+  })) as BoundaryWithClassification;
+
+  //export color in per classification, header, and fotter
+  let classificationString = `${boundary?.Classification?.dataValues.name}`;
+
+  if (boundary?.caveats) {
+    classificationString += `// ${boundary?.caveats}`;
+  }
+
+  sheet.headerFooter.oddHeader = classificationString;
+  sheet.headerFooter.oddFooter = classificationString;
+  sheet.getCell("A1").value = classificationString;
+
+  const bannerColor = boundary?.Classification?.dataValues.color;
+
+  sheet.getCell("A1").font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+  sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: bannerColor } };
 
   const cciItems = await CciItem.findAll({
     attributes: ["cciId"],

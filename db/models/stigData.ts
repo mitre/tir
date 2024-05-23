@@ -1,19 +1,21 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
-  NonAttribute,
   Association,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+  type NonAttribute,
+  type BelongsToManyAddAssociationMixin,
+  type BelongsToManyRemoveAssociationMixin,
 } from "sequelize";
 
 import { AssessmentItem } from "./assessmentItem";
 import { Stig } from "./stig";
 import { StigIdent } from "./stigIdent";
 import { EvaluationItem } from "./evaluationItem";
-import type { Override } from ".";
+import type { Override, StigReference, StigResponsibility } from ".";
 
 export class StigData extends Model<InferAttributes<StigData>, InferCreationAttributes<StigData>> {
   declare id: CreationOptional<number>;
@@ -49,22 +51,29 @@ export class StigData extends Model<InferAttributes<StigData>, InferCreationAttr
   declare AssessmentItems?: NonAttribute<AssessmentItem[]>;
   declare EvaluationItems?: NonAttribute<EvaluationItem[]>;
 
-  // declare SystemId: ForeignKey<System["id"]>;
-  // declare StigDatumId: ForeignKey<StigData["id"]>;
-
   declare Stigs?: NonAttribute<Stig[]>;
-  // declare SystemId: ForeignKey<System["id"]>;
-  // declare StigDatumId: ForeignKey<StigData["id"]>;
   declare StigIdents?: NonAttribute<StigIdent[]>;
   declare Overrides?: NonAttribute<Override[]>;
+  declare StigResponsibilities?: NonAttribute<StigResponsibility[]>;
+  declare StigReferences?: NonAttribute<StigReference[]>;
+
+  declare addStigResponsibility: BelongsToManyAddAssociationMixin<StigResponsibility, number>;
+  declare removeStigResponsibility: BelongsToManyRemoveAssociationMixin<StigResponsibility, number>;
+  declare getStigResponsibility: () => Promise<StigResponsibility[]>;
+  declare addStigReference: BelongsToManyAddAssociationMixin<StigReference, number>;
+  declare removeStigReference: BelongsToManyRemoveAssociationMixin<StigReference, number>;
+  declare getStigReference: () => Promise<StigReference[]>;
+  declare addStigIdent: BelongsToManyAddAssociationMixin<StigIdent, number>;
+  declare removeStigIdent: BelongsToManyRemoveAssociationMixin<StigIdent, number>;
 
   declare static associations: {
     AssessmentItems: Association<StigData, AssessmentItem>;
-    //   StigDatumId: Association<Override, StigData>;
     Stigs: Association<StigData, Stig>;
     StigIdents: Association<StigData, StigIdent>;
     EvaluationItmes: Association<StigData, EvaluationItem>;
     Overrides: Association<StigData, Override>;
+    StigResponsibilities: Association<StigData, StigResponsibility>;
+    StigReferences: Association<StigData, StigReference>;
   };
 }
 

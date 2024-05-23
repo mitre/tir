@@ -16,6 +16,7 @@ export default defineNuxtConfig({
     database_name: process.env.DATABASE_NAME,
     temp_folder: process.env.TEMP_FOLDER || "./tmp",
     jwt_key: process.env.JWT_KEY,
+    secret_key: process.env.SECRET_KEY,
     usesqlite: process.env.SQLITE,
     ldap_host: process.env.LDAP_HOST,
     ldap_port: process.env.LDAP_PORT || '389',

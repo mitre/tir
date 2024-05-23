@@ -1,13 +1,13 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
-  HasManyAddAssociationMixin,
-  HasManyHasAssociationMixin,
-  ForeignKey,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+  type HasManyAddAssociationMixin,
+  type HasManyHasAssociationMixin,
+  type ForeignKey,
 } from "sequelize";
 import { PolicyDocument } from "./policyDocument";
 

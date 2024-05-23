@@ -1,13 +1,13 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
-  NonAttribute,
   Association,
-  ForeignKey,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+  type NonAttribute,
+  type ForeignKey,
 } from "sequelize";
 import { System } from "./system";
 import { StigLibrary } from "./stigLibrary";
@@ -31,12 +31,14 @@ export class Boundary extends Model<InferAttributes<Boundary>, InferCreationAttr
 
   declare Systems?: NonAttribute<System[]>;
   declare StigLibrary?: NonAttribute<StigLibrary>;
+  declare Classification?: NonAttribute<Classification>;
 
   declare static associations: {
     Systems: Association<Boundary, System>;
     StigLibrary: Association<Boundary, StigLibrary>;
     ownerId: Association<Boundary, User>;
     ClassificationId: Association<Boundary, Classification>;
+    Classification: Association<Boundary, Classification>;
     TierId: Association<Boundary, Tier>;
   };
 }

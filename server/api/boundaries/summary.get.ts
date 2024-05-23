@@ -14,6 +14,7 @@ import {
 import { FindingCounts } from "../../utils/findings";
 import { PerfTimer } from "../../utils/perfTimer";
 import { decodeToken } from "../../utils/currentUser";
+import { Op } from "sequelize";
 
 export default defineEventHandler(async (event) => {
   const perfTimer = new PerfTimer();
@@ -116,6 +117,7 @@ export default defineEventHandler(async (event) => {
             model: Assessment,
             attributes: ["SystemId"],
             required: true,
+            where: { succeededByAssessmentId: { [Op.is]: null } },
             include: [
               {
                 model: System,
@@ -139,6 +141,13 @@ export default defineEventHandler(async (event) => {
       {
         model: Stig,
         attributes: ["id"],
+        include: [
+          {
+            model: StigLibrary,
+            where: { id: boundary.StigLibrary.id },
+            required: true,
+          },
+        ],
       },
     ],
   });
@@ -186,6 +195,10 @@ export default defineEventHandler(async (event) => {
         statusCode: 400,
         statusMessage: `Unable to find associated Stig for StigDataId: ${uniqueFinding.id}.`,
       });
+    }
+
+    if (!uniqueFinding.Stigs[0].id) {
+      break;
     }
 
     for (let j = 0; j < uniqueFinding.AssessmentItems.length; j++) {

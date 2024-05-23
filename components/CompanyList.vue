@@ -10,16 +10,18 @@
             {{ get[0].name }}
           </h4>
           <h4 v-else class="mt-4 text-xl font-bold tracking-tight text-gray-800 dark:text-white sm:text-2xl">
-            Companies
+            {{ tierView.alias }}
           </h4>
-          <h4 class="mt-1 text-lg text-gray-800 dark:text-white">Select your company to view relevant boundaries.</h4>
+          <h4 class="mt-1 text-lg text-gray-800 dark:text-white">
+            Select your company to view relevant {{ inflection.pluralize(boundaryView.alias) }}.
+          </h4>
         </div>
 
         <div v-show="currentUser.UserRole.name === 'User'" class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
           <button
             type="button"
             class="inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            @click="open = true"
+            @click="[(open = true), (edit = false), (companyName = null)]"
           >
             <PlusIcon class="-ml-0.5 h-5 w-5 rounded-md bg-indigo-500" aria-hidden="true" />
             Company
@@ -28,7 +30,7 @@
             v-if="tierList.length === 0"
             type="button"
             class="ml-3 inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            @click="[editCompany(), router.push('/boundaries/' + get[0].name + 'id' + get[0].id)]"
+            @click="[editCompany()]"
           >
             <PlusIcon class="-ml-0.5 h-5 w-5 rounded-md bg-indigo-500" aria-hidden="true" />
             Boundary
@@ -257,7 +259,7 @@
                   <DialogPanel class="pointer-events-auto w-screen max-w-xs">
                     <form
                       class="flex h-full flex-col divide-y divide-gray-200 bg-white shadow-xl dark:bg-gray-800"
-                      @submit.prevent="edit ? '' : addCompany(companyData)"
+                      @submit.prevent="edit ? '' : addCompany()"
                     >
                       <div class="h-0 flex-1 overflow-y-auto">
                         <div class="bg-indigo-700 px-4 py-6 sm:px-6">
@@ -282,7 +284,9 @@
                           </div>
                           <div class="mt-1">
                             <p v-if="edit" class="text-sm text-indigo-300">Edit your company and save changes.</p>
-                            <p v-else class="text-sm text-indigo-300">Add your company to start creating boundaries.</p>
+                            <p v-else class="text-sm text-indigo-300">
+                              Add your company to start creating {{ inflection.pluralize(boundaryView.alias) }}
+                            </p>
                           </div>
                         </div>
                         <div class="flex flex-1 flex-col justify-between">
@@ -404,6 +408,7 @@
                         </button>
                         <button
                           v-else
+                          @click="[(open = false)]"
                           type="submit"
                           class="ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                         >
@@ -460,6 +465,7 @@ import { XMarkIcon, ExclamationTriangleIcon, ChevronUpDownIcon } from "@heroicon
 
 import { storeToRefs } from "pinia";
 import { useBreadcrumbStore } from "~~/stores/Breadcrumb";
+import inflection from "inflection";
 const showErrorNotification = ref(false);
 const errorMsg = ref();
 const errorName = ref("");
@@ -496,6 +502,14 @@ const companyDetails = {
 // const tierList = ref()
 // const get = ref();
 
+//for the term alias
+const { data: currentAlias } = await useFetch("/api/boundaries/alias");
+//renders the current alias
+const tierView = ref(currentAlias.value[0]);
+// const tierViewAliasPlural = inflection.pluralize(boundaryView.alias);
+const boundaryView = ref(currentAlias.value[1]);
+// const boundaryViewAliasPlural = inflection.pluralize(boundaryView.alias);
+
 const { data: tierList, error } = await useFetch("/api/tiers/list", {
   method: "POST",
   body: companyList,
@@ -503,29 +517,25 @@ const { data: tierList, error } = await useFetch("/api/tiers/list", {
 });
 
 async function checkTier(id, hasBoundaries, companyName, parentId) {
-  const { data: tierCheck, error: listError } = await useFetch("/api/tiers/list", {
-    method: "POST",
-    body: { parentId: id },
-  });
+  try {
+    await $fetch("/api/tiers/list", {
+      method: "POST",
+      body: { parentId: id },
+    });
 
-  const { data: getCheck, error: getError } = await useFetch("/api/tiers/get", {
-    method: "POST",
-    body: { id },
-  });
+    await $fetch("/api/tiers/get", {
+      method: "POST",
+      body: { id },
+    });
 
-  if (listError.value === null && getError.value === null) {
     uniqueCompany(id, companyName, parentId);
     if (hasBoundaries) {
       router.push("/boundaries/" + companyName + "id" + id);
     } else {
       tierId.value = id;
     }
-  } else {
-    if (listError.value !== null) {
-      errorMsg.value = listError.value.statusMessage;
-    } else {
-      errorMsg.value = getError.value.statusMessage;
-    }
+  } catch (error) {
+    errorMsg.value = error.data.statusMessage;
 
     showErrorNotification.value = true;
     setTimeout(() => (showErrorNotification.value = false), 6000);
@@ -540,20 +550,22 @@ const { data: get } = await useFetch("/api/tiers/get", {
 pages.value.length = pagePosition(tierId.value) + 1;
 /// //////////////////////////////////
 const { data: currentUser } = await useFetch("/api/auth/currentUser");
-const companyData = {
-  name: companyName,
-  parentId: tierId,
-  ownerId: currentUser.value.id,
-};
 
-async function addCompany(companyData) {
+async function addCompany() {
   try {
-    await useFetch("/api/tiers/create", {
+    await $fetch("/api/tiers/create", {
       method: "POST",
-      body: companyData,
+      body: {
+        name: companyName.value,
+        parentId: tierId.value,
+        ownerId: currentUser.value.id,
+      },
     });
-  } finally {
     location.reload();
+  } catch (err) {
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
   }
 }
 /// /////////////////////////////////
@@ -562,23 +574,20 @@ async function addCompany(companyData) {
 const editId = ref();
 async function updateEditDetails() {
   const editCompanyPkg = {
-    id: editId,
-    name: editCompanyName,
+    id: editId.value,
+    name: editCompanyName.value,
     ownerId: selectedPerson.value.id,
   };
   try {
-    const { error } = await useFetch("/api/tiers/edit", {
+    await $fetch("/api/tiers/edit", {
       method: "PUT",
       body: editCompanyPkg,
       watch: false,
     });
-    if (error.value != null) {
-      errorMsg.value = error.value.statusMessage;
-      showErrorNotification.value = true;
-      setTimeout(() => (showErrorNotification.value = false), 6000);
-    } else {
-      console.log("Good");
-    }
+  } catch (error) {
+    errorMsg.value = error.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
   } finally {
     refreshNuxtData("tierListAPI");
   }
@@ -590,12 +599,15 @@ async function editCompany() {
     hasBoundaries: true,
   };
   try {
-    await useFetch("/api/tiers/edit", {
+    await $fetch("/api/tiers/edit", {
       method: "PUT",
       body: companyEdit,
     });
-  } finally {
-    // location.reload()
+    router.push("/boundaries/" + get.value[0].name + "id" + get.value[0].id);
+  } catch (err) {
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
   }
 }
 /// ////////////////////////////////////
@@ -611,8 +623,6 @@ async function removeCompany(companyId) {
       errorMsg.value = error.value.statusMessage;
       showErrorNotification.value = true;
       setTimeout(() => (showErrorNotification.value = false), 6000);
-    } else {
-      console.log("Good");
     }
   } finally {
     refreshNuxtData("tierListAPI");

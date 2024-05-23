@@ -7,74 +7,115 @@ import AdmZip from "adm-zip";
 import { DateTime } from "luxon";
 import { importChecklist } from "../../utils/checklist";
 import { importXccdf } from "../../utils/xccdf";
-import { System } from "../../../db/models/system";
+import { System, Boundary, Boundary_User } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig();
-
-  console.log("Starting Upload");
-
   const body = await proccessNodeRequest(event.node.req);
 
-  const uploadedFiles = body.files;
-  const dirList: string[] = [];
-
-  for (let i = 0; i < uploadedFiles.length; i++) {
-    let fileList: string[];
-
-    const newFileName = path.join(config.temp_folder, uploadedFiles[i].originalFilename);
-
-    const newDir = path.dirname(newFileName);
-    if (!fs.existsSync(newDir)) {
-      fs.mkdirSync(newDir, { recursive: true });
-    }
-
-    fs.renameSync(uploadedFiles[i].filepath, newFileName);
-
-    if (path.extname(newFileName) === ".zip") {
-      fileList = await processZip(newFileName, config.temp_folder);
+  const rawToken = getCookie(event, "tirtoken");
+  let userId: number;
+  if (rawToken) {
+    userId = decodeToken(rawToken);
+  } else {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unknown User.",
+    });
+  }
+  const boundary = await Boundary.findByPk(body.BoundaryId[0], {
+    attributes: ["id", "name", "ownerId"],
+    include: [
+      {
+        model: Boundary_User,
+      },
+    ],
+  });
+  const isOwner = boundary?.dataValues.ownerId === userId;
+  const isMember =
+    boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId) !==
+    undefined;
+  if (isOwner || isMember) {
+    if (
+      !isOwner &&
+      boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId)
+        .BoundaryRoleId === 3
+    ) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Reviewers are unable to edit Boundaries",
+      });
     } else {
-      fileList = [newFileName];
-    }
+      const config = useRuntimeConfig();
 
-    for (let j = 0; j < fileList.length; j++) {
-      const baseFilename = path.basename(fileList[j]);
-      let systemId;
+      console.log("Starting Upload");
 
-      if (body.SystemId) {
-        systemId = body.SystemId[j] || body.SystemId[0];
-      } else {
-        const systemName = path.basename(path.dirname(fileList[j]));
-        systemId = await createOrFindSystem(systemName, body.BoundaryId);
-      }
+      const uploadedFiles = body.files;
+      const dirList: string[] = [];
 
-      const fileData = fs.readFileSync(fileList[j], "utf-8");
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        let fileList: string[];
 
-      if (path.extname(baseFilename) === ".xml") {
-        if (verifyXccdf(fileData)) {
-          await importXccdf(fileData, systemId);
+        const newFileName = path.join(config.temp_folder, uploadedFiles[i].originalFilename);
+        const newDir = path.dirname(newFileName);
+        if (!fs.existsSync(newDir)) {
+          fs.mkdirSync(newDir, { recursive: true });
+        }
+
+        fs.renameSync(uploadedFiles[i].filepath, newFileName);
+
+        if (path.extname(newFileName) === ".zip") {
+          fileList = await processZip(newFileName, config.temp_folder);
+        } else {
+          fileList = [newFileName];
+        }
+
+        for (let j = 0; j < fileList.length; j++) {
+          const baseFilename = path.basename(fileList[j]);
+          let systemId;
+
+          if (body.SystemId) {
+            systemId = body.SystemId[j] || body.SystemId[0];
+          } else if (body.SystemName) {
+            systemId = await createOrFindSystem(body.SystemName[0], body.BoundaryId);
+          } else {
+            const systemName = path.basename(path.dirname(fileList[j]));
+            systemId = await createOrFindSystem(systemName, body.BoundaryId);
+          }
+
+          const fileData = fs.readFileSync(fileList[j], "utf-8");
+
+          if (path.extname(baseFilename) === ".xml") {
+            if (verifyXccdf(fileData)) {
+              await importXccdf(fileData, systemId);
+            }
+          }
+
+          if (path.extname(baseFilename) === ".ckl") {
+            await importChecklist(fileData, systemId);
+          }
+
+          if (dirList.findIndex((o) => o === path.dirname(fileList[j])) === -1) {
+            dirList.push(path.dirname(fileList[j]));
+          }
+
+          fs.rmSync(fileList[j]);
         }
       }
 
-      if (path.extname(baseFilename) === ".ckl") {
-        await importChecklist(fileData, systemId);
+      for (let i = 0; i < dirList.length; i++) {
+        if (path.dirname(dirList[i]) !== path.dirname(config.temp_folder)) {
+          fs.rmSync(dirList[i], { recursive: true });
+        }
       }
 
-      if (dirList.findIndex((o) => o === path.dirname(fileList[j])) === -1) {
-        dirList.push(path.dirname(fileList[j]));
-      }
-
-      fs.rmSync(fileList[j]);
+      return { success: true };
     }
+  } else {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Not a Member of this Boundary",
+    });
   }
-
-  for (let i = 0; i < dirList.length; i++) {
-    if (path.dirname(dirList[i]) !== path.dirname(config.temp_folder)) {
-      fs.rmSync(dirList[i], { recursive: true });
-    }
-  }
-
-  return { success: true };
 });
 
 const verifyXccdf = (xmlData: string): boolean => {

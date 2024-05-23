@@ -4,7 +4,9 @@
       <div class="sm:flex sm:items-center">
         <div class="sm:flex-auto">
           <h1 class="mt-1 text-xl font-bold text-gray-800 dark:text-white">{{ $route.params.company }}</h1>
-          <h1 class="mt-1 text-lg text-gray-800 dark:text-white">A list of all the boundaries you are a member of.</h1>
+          <h1 class="mt-1 text-lg text-gray-800 dark:text-white">
+            A list of all the {{ inflection.pluralize(boundaryView.alias.toLowerCase()) }} you are a member of.
+          </h1>
         </div>
         <div v-show="currentUser.UserRole.name === 'User'" class="ml-16 mt-4">
           <button
@@ -13,7 +15,7 @@
             @click="[(open = true), (edit = false)]"
           >
             <PlusIcon class="-ml-0.5 h-5 w-5 rounded-md bg-indigo-500" aria-hidden="true" />
-            <span>Enclave</span>
+            <span>{{ boundaryView.alias }}</span>
           </button>
         </div>
       </div>
@@ -104,9 +106,11 @@
                   {{ enclave.owner.email }}
                 </td>
                 <td v-else class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-200">None</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-200">Need Data</td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-200">
-                  {{ enclave.lastUpdate }}
+                  {{ formatDate(enclave.creationDate) }}
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-200">
+                  {{ formatDate(enclave.lastUpdate) }}
                 </td>
                 <td class="relative flex whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                   <Menu as="div" class="relative ml-auto">
@@ -156,15 +160,7 @@
                               active ? 'bg-gray-200 dark:bg-gray-700' : 'text-gray-300',
                               'group flex items-center px-3 py-1 text-sm leading-6 text-gray-500 dark:text-gray-100',
                             ]"
-                            @click.stop="
-                              [
-                                (edit = true),
-                                (open = true),
-                                (newName = enclave.name),
-                                (editId = enclave.id),
-                                editUpdate(enclave.ownerId, enclave.StigLibraryId),
-                              ]
-                            "
+                            @click.stop="[(edit = true), (open = true), editUpdate(enclave)]"
                           >
                             <PencilSquareIcon class="mr-3 h-5 w-5 text-gray-400" aria-hidden="true" />
                             Edit
@@ -285,17 +281,17 @@
               <DialogPanel class="pointer-events-auto w-screen max-w-xs">
                 <form
                   class="flex h-full flex-col divide-y divide-gray-200 bg-white shadow-xl dark:bg-gray-800"
-                  @submit.prevent="edit ? editBoundary(editData) : addBoundary(boundaryData)"
+                  @submit.prevent="edit ? confirmSelection() : addBoundary(boundaryData)"
                 >
                   <div class="h-0 flex-1 overflow-y-auto">
                     <div class="bg-indigo-700 px-4 py-6 sm:px-6">
                       <div class="flex items-center justify-between">
-                        <DialogTitle v-if="edit === true" class="text-base font-semibold leading-6 text-white"
-                          >Edit Enclave
+                        <DialogTitle v-if="edit === true" class="text-base font-semibold leading-6 text-white">
+                          {{ boundaryView.alias }}
                         </DialogTitle>
                         <DialogTitle v-else class="text-base font-semibold leading-6 text-white"
-                          >New Enclave</DialogTitle
-                        >
+                          >New {{ inflection.pluralize(boundaryView.alias) }}
+                        </DialogTitle>
                         <div class="ml-3 flex h-7 items-center">
                           <button
                             type="button"
@@ -321,7 +317,7 @@
                             <label
                               for="project-name"
                               class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"
-                              >Enclave name</label
+                              >{{ boundaryView.alias }} name</label
                             >
                             <div class="mt-2">
                               <input
@@ -474,67 +470,6 @@
                               </transition>
                             </div>
                           </Listbox>
-
-                          <!-- <fieldset>
-                            <legend class="text-sm font-medium leading-6 text-white">Owner</legend>
-                            <div class="mt-2 space-y-4">
-                              <div class="relative flex items-start">
-                                <div class="absolute flex h-6 items-center">
-                                  <input v-if="edit != true" v-model="owner" value=1 id="privacy-public" name="privacy"
-                                    aria-describedby="privacy-public-description" type="radio" 
-                                    class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-                                  Edit View
-                                  <input v-else v-model="newOwner" value=1 id="privacy-public" name="privacy"
-                                    aria-describedby="privacy-public-description" type="radio" 
-                                    class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-                                </div>
-                                <div class="pl-7 text-sm leading-6">
-                                  <label for="privacy-public" class="font-medium text-gray-200">Admin</label>
-                                  <p id="privacy-public-description" class="text-gray-400">Everyone with the link will see
-                                    this project.</p>
-                                </div>
-                              </div>
-                              <div>
-                                <div class="relative flex items-start">
-                                  <div class="absolute flex h-6 items-center">
-                                    <input v-if="edit != true" v-model="owner" value=2 id="privacy-private-to-project"
-                                      name="privacy" aria-describedby="privacy-private-to-project-description"
-                                      type="radio"
-                                      class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-                                    Edit View
-                                    <input v-else v-model="newOwner" value=2 id="privacy-private-to-project"
-                                      name="privacy" aria-describedby="privacy-private-to-project-description"
-                                      type="radio"
-                                      class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-                                  </div>
-                                  <div class="pl-7 text-sm leading-6">
-                                    <label for="privacy-private-to-project"
-                                      class="font-medium text-gray-200">User 1</label>
-                                    <p id="privacy-private-to-project-description" class="text-gray-400">Only members of
-                                      this project would be able to access.</p>
-                                  </div>
-                                </div>
-                              </div>
-                              <div>
-                                <div class="relative flex items-start">
-                                  <div class="absolute flex h-6 items-center">
-                                    <input v-if="edit != true" v-model="owner" value=3 id="privacy-private" name="privacy"
-                                      aria-describedby="privacy-private-to-project-description" type="radio"
-                                      class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-                                    Edit View
-                                    <input v-else v-model="newOwner" value=3 id="privacy-private" name="privacy"
-                                      aria-describedby="privacy-private-to-project-description" type="radio"
-                                      class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-                                  </div>
-                                  <div class="pl-7 text-sm leading-6">
-                                    <label for="privacy-private" class="font-medium text-gray-200">User 2</label>
-                                    <p id="privacy-private-description" class="text-gray-400">You are the only one able to
-                                      access this project.</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </fieldset> -->
                         </div>
                         <div class="py-4">
                           <Listbox v-if="edit != true" v-model="base" as="div">
@@ -663,7 +598,7 @@
 
                           <!-- RMF Versions  box -->
                           <br />
-                          <Listbox v-if="edit != true" v-model="currentV" as="div">
+                          <Listbox v-if="edit != true" v-model="policyDoc" as="div">
                             <ListboxLabel class="block text-sm font-medium leading-6 text-black dark:text-white"
                               >RMF Versions</ListboxLabel
                             >
@@ -672,7 +607,7 @@
                                 class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6"
                               >
                                 <span class="inline-flex w-full truncate">
-                                  <span class="truncate text-xs">{{ currentV.title }}</span>
+                                  <span class="truncate text-xs">{{ policyDoc.title }}</span>
                                   <!-- <span class="text-xs truncate"> Classified </span> -->
                                   <!-- <span class="ml-2 truncate text-gray-500">{{ base.date }}</span> -->
                                 </span>
@@ -725,7 +660,7 @@
                             </div>
                           </Listbox>
                           <!-- for it to show if edit is true -->
-                          <Listbox v-else v-model="currentV" as="div">
+                          <Listbox v-else v-model="editPolicyDoc" as="div">
                             <ListboxLabel class="block text-sm font-medium leading-6 text-black dark:text-white"
                               >RMF Versions</ListboxLabel
                             >
@@ -734,7 +669,7 @@
                                 class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6"
                               >
                                 <span class="inline-flex w-full truncate">
-                                  <span class="truncate text-xs">{{ currentV.title }}</span>
+                                  <span class="truncate text-xs">{{ editPolicyDoc.title }}</span>
                                   <!-- <span class="text-xs truncate"> Classified </span> -->
                                   <!-- <span class="ml-2 truncate text-gray-500">{{ base.date }}</span> -->
                                 </span>
@@ -791,7 +726,7 @@
                           <br />
                           <hr class="divide-y divide-gray-200 px-4 sm:px-6" />
                           <br />
-                          <Listbox v-if="edit != true" v-model="foundation" as="div">
+                          <Listbox v-if="edit != true" v-model="classification" as="div">
                             <ListboxLabel class="block text-sm font-medium leading-6 text-black dark:text-white"
                               >Classification</ListboxLabel
                             >
@@ -800,7 +735,7 @@
                                 class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6"
                               >
                                 <span class="inline-flex w-full truncate">
-                                  <span class="truncate text-xs">{{ foundation.name }}</span>
+                                  <span class="truncate text-xs">{{ classification.name }}</span>
                                   <!-- <span class="text-xs truncate"> Classified </span> -->
                                   <!-- <span class="ml-2 truncate text-gray-500">{{ base.date }}</span> -->
                                 </span>
@@ -853,7 +788,7 @@
                             </div>
                           </Listbox>
                           <!-- show if classfification needs to be dit -->
-                          <Listbox v-else v-model="foundation" as="div">
+                          <Listbox v-else v-model="editClassification" as="div">
                             <ListboxLabel class="block text-sm font-medium leading-6 text-black dark:text-white"
                               >Classification</ListboxLabel
                             >
@@ -862,7 +797,7 @@
                                 class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6"
                               >
                                 <span class="inline-flex w-full truncate">
-                                  <span class="truncate text-xs">{{ foundation.classification }}</span>
+                                  <span class="truncate text-xs">{{ editClassification.name }}</span>
                                   <!-- <span class="text-xs truncate"> Classified </span> -->
                                   <!-- <span class="ml-2 truncate text-gray-500">{{ base.date }}</span> -->
                                 </span>
@@ -895,7 +830,7 @@
                                       <div class="flex">
                                         <span
                                           :class="[selected ? 'font-semibold' : 'font-normal', 'truncate text-xs']"
-                                          >{{ item.classification }}</span
+                                          >{{ item.name }}</span
                                         >
                                         <!-- <span :class="[active ? 'text-indigo-200' : 'text-gray-500', 'ml-2 truncate']">{{ file.date }}</span> -->
                                       </div>
@@ -941,41 +876,7 @@
                               />
                             </div>
                           </div>
-                          <!-- Edit View -->
-
-                          <!-- <RadioGroup v-if="edit != true" v-model="base" class="mt-2">
-                            <RadioGroupLabel class="sr-only">Choose a memory option</RadioGroupLabel>
-                            <div class="grid grid-cols-2 gap-3 ">
-                              <RadioGroupOption as="template" v-for="option in baselineOptions" :key="option.name" :value="option.value"  v-slot="{ active, checked }">
-                                <div :class="['cursor-pointer focus:outline-none' , active ? 'ring-2 ring-indigo-600 ring-offset-2' : '', checked ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50', 'flex items-center justify-center rounded-md py-3 px-3 text-sm font-semibold uppercase sm:flex-1']">
-                                  <RadioGroupLabel as="span">{{ option.name }}</RadioGroupLabel>
-                                </div>
-                              </RadioGroupOption>
-                            </div>
-                          </RadioGroup>
-                          Edit View
-                          <RadioGroup v-else v-model="editBase" class="mt-2">
-                            <RadioGroupLabel class="sr-only">Choose a memory option</RadioGroupLabel>
-                            <div class="grid grid-cols-2 gap-3 ">
-                              <RadioGroupOption as="template" v-for="option in baselineOptions" :key="option.name" :value="option.value"  v-slot="{ active, checked }">
-                                <div :class="['cursor-pointer focus:outline-none' , active ? 'ring-2 ring-indigo-600 ring-offset-2' : '', checked ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'ring-1 ring-inset ring-gray-300 bg-white text-gray-900 hover:bg-gray-50', 'flex items-center justify-center rounded-md py-3 px-3 text-sm font-semibold uppercase sm:flex-1']">
-                                  <RadioGroupLabel as="span">{{ option.name }}</RadioGroupLabel>
-                                </div>
-                              </RadioGroupOption>
-                            </div>
-                          </RadioGroup> -->
                         </div>
-                        <!-- <div class="pb-6 pt-4">
-                          <div class="mt-4 flex text-sm">
-                            <a href="#" class="group inline-flex items-center text-gray-500 hover:text-gray-900">
-                              <QuestionMarkCircleIcon
-                                class="h-5 w-5 text-gray-400 group-hover:text-gray-500"
-                                aria-hidden="true"
-                              />
-                              <span class="ml-2">Learn more about sharing</span>
-                            </a>
-                          </div>
-                        </div> -->
                       </div>
                     </div>
                   </div>
@@ -991,7 +892,7 @@
                       v-if="edit != true"
                       type="submit"
                       class="ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                      @click="updateDetails()"
+                      @click="[updateDetails(), (open = false)]"
                     >
                       Save
                     </button>
@@ -999,7 +900,7 @@
                       v-else
                       type="submit"
                       class="ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                      @click="[updateEditDetails(), (open = false)]"
+                      @click="[updateEditDetails()]"
                     >
                       Save Changes
                     </button>
@@ -1010,6 +911,128 @@
           </div>
         </div>
       </div>
+      <TransitionRoot as="template" :show="openConfirmation">
+        <Dialog as="div" class="relative z-10" @close="openConfirmation = false">
+          <TransitionChild
+            as="template"
+            enter="ease-out duration-300"
+            enter-from="opacity-0"
+            enter-to="opacity-100"
+            leave="ease-in duration-200"
+            leave-from="opacity-100"
+            leave-to="opacity-0"
+          >
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          </TransitionChild>
+          <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              <TransitionChild
+                as="template"
+                enter="ease-out duration-300"
+                enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enter-to="opacity-100 translate-y-0 sm:scale-100"
+                leave="ease-in duration-200"
+                leave-from="opacity-100 translate-y-0 sm:scale-100"
+                leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              >
+                <DialogPanel
+                  class="relative transform overflow-hidden rounded-lg bg-gray-100 text-left shadow-xl transition-all dark:bg-gray-900"
+                >
+                  <div>
+                    <div class="px-8 py-6 text-center">
+                      <DialogTitle as="h3" class="text-lg font-bold leading-6 text-black dark:text-white"
+                        >Confirm STIG Baseline Changes
+                      </DialogTitle>
+                      <div class="mt-4 rounded-lg bg-gray-100/5 p-4">
+                        <p class="text-md flex justify-center font-semibold text-gray-600 dark:text-white">
+                          {{ originalStigLibrary.filename }}
+                          <ArrowLongRightIcon class="mx-4 h-7 w-7 text-gray-600 dark:text-white" />
+                          {{ editBase.filename }}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Confirm/Cancel Buttons -->
+                  <div class="flex w-full justify-center gap-4 bg-gray-100/5 py-4">
+                    <button
+                      type="button"
+                      class="inline-flex w-24 justify-center rounded-md border border-white/50 bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                      @click="[userConfirm(), (openConfirmation = false)]"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex w-24 justify-center rounded-md border border-white/50 bg-red-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                      @click="openConfirmation = false"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </DialogPanel>
+              </TransitionChild>
+            </div>
+          </div>
+        </Dialog>
+      </TransitionRoot>
+      <TransitionRoot as="template" :show="loading">
+        <Dialog as="div" class="relative z-10" @close="loading = false">
+          <TransitionChild
+            as="template"
+            enter="ease-out duration-300"
+            enter-from="opacity-0"
+            enter-to="opacity-100"
+            leave="ease-in duration-200"
+            leave-from="opacity-100"
+            leave-to="opacity-0"
+          >
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          </TransitionChild>
+          <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              <TransitionChild
+                as="template"
+                enter="ease-out duration-300"
+                enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enter-to="opacity-100 translate-y-0 sm:scale-100"
+                leave="ease-in duration-200"
+                leave-from="opacity-100 translate-y-0 sm:scale-100"
+                leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              >
+                <DialogPanel
+                  class="relative transform overflow-hidden rounded-lg bg-gray-900 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl sm:p-6"
+                >
+                  <div>
+                    <div class="flex h-7 items-center">
+                      <button
+                        type="button"
+                        class="rounded-md bg-gray-900 text-indigo-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
+                        @click="loading = false"
+                      >
+                        <XMarkIcon class="h-6 w-6" aria-hidden="true" />
+                      </button>
+                    </div>
+                    <div class="text-center">
+                      <DialogTitle as="h3" class="text-base font-semibold leading-6 text-white"
+                        >Changing STIG Library
+                      </DialogTitle>
+                      <div class="mb-12 mt-2">
+                        <p class="text-sm text-white">Please Wait...</p>
+                      </div>
+                      <div class="absolute left-1/2 top-3/4 -translate-x-1/2 -translate-y-1/2">
+                        <svg
+                          class="h-7 w-7 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"
+                          viewBox="0 0 24 24"
+                        ></svg>
+                      </div>
+                    </div>
+                  </div>
+                </DialogPanel>
+              </TransitionChild>
+            </div>
+          </div>
+        </Dialog>
+      </TransitionRoot>
     </Dialog>
   </TransitionRoot>
   <Members
@@ -1030,6 +1053,7 @@
 </template>
 
 <script setup>
+import { DateTime } from "luxon";
 //   Add Stuff
 import { ref } from "vue";
 import {
@@ -1048,7 +1072,7 @@ import {
   ListboxOption,
   ListboxOptions,
 } from "@headlessui/vue";
-import { XMarkIcon, ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
+import { XMarkIcon, ExclamationTriangleIcon, ArrowLongRightIcon } from "@heroicons/vue/24/outline";
 import {
   PencilSquareIcon,
   TrashIcon,
@@ -1064,37 +1088,32 @@ import {
 // Pinia Store
 import { storeToRefs } from "pinia";
 import { useBreadcrumbStore } from "~~/stores/Breadcrumb";
+import inflection from "inflection";
 
-const refreshAll = async () => {
-  await refreshNuxtData();
-};
+const edit = ref(false);
 const showErrorNotification = ref(false);
 const errorMsg = ref();
 const openAlert = ref(false);
 const errorName = ref("");
 const deleteId = ref();
 // DB Function
-const info = ref("");
-const owner = ref(1);
-const edit = ref(false);
-const newName = ref("");
-const editId = ref("");
-const newCaveat = ref("");
-const cav = ref("");
+
+const originalStigLibrary = ref("");
+const loading = ref(false);
+const openConfirmation = ref(false);
 
 const route = useRoute();
-const baselineOptions = [
-  { name: "Q1 2023", value: 0 },
-  { name: "Q2 2023", value: 1 },
-  { name: "Q3 2023", value: 2 },
-  { name: "Q4 2023", value: 3 },
-];
+
 /// //Stig Library baseline
 const { data: stigLibrary } = await useFetch("/api/stigLibrary", { key: "stigLibrary" });
 /// classification API
 const { data: classLibrary } = await useFetch("/api/boundaries/listClassification");
 // RMF Version API
 const { data: rmfLibrary } = await useFetch("/api/boundaries/listRMFVersions");
+//for the term alias
+const { data: currentAlias } = await useFetch("/api/boundaries/alias");
+//renders the current alias
+const boundaryView = ref(currentAlias.value[1]);
 // refreshNuxtData('stigLibrary')
 const sortedStigLibrary = ref({});
 if (stigLibrary.value === null) {
@@ -1116,104 +1135,160 @@ if (stigLibrary.value === null) {
   });
 }
 
-const base = ref(sortedStigLibrary.value[0]);
-const foundation = ref(classLibrary.value);
-const currentV = ref(rmfLibrary.value);
-
 /// ///User Selection
 const { data: users } = await useFetch("/api/users");
 const filteredUsers = users.value.filter((o) => o.UserRoleId === 2);
 const { data: currentUser } = await useFetch("/api/auth/currentUser");
-const selectedOwner = ref(currentUser.value);
+
 const boundaryData = ref();
 const editData = ref();
 
 const newOwner = ref(filteredUsers[0]);
+const selectedOwner = ref(currentUser.value);
+const base = ref(sortedStigLibrary.value[0]);
 const editBase = ref(sortedStigLibrary.value[0]);
+const policyDoc = ref(rmfLibrary.value[0]);
+const editPolicyDoc = ref(rmfLibrary.value[0]);
+const classification = ref(classLibrary.value[0]);
+const editClassification = ref(classLibrary.value[0]);
+const cav = ref("");
+const newCaveat = ref("");
+const info = ref("");
+const newName = ref("");
+
+const editId = ref("");
 
 boundaryData.value = {
   name: info,
   ownerId: selectedOwner.value.id,
   StigLibraryId: base.value.id,
   TierId: route.params.id,
-  ClassificationId: foundation.value.id,
-  caveats: newCaveat,
-  title: currentV.value.title,
+  ClassificationId: classification.value.id,
+  caveats: cav.value,
+  PolicyDocumentId: policyDoc.value.id,
 };
-// editData = {
-//   "id": editId,
-//   "name": newName,
-//   "ownerId": newOwner.value.id,
-//   "StigLibraryId": editBase.value.id,
-// }
-// console.log(editData)
+
 function updateDetails() {
   boundaryData.value = {
     name: info,
     ownerId: selectedOwner.value.id,
     StigLibraryId: base.value.id,
     TierId: route.params.id,
-    ClassificationId: foundation.value.id,
-    caveats: cav,
-    title: currentV.value.title,
+    ClassificationId: classification.value.id,
+    caveats: cav.value,
+    PolicyDocumentId: policyDoc.value.id,
   };
 }
 
-function editUpdate(user, base) {
-  newOwner.value = filteredUsers[filteredUsers.findIndex((o) => o.id === user)];
-  editBase.value = sortedStigLibrary.value[sortedStigLibrary.value.findIndex((o) => o.id === base)];
+function formatDate(isoDate) {
+  try {
+    const parsedDate = new Date(isoDate);
+
+    const format = {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      timeZoneName: "short",
+    };
+    const formattedDate = parsedDate.toLocaleString("en-US", format);
+    return formattedDate;
+  } catch (error) {
+    return "Invalid date";
+  }
+}
+
+function editUpdate(enclave) {
+  editId.value = enclave.id;
+  newName.value = enclave.name;
+  newOwner.value = filteredUsers[filteredUsers.findIndex((o) => o.id === enclave.ownerId)];
+  editBase.value = sortedStigLibrary.value[sortedStigLibrary.value.findIndex((o) => o.id === enclave.StigLibraryId)];
+  editClassification.value = classLibrary.value[classLibrary.value.findIndex((o) => o.id === enclave.ClassificationId)];
+  newCaveat.value = enclave.caveats;
+  editPolicyDoc.value = rmfLibrary.value[rmfLibrary.value.findIndex((o) => o.id === enclave.PolicyDocumentId)];
+  originalStigLibrary.value = editBase.value;
 }
 function updateEditDetails() {
   editData.value = {
     id: editId,
     name: newName,
     ownerId: newOwner.value.id,
+    TierId: route.params.id,
     StigLibraryId: editBase.value.id,
-    classification: foundation.value.id,
-    caveatField: newCaveat,
-    title: currentV.value.title,
+    ClassificationId: editClassification.value.id,
+    caveats: newCaveat,
+    PolicyDocumentId: editPolicyDoc.value.id,
   };
 }
 /// ////////////////////////////////////////////////////////////////////////////////////////////////
 async function addBoundary(boundaryData) {
   try {
-    await useFetch("/api/boundaries/create", {
+    await $fetch("/api/boundaries/create", {
       method: "POST",
       body: boundaryData,
     });
-  } finally {
     location.reload();
+  } catch (err) {
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
   }
 }
+
+async function confirmSelection() {
+  if (originalStigLibrary.value.id === editData.value.StigLibraryId) {
+    await editBoundary(editData.value);
+  } else {
+    openConfirmation.value = true;
+  }
+}
+
+async function userConfirm() {
+  loading.value = true;
+  const response = await $fetch("/api/boundaries/changeStigLibrary", {
+    method: "POST",
+    body: { BoundaryId: editId.value, StigLibraryId: editData.value.StigLibraryId },
+  });
+  if (response.results === "Success") {
+    loading.value = false;
+    await editBoundary(editData.value);
+  } else {
+    loading.value = false;
+    open.value = false;
+    errorMsg.value = "Error Migrating";
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
+  }
+}
+
 async function editBoundary(editData) {
   try {
-    const { error } = await useFetch("/api/boundaries/edit", {
+    await $fetch("/api/boundaries/edit", {
       method: "PUT",
       body: editData,
       watch: false,
     });
-    if (error.value != null) {
-      errorMsg.value = error.value.statusMessage;
-      showErrorNotification.value = true;
-      setTimeout(() => (showErrorNotification.value = false), 6000);
-    }
+  } catch (err) {
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
   } finally {
     refreshNuxtData("boundaryListAPI");
+    open.value = false;
   }
 }
 async function deleteBoundary(boundaryId) {
   try {
-    const { error } = await useFetch("/api/boundaries/delete", {
+    await $fetch("/api/boundaries/delete", {
       method: "POST",
       body: { id: boundaryId },
     });
-    if (error.value != null) {
-      errorMsg.value = error.value.statusMessage;
-      showErrorNotification.value = true;
-      setTimeout(() => (showErrorNotification.value = false), 6000);
-    } else {
-      console.log("Good");
-    }
+  } catch (error) {
+    errorMsg.value = error.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
   } finally {
     refreshNuxtData("boundaryListAPI");
   }
@@ -1230,15 +1305,15 @@ const { data } = await useFetch("/api/boundaries/list", {
 });
 
 async function checkPermissions(enclaveId, enclaveName) {
-  const { error } = await useFetch("/api/boundaries/summary", {
-    method: "GET",
-    query: { BoundaryId: enclaveId },
-  });
-  if (error.value === null) {
+  try {
+    await $fetch("/api/boundaries/summary", {
+      method: "GET",
+      query: { BoundaryId: enclaveId },
+    });
+
     router.push("/boundaries/" + route.params.company + "id" + route.params.id + "/" + enclaveName);
-  } else {
-    console.log("Enclave Check Failed");
-    errorMsg.value = error.value.statusMessage;
+  } catch (error) {
+    errorMsg.value = error.data.statusMessage;
     showErrorNotification.value = true;
     setTimeout(() => (showErrorNotification.value = false), 6000);
   }
@@ -1248,16 +1323,6 @@ const router = useRouter();
 const store = useBreadcrumbStore();
 const { pages } = storeToRefs(store);
 const { tierId } = storeToRefs(store);
-const { deleteEnclave } = store;
-// const num = store.CompanyInfo.findIndex(o => o.companyName === route.params.company)
-
-function addItem(num, enclaveName, ownerName, dateCreated) {
-  if (enclaveName.length === 0 || ownerName.length === 0 || dateCreated.length === 0) {
-    return;
-  }
-  // invokes function in the store:
-  store.addEnclaveInfo(num, enclaveName, ownerName, dateCreated);
-}
 
 const open = ref(false);
 /// BreadCrumb

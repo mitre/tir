@@ -7,12 +7,14 @@ export default defineEventHandler(async (event) => {
 
   if (!user || !tier) {
     if (!user) {
+      logger.error(`Unable to find UserId`);
       return {
         success: false,
         error: "Unable to find UserId",
         id: body.UserId,
       };
     } else {
+      logger.error(`Unable to find TierId`);
       return {
         success: false,
         error: "Unable to find TierId",
@@ -21,6 +23,9 @@ export default defineEventHandler(async (event) => {
     }
   }
   await tier.addUser(user, { through: { TierRoleId: body.TierRoleId } });
-
+  logger.info({
+    service: "Tiers",
+    message: `${user?.email} Successfully Added to: ${tier.name}`,
+  });
   return { success: true };
 });

@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = await User.findByPk(userId, {
-    attributes: [],
+    attributes: ["email"],
     include: [
       {
         model: UserRole,
@@ -21,7 +21,6 @@ export default defineEventHandler(async (event) => {
       },
     ],
   });
-
   const body = await readBody(event);
   const tier = await Tier.findByPk(body.id, {
     include: [
@@ -38,13 +37,19 @@ export default defineEventHandler(async (event) => {
           .TierRoleId === 1
       ) {
         await tier?.destroy();
+        logger.info({
+          service: "Tiers",
+          message: `${user?.email} Successfully Deleted: ${tier.name}`,
+        });
       } else {
+        logger.error(`Insufficient Permissions to delete ${tier.name}. User: ${user?.email}`);
         throw createError({
           statusCode: 401,
           statusMessage: "Must be an Admin, Owner, or Co-Owner of this Company to delete.",
         });
       }
     } else {
+      logger.error(`Insufficient Permissions to delete ${tier?.name}. User: ${user?.email}`);
       throw createError({
         statusCode: 401,
         statusMessage: "Must be an Admin, Owner, or Co-Owner of this Company to delete.",
@@ -52,6 +57,10 @@ export default defineEventHandler(async (event) => {
     }
   } else {
     await tier?.destroy();
+    logger.info({
+      service: "Tiers",
+      message: `${user?.email} Successfully Deleted: ${tier?.name}`,
+    });
   }
   return { success: 1 };
 });

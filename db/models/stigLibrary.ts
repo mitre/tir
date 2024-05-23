@@ -1,11 +1,16 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
+  Association,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+  type BelongsToManyRemoveAssociationMixin,
+  type BelongsToManyAddAssociationMixin,
+  type NonAttribute,
 } from "sequelize";
+import type { Stig } from "./stig";
 
 export class StigLibrary extends Model<
   InferAttributes<StigLibrary>,
@@ -20,6 +25,16 @@ export class StigLibrary extends Model<
   declare importedDate: string;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
+
+  declare Stigs?: NonAttribute<Stig[]>;
+
+  declare addStig: BelongsToManyAddAssociationMixin<Stig, number>;
+  declare removeStig: BelongsToManyRemoveAssociationMixin<Stig, number>;
+  declare getStigs: () => Promise<Stig[]>;
+
+  declare static associations: {
+    Stigs: Association<StigLibrary, Stig>;
+  };
 }
 
 StigLibrary.init(

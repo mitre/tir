@@ -4,6 +4,6 @@ export default defineEventHandler(async (event) => {
   console.log(
     `Calling Create Assessment with SystemId: ${body.SystemId} and StigID: ${body.StigId}`,
   );
-  const newAssessment = await createAssessment(body.SystemId, body.StigId);
+  const newAssessment = await findOrCreateAssessment(body.SystemId, body.StigId);
   return newAssessment;
 });

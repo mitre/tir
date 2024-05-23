@@ -32,3 +32,4 @@ db/tirdb.sqlite-journal
 
 # internal test
 test
+server/api/localtest

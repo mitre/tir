@@ -1,21 +1,26 @@
-import * as fs from 'fs';
+import * as fs from "fs";
 
 export default defineEventHandler(async (event) => {
- 
-  const filePath = 'logConfig.json';
+  const logConfigPath = "config/logConfig.json";
 
   try {
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-
-    const jsonObject = JSON.parse(fileContent);
-
-    return jsonObject;
-
+    if (fs.existsSync(logConfigPath)) {
+      fs.accessSync(logConfigPath, fs.constants.R_OK);
+      const fileContent = fs.readFileSync(logConfigPath, "utf-8");
+      const logConfig = JSON.parse(fileContent);
+      return logConfig;
+    }
+    return {
+      logPath: "tmp",
+      syslogTarget: "",
+      syslogPort: 0,
+      logLevel: "warning",
+    };
   } catch (err) {
+    logger.error("Unable to read log configuration");
     throw createError({
       statusCode: 404,
-      statusMessage: 'Configuration Not Found',
-    })
+      statusMessage: "Erorr reading log configuration",
+    });
   }
-
-})
+});

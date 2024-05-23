@@ -6,12 +6,14 @@ export default defineEventHandler(async (event) => {
   const boundary = (await Boundary.findByPk(body.BoundaryId)) as BoundaryInterface;
   if (!user || !boundary) {
     if (!user) {
+      logger.error(`Unable to find UserId`);
       return {
         success: false,
         error: "Unable to find UserId",
         id: body.UserId,
       };
     } else {
+      logger.error(`Unable to find BoundaryId`);
       return {
         success: false,
         error: "Unable to find BoundaryId",
@@ -20,5 +22,9 @@ export default defineEventHandler(async (event) => {
     }
   }
   await boundary.removeUser(user);
+  logger.info({
+    service: "Boundary",
+    message: `${user?.email} Successfully Removed from: ${boundary.name}`,
+  });
   return { success: 1 };
 });

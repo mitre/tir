@@ -1,8 +1,17 @@
-import { DataTypes, Model } from "sequelize";
+/* eslint-disable no-use-before-define */
+import {
+  Model,
+  DataTypes,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+} from "sequelize";
 
-export class Theme extends Model {
-  declare id: number;
+export class Theme extends Model<InferAttributes<Theme>, InferCreationAttributes<Theme>> {
+  declare id: CreationOptional<number>;
   declare name: string;
+  declare lastUpdate: CreationOptional<string>;
+  declare creationDate: CreationOptional<string>;
 }
 
 Theme.init(
