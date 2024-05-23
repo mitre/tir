@@ -35,10 +35,6 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   declare Milestones?: NonAttribute<Milestone[]>;
   declare addEvaluationItem: HasManyAddAssociationMixin<EvaluationItem, number>;
 
-  public comparePassword = (inputPassword: string): Promise<boolean> => {
-    return bcrypt.compare(inputPassword, this.password);
-  };
-
   declare static associations: {
     Boundaries: Association<User, Boundary>;
     EvaluationItems: Association<User, EvaluationItem>;
