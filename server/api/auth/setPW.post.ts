@@ -1,11 +1,14 @@
-import bcrypt from "bcryptjs";
+import { DateTime } from "luxon";
 import { User } from "../../../db/models";
+import { generateSalt, hashPassword } from "~/server/utils/hash";
 
 const config = useRuntimeConfig();
 
-if (!config.jwt_key) {
-  throw new Error("jwt_key is not set.");
+if (!config.secret_key) {
+  throw new Error("secret_key is not set.");
 }
+
+const SECRET_KEY = config.secret_key as string;
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -18,10 +21,20 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Unknown User.",
     });
   }
-  const hashPW = await bcrypt.hash(body.password, 10);
+
+  if (user.salt === null) {
+    user.salt = generateSalt();
+  }
+
+  const hashPW = hashPassword(body.password, user.salt, SECRET_KEY);
 
   user.password = hashPW;
-  await user.save();
+  user.passwordChangedAt = DateTime.now().toISO();
 
-  return { sucesss: true };
+  await user.save();
+  logger.info({
+    service: "auth",
+    message: `Password Successfully Set for User ${user?.email} `,
+  });
+  return { success: true };
 });

@@ -1,9 +1,18 @@
-import { DataTypes, Model } from "sequelize";
+/* eslint-disable no-use-before-define */
+import {
+  Model,
+  DataTypes,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+} from "sequelize";
 
-export class Timezone extends Model {
-  declare id: number;
+export class Timezone extends Model<InferAttributes<Timezone>, InferCreationAttributes<Timezone>> {
+  declare id: CreationOptional<number>;
   declare name: string;
   declare abbreviation: string;
+  declare lastUpdate: CreationOptional<string>;
+  declare creationDate: CreationOptional<string>;
 }
 
 Timezone.init(

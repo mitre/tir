@@ -1,11 +1,15 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+  type NonAttribute,
+  type BelongsToManyAddAssociationMixin,
+  Association,
 } from "sequelize";
+import type { User } from ".";
 
 export class Milestone extends Model<
   InferAttributes<Milestone>,
@@ -16,6 +20,13 @@ export class Milestone extends Model<
   declare completion_date: string;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
+  declare Users?: NonAttribute<User[]>;
+
+  declare addUser: BelongsToManyAddAssociationMixin<User, number>;
+
+  declare static associations: {
+    Users: Association<Milestone, User>;
+  };
 }
 
 Milestone.init(

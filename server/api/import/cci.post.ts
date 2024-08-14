@@ -3,8 +3,24 @@ import * as path from "path";
 import { IncomingMessage } from "http";
 import formidable from "formidable";
 import { verifyCciList, importCciList } from "../../utils/cci";
+import { User } from "~/db/models";
 
 export default defineEventHandler(async (event) => {
+  const rawToken = getCookie(event, "tirtoken");
+  let userId: number;
+  if (rawToken) {
+    userId = decodeToken(rawToken);
+  } else {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unknown User.",
+    });
+  }
+
+  const user = await User.findByPk(userId, {
+    attributes: ["email"],
+  });
+
   const config = useRuntimeConfig();
 
   console.log("Starting Upload");
@@ -47,7 +63,7 @@ export default defineEventHandler(async (event) => {
         } else {
           throw createError({
             statusCode: 415,
-            statusMessage: verifyResults,
+            statusMessage: `${verifyResults}`,
           });
         }
       } else {
@@ -64,7 +80,10 @@ export default defineEventHandler(async (event) => {
       fs.rmSync(dirList[i], { recursive: true });
     }
   }
-
+  logger.info({
+    service: "Library",
+    message: `User: ${user?.email} Uploaded CCI Matrix`,
+  });
   return { success: true };
 });
 

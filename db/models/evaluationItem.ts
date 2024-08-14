@@ -1,14 +1,15 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
   DataTypes,
-  CreationOptional,
-  type NonAttribute,
   Association,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+  type NonAttribute,
+  type BelongsToManyAddAssociationMixin,
 } from "sequelize";
-import type { Milestone } from ".";
+import type { Milestone, User } from ".";
 
 type levels = "Very High" | "High" | "Moderate" | "Low" | "Very Low";
 
@@ -33,11 +34,15 @@ export class EvaluationItem extends Model<
   declare Recommendations: levels;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
+  declare Users?: NonAttribute<User[]>;
 
   declare Milestones?: NonAttribute<Milestone[]>;
 
+  declare addUser: BelongsToManyAddAssociationMixin<User, number>;
+
   declare static associations: {
     Milestones: Association<EvaluationItem, Milestone>;
+    Users: Association<EvaluationItem, User>;
   };
 }
 

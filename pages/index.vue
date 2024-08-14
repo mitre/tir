@@ -3,31 +3,33 @@ import { ref, watch } from "vue";
 import LoginForm from "../components/login/LoginForm.vue";
 
 const config = useRuntimeConfig();
-const ldapEnabled = config.public.ldap_enabled === 'true';
+const ldapEnabled = config.public.ldap_enabled === "true" || config.public.ldap_enabled === true;
+const ldapEnabledRaw = config.public.ldap_enabled;
+const ldaphost = config.ldap_host;
 
 definePageMeta({
   layout: false,
 });
 
 const authMethods = ref([
-  { name: "Local", current: !ldapEnabled},
+  { name: "Local", current: !ldapEnabled },
   ...(ldapEnabled ? [{ name: "LDAP", current: ldapEnabled }] : []),
 ]);
 const selectedAuthMethod = ref(authMethods.value.find((method) => method.current).name);
 watch(selectedAuthMethod, (newMethod, oldMethod) => {
-      const methodToDeselect = authMethods.value.find((method) => method.name === oldMethod);
-      if (methodToDeselect) {
-        methodToDeselect.current = false;
-      }
-      const methodToSelect = authMethods.value.find((method) => method.name === newMethod);
-      if (methodToSelect) {
-        methodToSelect.current = true;
-      }
+  const methodToDeselect = authMethods.value.find((method) => method.name === oldMethod);
+  if (methodToDeselect) {
+    methodToDeselect.current = false;
+  }
+  const methodToSelect = authMethods.value.find((method) => method.name === newMethod);
+  if (methodToSelect) {
+    methodToSelect.current = true;
+  }
 });
 </script>
 
 <template>
-  <div class="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+  <div class="flex h-screen flex-1 flex-col justify-between px-6 py-8 lg:px-8">
     <div class="sm:mx-auto sm:w-full sm:max-w-sm">
       <img class="mx-auto h-40 w-40" src="../assets/TIR_Icon.svg" alt="Your Company" />
       <h1 class="mt-8 text-center text-3xl font-bold leading-9 tracking-tight text-gray-800 dark:text-white">
@@ -36,9 +38,8 @@ watch(selectedAuthMethod, (newMethod, oldMethod) => {
       <h4 class="mt-5 text-center text-xl font-bold leading-9 tracking-tight text-gray-800 dark:text-white">
         Sign in to your account
       </h4>
-    </div>
-    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-      <div>
+
+      <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
         <div class="sm:hidden">
           <label for="authMethods" class="sr-only">Select an authentication method</label>
           <select
@@ -71,8 +72,11 @@ watch(selectedAuthMethod, (newMethod, oldMethod) => {
             </nav>
           </div>
         </div>
+        <LoginForm :auth-method="selectedAuthMethod" />
       </div>
-      <LoginForm :auth-method="selectedAuthMethod"/>
+    </div>
+    <div class="relative self-center">
+      <Footer />
     </div>
   </div>
 </template>

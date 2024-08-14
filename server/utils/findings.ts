@@ -87,6 +87,9 @@ export async function getFindingsSheet(
           {
             model: Assessment,
             attributes: ["id"],
+            where: {
+              succeededByAssessmentId: { [Op.is]: null },
+            },
             required: true,
             include: [
               {

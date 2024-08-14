@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = await User.findByPk(userId, {
-    attributes: [],
+    attributes: ["email"],
     include: [
       {
         model: UserRole,
@@ -29,13 +29,33 @@ export default defineEventHandler(async (event) => {
       },
     ],
   });
+
+  let isReviewer;
+  if (tier?.dataValues.Tier_Users.find((o: { UserId: number }) => o.UserId === userId)) {
+    isReviewer =
+      tier?.dataValues.Tier_Users.find((o: { UserId: number }) => o.UserId === userId)
+        .TierRoleId === 3;
+  }
+
   if (tier) {
     if (body.hasBoundaries) {
-      for (let key in body) {
-        tier.setDataValue(key, body[key]);
+      if (isReviewer) {
+        logger.error(`Insufficient Permissions to Create Boundary. User: ${user?.email}`);
+        throw createError({
+          statusCode: 401,
+          statusMessage: "Reviewers are not able to create Boundaries",
+        });
+      } else {
+        for (let key in body) {
+          tier.setDataValue(key, body[key]);
+        }
+        tier.save();
+        logger.info({
+          service: "Tiers",
+          message: `${user?.email} Successfully Created Boundary for ${tier?.name} `,
+        });
+        return { error: false };
       }
-      tier.save();
-      return { error: false };
     } else if (tier?.dataValues.ownerId !== userId && user?.dataValues.UserRole.id !== 1) {
       if (tier?.dataValues.Tier_Users.find((o: { UserId: number }) => o.UserId === userId)) {
         if (
@@ -46,14 +66,20 @@ export default defineEventHandler(async (event) => {
             tier.setDataValue(key, body[key]);
           }
           tier.save();
+          logger.info({
+            service: "Tiers",
+            message: `${user?.email} Successfully Edited: ${tier?.name}`,
+          });
           return { error: false };
         } else {
+          logger.error(`Insufficient Permissions to Edit Company. User: ${user?.email}`);
           throw createError({
             statusCode: 401,
             statusMessage: "Must be an Admin, Owner, or Co-Owner of this Company to Edit.",
           });
         }
       } else {
+        logger.error(`Insufficient Permissions to Edit Company. User: ${user?.email}`);
         throw createError({
           statusCode: 401,
           statusMessage: "Must be an Admin, Owner, or Co-Owner of this Company to Edit.",
@@ -64,9 +90,14 @@ export default defineEventHandler(async (event) => {
         tier.setDataValue(key, body[key]);
       }
       tier.save();
+      logger.info({
+        service: "Tiers",
+        message: `${user?.email} Successfully Edited: ${tier?.name}`,
+      });
       return { error: false };
     }
   } else {
+    logger.error(`Tier Item: ${body.id} not found.`);
     return { error: true, errorMsg: `Tier Item: ${body.id} not found.` };
   }
 });

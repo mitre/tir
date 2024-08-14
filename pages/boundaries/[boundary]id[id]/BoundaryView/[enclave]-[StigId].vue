@@ -116,8 +116,26 @@
                                     ? 'text-sky-500'
                                     : 'text-white',
                           ]"
-                          >{{ check.vuln_num }}</span
                         >
+                          {{ check.vuln_num }}
+                        </span>
+                        <span
+                          v-show="check.Overrides.length > 0"
+                          :class="[
+                            check.status === 'Open'
+                              ? 'text-red-500'
+                              : check.status === 'NotAFinding'
+                                ? 'text-green-400'
+                                : check.status === 'Not_Reviewed'
+                                  ? 'text-amber-500'
+                                  : check.status === 'Not_Applicable'
+                                    ? 'text-sky-500'
+                                    : 'text-white',
+                            'max-h-6 text-2xl',
+                          ]"
+                        >
+                          *
+                        </span>
                       </a>
                     </li>
                   </ul>
@@ -251,7 +269,7 @@
                 />
               </div>
 
-              <Disclosure v-slot="{ open }" default-open="true">
+              <Disclosure v-slot="{ open }" :default-open="true">
                 <DisclosureButton
                   :class="[
                     open ? 'bg-gray-300 dark:bg-gray-900' : 'rounded-b-lg bg-gray-900/10 dark:bg-gray-300/5',
@@ -966,6 +984,12 @@
             :StigDataId="listOfChecks[checkData].id"
             @show-override="showOverride = false"
           />
+          <ErrorNotification
+            v-if="showErrorNotification"
+            :show="showErrorNotification"
+            :msg="errorMsg"
+            @show="showErrorNotification = false"
+          />
         </div>
       </div>
     </div>
@@ -1002,7 +1026,8 @@ import { storeToRefs } from "pinia";
 import { useIdStorageStore } from "~~/stores/IdStorage";
 import { useEvaluationDataStore } from "~~/stores/EvaluationData";
 const route = useRoute();
-
+const showErrorNotification = ref(false);
+const errorMsg = ref();
 const store = useIdStorageStore();
 const { StigId } = storeToRefs(store);
 const { SystemId } = storeToRefs(store);
@@ -1137,7 +1162,7 @@ let checkStatus = ref("");
 let startingPosition = ref();
 
 checkStatus = listOfChecks[checkData.value].status;
-// console.log('Check Data',checkData)
+// console.log("Check Data", checkData, listOfChecks);
 function updateVar() {
   checkStatus = listOfChecks[checkData].status;
   startingPosition = statusOptions.findIndex((o) => o.title === checkStatus);
@@ -1188,10 +1213,8 @@ function updateVar() {
 }
 
 function findCheck(checkId) {
-  console.log(checkId);
   checkData = listOfChecks.findIndex((o) => o.id === checkId);
   assessmentId.value = checkData;
-  // console.log("Array Position", checkData)
 }
 /// /////////// Finding Status
 
@@ -1204,7 +1227,7 @@ const statusOptions = [
 
 startingPosition = statusOptions.findIndex((o) => o.title === checkStatus);
 let selected = ref(statusOptions[startingPosition]);
-
+// console.log(startingPosition);
 /// /// Back Button
 async function backButton() {
   await navigateTo(
@@ -1306,9 +1329,7 @@ const editOffice = ref(listOfChecks[assessmentId.value].EvaluationItems[0].Offic
 const editResources = ref(listOfChecks[assessmentId.value].EvaluationItems[0].Resources_Required);
 let editScheduledCompletionDate = ref();
 if (listOfChecks[assessmentId.value].EvaluationItems[0].Scheduled_Completion_Date != null) {
-  editScheduledCompletionDate = ref(
-    listOfChecks[assessmentId.value].EvaluationItems[0].Scheduled_Completion_Date.split("T", 1)[0],
-  );
+  editScheduledCompletionDate = ref(listOfChecks[assessmentId.value].EvaluationItems[0].Scheduled_Completion_Date);
 } else {
   editScheduledCompletionDate = ref(listOfChecks[assessmentId.value].EvaluationItems[0].Scheduled_Completion_Date);
 }
@@ -1320,25 +1341,27 @@ const editImpactDesc = ref(listOfChecks[assessmentId.value].EvaluationItems[0].I
 let editRecommendations = ref(listOfChecks[assessmentId.value].EvaluationItems[0].Recommendations);
 
 function setFields(check) {
-  editOffice.value = check.Office_Org;
-  editResources.value = check.Resources_Required;
+  editOffice.value = check.EvaluationItems[0].Office_Org;
+  editResources.value = check.EvaluationItems[0].Resources_Required;
 
-  if (check.Scheduled_Completion_Date != null) {
-    editScheduledCompletionDate.value = check.Scheduled_Completion_Date.split("T", 1)[0];
+  if (check.EvaluationItems[0].Scheduled_Completion_Date != null) {
+    editScheduledCompletionDate.value = check.EvaluationItems[0].Scheduled_Completion_Date.split("T", 1)[0];
   } else {
-    editScheduledCompletionDate.value = check.Scheduled_Completion_Date;
+    editScheduledCompletionDate.value = check.EvaluationItems[0].Scheduled_Completion_Date;
   }
-  editMilestoneChanges.value = check.Milestone_Changes;
-  editPoamComments.value = check.Poam_Comments;
-  editMitigations.value = check.Mitigations;
+  editMilestoneChanges.value = check.EvaluationItems[0].Milestone_Changes;
+  editPoamComments.value = check.EvaluationItems[0].Poam_Comments;
+  editMitigations.value = check.EvaluationItems[0].Mitigations;
 
-  editImpactDesc.value = check.Impact_Description;
-  editRecommendations = check.Recommendations;
-
-  if (check.Milestones?.length !== 0) {
+  editImpactDesc.value = check.EvaluationItems[0].Impact_Description;
+  editRecommendations.value = check.EvaluationItems[0].Recommendations;
+  if (check.EvaluationItems[0].Milestones && check.EvaluationItems[0].Milestones?.length !== 0) {
     milestones = ref([]);
-    for (let i = 0; i < check.Milestones.length; i++) {
-      milestones.value.push({ milestone: check.Milestones[i].item, date: check.Milestones[i].completion_date });
+    for (let i = 0; i < check.EvaluationItems[0].Milestones.length; i++) {
+      milestones.value.push({
+        milestone: check.EvaluationItems[0].Milestones[i].item,
+        date: check.EvaluationItems[0].Milestones[i].completion_date,
+      });
     }
   } else {
     milestones = ref([]);
@@ -1407,32 +1430,36 @@ async function editAssessmentApi() {
       milestoneDate.push(o.date);
     });
 
-    await useFetch("/api/evaluation/updateItem", {
+    await $fetch("/api/evaluation/updateItem", {
       method: "PUT",
       body: {
-        id: editId,
-        finding_details: editFinding,
-        comments: editComments,
-        status: editStatus,
-        Office_Org: editOffice,
-        Resources_Required: editResources,
-        Scheduled_Completion_Date: editScheduledCompletionDate,
+        id: editId.value,
+        BoundaryId: route.params.enclave,
+        finding_details: editFinding.value,
+        comments: editComments.value,
+        status: editStatus.value,
+        Office_Org: editOffice.value,
+        Resources_Required: editResources.value,
+        Scheduled_Completion_Date: editScheduledCompletionDate.value,
         Milestone: milestoneText,
         Milestone_Completion_Dte: milestoneDate,
-        Milestone_Changes: editMilestoneChanges,
-        Poam_Comments: editPoamComments,
-        Mitigations: editMitigations,
+        Milestone_Changes: editMilestoneChanges.value,
+        Poam_Comments: editPoamComments.value,
+        Mitigations: editMitigations.value,
         Severity: severity.value.name,
         Relevance_of_Threat: relevance.value.name,
         Likelihood: likelihood.value.name,
         Impact: impact.value.name,
-        Impact_Description: editImpactDesc,
+        Impact_Description: editImpactDesc.value,
         Residual_Risk_Level: risk.value.name,
-        Recommendations: editRecommendations,
+        Recommendations: editRecommendations.value,
       },
     });
-  } finally {
     location.reload();
+  } catch (err) {
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
   }
 }
 

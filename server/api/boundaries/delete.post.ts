@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = await User.findByPk(userId, {
-    attributes: [],
+    attributes: ["email"],
     include: [
       {
         model: UserRole,
@@ -38,13 +38,23 @@ export default defineEventHandler(async (event) => {
           .BoundaryRoleId === 1
       ) {
         await boundary?.destroy();
+        logger.info({
+          service: "Boundary",
+          message: `User: ${user?.email} Successfully Deleted Boundary:${boundary.name}`,
+        });
       } else {
+        logger.error(
+          `${user?.email} must be an Admin, Owner, or Co-Owner of ${boundary.name} to delete.`,
+        );
         throw createError({
           statusCode: 401,
           statusMessage: "Must be an Admin, Owner, or Co-Owner of this Enclave to delete.",
         });
       }
     } else {
+      logger.error(
+        `${user?.email} must be an Admin, Owner, or Co-Owner of ${boundary.name} to delete.`,
+      );
       throw createError({
         statusCode: 401,
         statusMessage: "Must be an Admin, Owner, or Co-Owner of this Enclave to delete.",
@@ -52,6 +62,10 @@ export default defineEventHandler(async (event) => {
     }
   } else {
     await boundary?.destroy();
+    logger.info({
+      service: "Boundary",
+      message: `User: ${user?.email} Successfully Deleted Boundary:${boundary?.name}`,
+    });
   }
   return { success: 1 };
 });

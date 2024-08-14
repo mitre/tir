@@ -1,13 +1,13 @@
 /* eslint-disable no-use-before-define */
 import {
   Model,
-  InferAttributes,
-  InferCreationAttributes,
+  type InferAttributes,
+  type InferCreationAttributes,
   DataTypes,
-  CreationOptional,
+  type CreationOptional,
   Association,
-  NonAttribute,
-  ForeignKey,
+  type NonAttribute,
+  type ForeignKey,
 } from "sequelize";
 
 import { AssessmentItem } from "./assessmentItem";
@@ -29,7 +29,9 @@ export class Assessment extends Model<
   declare AssessmentItems?: NonAttribute<AssessmentItem[]>;
   declare System?: NonAttribute<System>;
   declare SystemId: ForeignKey<System["id"]>;
+  declare StigId: ForeignKey<Stig["id"]>;
   declare Stig?: NonAttribute<Stig>;
+  declare succeededByAssessmentId: ForeignKey<Assessment["id"]> | null;
 
   declare static associations: {
     AssessmentItems: Association<Assessment, AssessmentItem>;
@@ -60,6 +62,14 @@ Assessment.init(
     comment: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    succeededByAssessmentId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: "Assessments",
+        key: "id",
+      },
     },
     lastUpdate: {
       type: DataTypes.STRING(DATETIME_LENGTH),

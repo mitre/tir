@@ -17,7 +17,9 @@
                   >
 
                   <Popover class="relative inline-flex">
-                    <PopoverButton class="hover:text-gray-800 dark:hover:text-white"> Add System </PopoverButton>
+                    <PopoverButton :id="id" class="hover:text-gray-800 dark:hover:text-white">
+                      Add System
+                    </PopoverButton>
 
                     <transition
                       enter-active-class="transition ease-out duration-200"
@@ -265,7 +267,7 @@
                     Not Reviewed
                   </div>
                 </div>
-                <p class="mt-2 items-baseline gap-x-2">
+                <div class="mt-2 items-baseline gap-x-2">
                   <span
                     v-if="statIdx === 2"
                     class="break-all text-xl font-semibold tracking-tight text-gray-900 dark:text-white"
@@ -309,7 +311,7 @@
                     </p>
                   </span>
 
-                  <span v-else class="text-4xl font-semibold tracking-tight text-gray-900 dark:text-white">{{
+                  <span v-else class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{{
                     stat.value
                   }}</span>
                   <span
@@ -349,7 +351,7 @@
                       {{ stat.value2.Not_Reviewed }}
                     </p>
                   </span>
-                </p>
+                </div>
               </div>
             </div>
           </header>
@@ -402,7 +404,7 @@
                 <DialogPanel class="pointer-events-auto w-screen max-w-lg">
                   <form
                     class="flex h-full flex-col divide-y divide-gray-200 bg-white shadow-xl dark:bg-gray-800"
-                    @submit.prevent="addSystem(systemData)"
+                    @submit.prevent="addSystem()"
                   >
                     <div class="h-0 flex-1 overflow-y-auto">
                       <div class="bg-indigo-700 px-4 py-6 sm:px-6">
@@ -445,77 +447,8 @@
                                   class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                 />
                               </div>
-                              <!-- Compnent 2  -->
-                              <!-- <div class="py-6">
-                                <label for="project-name" class="block text-sm font-medium leading-6 text-white">Apply
-                                  STIGs</label>
-                                <Combobox >
-                                  <div class="relative">
-                                    <MagnifyingGlassIcon
-                                      class="pointer-events-none absolute left-4 top-3.5 h-5 w-5 text-gray-400"
-                                      aria-hidden="true" />
-                                    <ComboboxInput
-                                      class="h-12 w-full border-0 bg-transparent pl-11 pr-4 text-gray-200 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
-                                      placeholder="Search..." @change="query = $event.target.value" />
-                                  </div>
-
-                                  <div v-if="query === ''"
-                                    class="border-t border-gray-100 px-6 py-14 text-center text-sm sm:px-14">
-                                    <GlobeAmericasIcon class="mx-auto h-6 w-6 text-gray-400" aria-hidden="true" />
-                                    <p class="mt-4 font-semibold text-gray-200">Search for STIGS</p>
-                                    <p class="mt-2 text-gray-400">Quickly add STIGS for your system by running a 
-                                      search.</p>
-                                  </div>
-
-                                  <ComboboxOptions v-if="filteredItems.length > 0" static
-                                    class="max-h-80 scroll-pb-2 scroll-pt-11 space-y-2 overflow-y-auto pb-2">
-                                    <li v-for="[category, stigList] in Object.entries(groups)" :key="category">
-                                      <h2 class="bg-gray-100 px-4 py-2.5 text-xs font-semibold text-gray-900">
-                                        {{ category }}
-                                      </h2>
-                                      <ul class="mt-2 text-sm font-normal text-gray-200">
-                                        <ComboboxOption v-for="item in stigList" :key="item.id" :value="item" as="template"
-                                          v-slot="{ active }">
-                                          <li
-                                            :class="['cursor-default select-none px-4 py-2', active && 'bg-indigo-600 text-white']" @click="addTempStig(item.title)">
-                                            {{ item.title }}
-                                          </li>
-                                        </ComboboxOption>
-                                      </ul>
-                                    </li>
-                                  </ComboboxOptions>
-
-                                  <div v-if="query !== '' && filteredItems.length === 0"
-                                    class="border-t border-gray-100 px-6 py-14 text-center text-sm sm:px-14">
-                                    <FaceFrownIcon class="mx-auto h-6 w-6 text-gray-400" aria-hidden="true" />
-                                    <p class="mt-4 font-semibold text-gray-900">No results found</p>
-                                    <p class="mt-2 text-gray-500">We couldn’t find anything with that term. Please try
-                                      again.</p>
-                                  </div>
-                                </Combobox>
-                              </div> -->
                             </div>
                           </div>
-                          <!-- <div class="pb-6 pt-4">
-                            <label for="project-name" class="block text-sm font-medium leading-6 text-white">Applied
-                                  STIGs:</label> -->
-                          <!-- Table -->
-                          <!-- <ul role="list" class="divide-y divide-white/5 max-h-96 scroll-pb-2 scroll-pt-11 overflow-y-auto">
-                            <li v-for="stig in TempStigList" :key=" stig.stigName" 
-                                class="relative flex items-center space-x-4 py-2 hover:bg-gray-500/10 ">
-                                <div class="flex items-center gap-x-5">
-                                    <button @click="deleteTempStig(stig.stigName)">
-                                        <XMarkIcon class="h-6 w-6 text-gray-400 hover:text-white " />
-                                    </button>
-                                    <h2 class="flex min-w-0 text-sm font-normal leading-6 text-gray-200">
-                                        <a  class="flex gap-x-2 ">
-                                            <span>{{ stig.stigName }}</span>
-                                        </a>
-                                    </h2>
-                                </div>
-                            </li>
-                            </ul>
-                          </div> -->
                         </div>
                       </div>
                     </div>
@@ -530,8 +463,9 @@
                       <button
                         type="submit"
                         class="ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                        @click="[refreshSystem()]"
+                        @click="[(open = false)]"
                       >
+                        <!-- @click="[refreshSystem()]" -->
                         Save
                       </button>
                     </div>
@@ -602,17 +536,30 @@
         </div>
       </Dialog>
     </TransitionRoot>
+
+    <!-- <Export v-if="showExport" :showExport="showExport" :entityId="TierId" entityType="Tier" commonName="Company" :nameProp="nameProp" @openClose="openMembers = false"/> -->
+    <!-- <Export v-if="showExport" :open="showExport" :entityId=parseInt($route.params.id) @openClose="showExport = false"/> -->
+    <Export
+      v-if="showExport"
+      :open="showExport"
+      :boundaryId="search"
+      :boundaryName="boundaryName"
+      @showExport="showExport = false"
+    />
+    <QuickAdd
+      v-if="openWidget"
+      :openMembers="openWidget"
+      :boundaryId="search"
+      :libraryId="libraryId"
+      @openClose="[(openWidget = false), refreshSystem()]"
+    />
+    <ErrorNotification
+      v-if="showErrorNotification"
+      :show="showErrorNotification"
+      :msg="errorMsg"
+      @show="showErrorNotification = false"
+    />
   </main>
-  <!-- <Export v-if="showExport" :showExport="showExport" :entityId="TierId" entityType="Tier" commonName="Company" :nameProp="nameProp" @openClose="openMembers = false"/> -->
-  <!-- <Export v-if="showExport" :open="showExport" :entityId=parseInt($route.params.id) @openClose="showExport = false"/> -->
-  <Export v-if="showExport" :open="showExport" :boundaryId="search" @showExport="showExport = false" />
-  <QuickAdd
-    v-if="openWidget"
-    :openMembers="openWidget"
-    :boundaryId="search"
-    :libraryId="libraryId"
-    @openClose="[(openWidget = false), refreshSystem()]"
-  />
 </template>
 
 <script setup>
@@ -637,7 +584,7 @@ import {
 import { storeToRefs } from "pinia";
 import { useQuickAddStore } from "~~/stores/QuickAdd";
 import { useIdStorageStore } from "~~/stores/IdStorage";
-
+const id = useId();
 const storeID = useIdStorageStore();
 const { BoundaryId } = storeToRefs(storeID);
 const { Summary } = storeToRefs(storeID);
@@ -654,6 +601,8 @@ const hover4 = ref(false);
 const boundaryList = {
   TierId: route.params.id,
 };
+const showErrorNotification = ref(false);
+const errorMsg = ref();
 
 const { data } = await useFetch("/api/boundaries/list", {
   method: "POST",
@@ -661,17 +610,27 @@ const { data } = await useFetch("/api/boundaries/list", {
 });
 const dbvalue = data.value.findIndex((o) => o.name === route.params.details);
 const search = data.value[dbvalue].id;
+const boundaryName = data.value[dbvalue].name;
+
 BoundaryId.value = search;
 // console.log('Search', search)
-const systemData = {
-  name: systemName,
-  BoundaryId: search,
-};
-async function addSystem(systemData) {
-  await useFetch("/api/systems/create", {
-    method: "POST",
-    body: systemData,
-  });
+async function addSystem() {
+  try {
+    await $fetch("/api/systems/create", {
+      method: "POST",
+      body: {
+        name: systemName.value,
+        BoundaryId: search,
+      },
+    });
+    // console.log(error);
+  } catch (err) {
+    errorMsg.value = err.data.statusMessage;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
+  } finally {
+    refreshSystem();
+  }
 }
 /// Add System
 
@@ -696,24 +655,42 @@ if (
 const { data: summary } = await useFetch("/api/boundaries/summary", {
   method: "GET",
   query: { BoundaryId: search },
+  key: "SummaryAPI",
 });
-// console.log(summary.value)
-// console.log('Summary', storeID.Summary)
+
 storeID.Summary = summary;
 
-// Summary.value = summary
-/// ///
+const { data: rmfLibrary } = await useFetch("/api/boundaries/listRMFVersions");
+const policyDocument =
+  rmfLibrary.value[rmfLibrary.value.findIndex((o) => o.id === data.value[dbvalue].PolicyDocumentId)];
+
 async function refreshSystem() {
   const { data: summary } = await useFetch("/api/boundaries/summary", {
     method: "GET",
     query: { BoundaryId: search },
+    watch: false,
   });
   storeID.Summary = summary;
-  location.reload();
+  stats.value = [
+    { name: "Number of Systems", value: summary.value.systemView.length },
+    {
+      name: "Status",
+      value: summary.value.totalCounts,
+      unit: "Total:",
+      value2: summary.value.uniqueCounts,
+      unit2: "Unique:",
+    },
+    { name: "STIG baseline", value: data.value[dbvalue].StigLibrary.filename },
+    { name: "NIST version", value: policyDocument.title },
+    { name: "Overlay Selected", value: data.value[dbvalue].overlaySelected },
+    { name: "Control Status", value: "0/0 Met" },
+  ];
+  systemName.value = "";
+  // location.reload();
 }
 
-const stats = [
-  { name: "Number of Systems", value: data.value[dbvalue].systemCount },
+const stats = ref([
+  { name: "Number of Systems", value: summary.value.systemView.length },
   {
     name: "Status",
     value: summary.value.totalCounts,
@@ -722,10 +699,10 @@ const stats = [
     unit2: "Unique:",
   },
   { name: "STIG baseline", value: data.value[dbvalue].StigLibrary.filename },
-  { name: "NIST version", value: data.value[dbvalue].nistVersion },
+  { name: "NIST version", value: policyDocument.title },
   { name: "Overlay Selected", value: data.value[dbvalue].overlaySelected },
   { name: "Control Status", value: "0/0 Met" },
-];
+]);
 const tabs = [
   {
     name: "Boundary View",
@@ -774,9 +751,9 @@ async function createSystem(isZip) {
   if (isZip) {
     const fileInputS = document.getElementById("uploadZip");
     selectedFiles = fileInputS.files;
+
     folder = selectedFiles[0].name.split(".zip");
     systemName = folder[0];
-
     const formdata = new FormData();
     for (let i = 0; i < selectedFiles.length; i++) {
       formdata.append("files", selectedFiles[i]);
@@ -785,10 +762,12 @@ async function createSystem(isZip) {
     try {
       formdata.append("SystemName", systemName);
       formdata.append("BoundaryId", search);
-      const result = await useFetch("/api/import/results", { method: "POST", body: formdata });
+      await $fetch("/api/import/results", { method: "POST", body: formdata });
       await refreshNuxtData("SystemStigList");
-    } catch (error) {
-      console.log("ERROR:", error);
+    } catch (err) {
+      errorMsg.value = err.data.statusMessage;
+      showErrorNotification.value = true;
+      setTimeout(() => (showErrorNotification.value = false), 6000);
     }
   } else {
     const fileInputS = document.getElementById("uploadFolder");
@@ -810,14 +789,16 @@ async function createSystem(isZip) {
       }
       if (nextFolder.length === 3 && nextSystemName !== systemName) {
         try {
-          await useFetch("/api/systems/create", {
+          await $fetch("/api/systems/create", {
             method: "POST",
             body: { name: systemName, BoundaryId: search },
           });
-          const result = await useFetch("/api/import/results", { method: "POST", body: formdata });
+          await useFetch("/api/import/results", { method: "POST", body: formdata });
           await refreshNuxtData("SystemStigList");
-        } catch (error) {
-          console.log("ERROR:", error);
+        } catch (err) {
+          errorMsg.value = err.data.statusMessage;
+          showErrorNotification.value = true;
+          setTimeout(() => (showErrorNotification.value = false), 6000);
         }
 
         formdata.delete("files");
@@ -829,14 +810,16 @@ async function createSystem(isZip) {
       }
       if (i === selectedFiles.length - 1) {
         try {
-          await useFetch("/api/systems/create", {
+          await $fetch("/api/systems/create", {
             method: "POST",
             body: { name: systemName, BoundaryId: search },
           });
-          const result = await useFetch("/api/import/results", { method: "POST", body: formdata });
+          await useFetch("/api/import/results", { method: "POST", body: formdata });
           await refreshNuxtData("SystemStigList");
-        } catch (error) {
-          console.log("ERROR:", error);
+        } catch (err) {
+          errorMsg.value = err.data.statusMessage;
+          showErrorNotification.value = true;
+          setTimeout(() => (showErrorNotification.value = false), 6000);
         }
       }
     }

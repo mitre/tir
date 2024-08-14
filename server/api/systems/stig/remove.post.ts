@@ -1,9 +1,40 @@
-import { Assessment, Stig, System, SystemInterface } from "../../../../db/models";
+import {
+  Assessment,
+  Stig,
+  System,
+  SystemInterface,
+  Boundary,
+  Boundary_User,
+} from "../../../../db/models";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const stig = await Stig.findByPk(body.StigId);
   const system = (await System.findByPk(body.SystemId)) as SystemInterface;
+
+  const rawToken = getCookie(event, "tirtoken");
+  let userId: number;
+  if (rawToken) {
+    userId = decodeToken(rawToken);
+  } else {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unknown User.",
+    });
+  }
+
+  const boundary = await Boundary.findByPk(body.BoundaryId, {
+    attributes: ["id", "name", "ownerId"],
+    include: [
+      {
+        model: Boundary_User,
+      },
+    ],
+  });
+  const isOwner = boundary?.dataValues.ownerId === userId;
+  const isMember =
+    boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId) !==
+    undefined;
 
   if (!stig || !system) {
     if (!stig) {
@@ -20,16 +51,35 @@ export default defineEventHandler(async (event) => {
       };
     }
   }
-  await system.removeStig(stig);
 
-  const numDestroyed = await Assessment.destroy({
-    where: {
-      SystemId: body.SystemId,
-      StigId: body.StigId,
-    },
-  });
+  if (isOwner || isMember) {
+    if (
+      !isOwner &&
+      boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId)
+        .BoundaryRoleId === 3
+    ) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Reviewers are unable to remove STIGs",
+      });
+    } else {
+      await system.removeStig(stig);
 
-  console.log("Destroyed: ", numDestroyed);
+      const numDestroyed = await Assessment.destroy({
+        where: {
+          SystemId: body.SystemId,
+          StigId: body.StigId,
+        },
+      });
 
-  return { success: true };
+      console.log("Destroyed: ", numDestroyed);
+
+      return { success: true };
+    }
+  } else {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Not a Member of this Boundary",
+    });
+  }
 });

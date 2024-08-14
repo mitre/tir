@@ -1,6 +1,6 @@
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { User } from "../../../../db/models";
+import { verifyPassword } from "~/server/utils/hash";
 
 const config = useRuntimeConfig();
 
@@ -8,7 +8,12 @@ if (!config.jwt_key) {
   throw new Error("jwt_key is not set.");
 }
 
-const SECRET_KEY = config.jwt_key as string;
+if (!config.secret_key) {
+  throw new Error("secret_key is not set.");
+}
+
+const JWT_KEY = config.jwt_key as string;
+const SECRET_KEY = config.secret_key as string;
 
 export default defineEventHandler(async (event) => {
   console.log("entered local flow");
@@ -19,24 +24,27 @@ export default defineEventHandler(async (event) => {
   console.log("entered local flow");
   const user = await User.findOne({ where: { email } });
   if (!user) {
-    console.log("couldn't find user");
+    logger.info({
+      service: "auth",
+      message: `Unsuccessful login attempt.  Unknown user: ${email}`,
+    });
     throw createError({
       statusCode: 401,
       statusMessage: "Unknown User",
     });
   }
+  const validPassword = verifyPassword(password, user.password, user.salt, SECRET_KEY);
 
-  const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) {
-    console.log("invalid password");
+    logger.info({ service: "auth", message: `Unsuccessful login attempt.  User: ${email}` });
     throw createError({
       statusCode: 401,
       statusMessage: "Bad Password",
     });
   }
-
+  logger.info({ service: "auth", message: `Successful login.  User: ${email}` });
   const cookieName = "tirtoken";
-  setCookie(event, cookieName, jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: "2h" }), {
+  setCookie(event, cookieName, jwt.sign({ userId: user.id }, JWT_KEY, { expiresIn: "2h" }), {
     httpOnly: true,
     path: "/",
     sameSite: "strict",
@@ -45,7 +53,7 @@ export default defineEventHandler(async (event) => {
   });
 
   const results = {
-    token: jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: "2h" }),
+    token: jwt.sign({ userId: user.id }, JWT_KEY, { expiresIn: "2h" }),
     userId: user.id,
   };
 

@@ -1,8 +1,8 @@
 /* eslint-disable camelcase */
 import {
-  BelongsToManyAddAssociationMixin,
-  BelongsToManyRemoveAssociationMixin,
-  BelongsToManyHasAssociationMixin,
+  type BelongsToManyAddAssociationMixin,
+  type BelongsToManyRemoveAssociationMixin,
+  type BelongsToManyHasAssociationMixin,
 } from "sequelize";
 
 import { User } from "./user";
@@ -32,6 +32,8 @@ import { CciReference } from "./cciReferences";
 import { PolicyDocument } from "./policyDocument";
 import { StigIdent } from "./stigIdent";
 import { Classification } from "./classification";
+import { StigAlias } from "./stigAlias";
+import { TirAlias } from "./tirAlias";
 
 Boundary.belongsTo(User, {
   as: "owner",
@@ -62,6 +64,7 @@ Boundary.belongsTo(Tier, {
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
+
 Tier.hasMany(Boundary);
 
 export const Boundary_User = sequelize.define("Boundary_User", {}, { timestamps: false });
@@ -90,6 +93,18 @@ Tier.hasMany(Tier_User);
 TierRole.hasOne(Tier_User);
 Tier_User.belongsTo(TierRole);
 Tier_User.belongsTo(User);
+
+export const EvalDates_User = sequelize.define("EvalDates_User", {}, { timestamps: false });
+EvaluationItem.belongsToMany(User, { through: EvalDates_User });
+User.belongsToMany(EvaluationItem, { through: EvalDates_User });
+
+export const MilestoneDates_User = sequelize.define(
+  "MilestoneDates_User",
+  {},
+  { timestamps: false },
+);
+Milestone.belongsToMany(User, { through: MilestoneDates_User });
+User.belongsToMany(Milestone, { through: MilestoneDates_User });
 
 const Stig_StigData = sequelize.define("Stig_StigData", {}, { timestamps: false });
 StigData.belongsToMany(Stig, { through: Stig_StigData });
@@ -126,17 +141,17 @@ const StigLibrary_Stig = sequelize.define("StigLibrary_Stig", {}, { timestamps: 
 Stig.belongsToMany(StigLibrary, { through: StigLibrary_Stig });
 StigLibrary.belongsToMany(Stig, { through: StigLibrary_Stig });
 
-export interface StigLibraryInterface extends StigLibrary {
-  addStig: BelongsToManyAddAssociationMixin<Stig, number>;
-  removeStig: BelongsToManyRemoveAssociationMixin<Stig, number>;
-  getStigs: () => Promise<Stig[]>;
-}
+// export interface StigLibraryInterface extends StigLibrary {
+//   addStig: BelongsToManyAddAssociationMixin<Stig, number>;
+//   removeStig: BelongsToManyRemoveAssociationMixin<Stig, number>;
+//   getStigs: () => Promise<Stig[]>;
+// }
 
-export interface StigInterface extends Stig {
-  addStigData: BelongsToManyAddAssociationMixin<StigData, number>;
-  removeStigData: BelongsToManyRemoveAssociationMixin<StigData, number>;
-  getStigDatum: () => Promise<StigData[]>;
-}
+// export interface StigInterface extends Stig {
+//   addStigData: BelongsToManyAddAssociationMixin<StigData, number>;
+//   removeStigData: BelongsToManyRemoveAssociationMixin<StigData, number>;
+//   getStigDatum: () => Promise<StigData[]>;
+// }
 
 export interface StigLibraryWithStigs extends StigLibrary {
   Stigs: Stig[];
@@ -263,19 +278,26 @@ export const StigData_StigIdent = sequelize.define("StigData_StigIdent", {}, { t
 StigData.belongsToMany(StigIdent, { through: StigData_StigIdent });
 StigIdent.belongsToMany(StigData, { through: StigData_StigIdent });
 
-export interface StigDataInterface extends StigData {
-  addStigResponsibility: BelongsToManyAddAssociationMixin<StigResponsibility, number>;
-  removeStigResponsibility: BelongsToManyRemoveAssociationMixin<StigResponsibility, number>;
-  getStigResponsibility: () => Promise<StigResponsibility[]>;
-  addStigReference: BelongsToManyAddAssociationMixin<StigReference, number>;
-  removeStigReference: BelongsToManyRemoveAssociationMixin<StigReference, number>;
-  getStigReference: () => Promise<StigReference[]>;
-  addStigIdent: BelongsToManyAddAssociationMixin<StigIdent, number>;
-  removeStigIdent: BelongsToManyRemoveAssociationMixin<StigIdent, number>;
-}
+// export interface StigDataInterface extends StigData {
+//   addStigResponsibility: BelongsToManyAddAssociationMixin<StigResponsibility, number>;
+//   removeStigResponsibility: BelongsToManyRemoveAssociationMixin<StigResponsibility, number>;
+//   getStigResponsibility: () => Promise<StigResponsibility[]>;
+//   addStigReference: BelongsToManyAddAssociationMixin<StigReference, number>;
+//   removeStigReference: BelongsToManyRemoveAssociationMixin<StigReference, number>;
+//   getStigReference: () => Promise<StigReference[]>;
+//   addStigIdent: BelongsToManyAddAssociationMixin<StigIdent, number>;
+//   removeStigIdent: BelongsToManyRemoveAssociationMixin<StigIdent, number>;
+// }
 
 Classification.hasOne(Boundary, { onDelete: "RESTRICT", onUpdate: "CASCADE" });
 Boundary.belongsTo(Classification, { onDelete: "RESTRICT", onUpdate: "CASCADE" });
+
+Assessment.belongsTo(Assessment, {
+  as: "previousAssessment",
+  foreignKey: { name: "succeededByAssessmentId", allowNull: true },
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
 
 export {
   User,
@@ -305,4 +327,6 @@ export {
   PolicyDocument,
   StigIdent,
   Classification,
+  StigAlias,
+  TirAlias,
 };

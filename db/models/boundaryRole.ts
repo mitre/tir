@@ -1,6 +1,21 @@
-import { DataTypes, Model } from "sequelize";
+/* eslint-disable no-use-before-define */
+import {
+  Model,
+  DataTypes,
+  type InferAttributes,
+  type InferCreationAttributes,
+  type CreationOptional,
+} from "sequelize";
 
-export class BoundaryRole extends Model {}
+export class BoundaryRole extends Model<
+  InferAttributes<BoundaryRole>,
+  InferCreationAttributes<BoundaryRole>
+> {
+  declare id: CreationOptional<number>;
+  declare name: string;
+  declare lastUpdate: CreationOptional<string>;
+  declare creationDate: CreationOptional<string>;
+}
 
 BoundaryRole.init(
   {

@@ -1,10 +1,30 @@
 import { IncomingMessage } from "http";
 import formidable from "formidable";
-import { processLibrary, parseLibraryName } from "../../utils/processLibrary";
+import { processLibrary, parseLibraryName } from "../../utils/stigLibrary";
+import { User } from "~/db/models";
 
 const config = useRuntimeConfig();
 
 export default defineEventHandler(async (event) => {
+  const rawToken = getCookie(event, "tirtoken");
+  let userId: number;
+  if (rawToken) {
+    userId = decodeToken(rawToken);
+  } else {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unknown User.",
+    });
+  }
+
+  const user = await User.findByPk(userId, {
+    attributes: ["email"],
+  });
+
+  const allUsers = await User.findAll({
+    attributes: ["email", "id"],
+  });
+
   const reqbody = readBody(event);
   console.log("Starting Upload");
   const body = await proccessNodeRequest(event.node.req);
@@ -21,10 +41,25 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!libraryNameAttributes.error) {
-    const extractedCount = processLibrary(zipArchive, config.temp_folder, originalFilename);
+    const results = processLibrary(zipArchive, config.temp_folder, originalFilename);
+    logger.info({
+      service: "Library",
+      message: `User: ${user?.email} Uploaded STIG Library:${originalFilename}`,
+    });
+    for (let i = 0; i < allUsers.length; i++) {
+      await $fetch("/api/config/alert", {
+        method: "POST",
+        body: {
+          userId: allUsers[i].id,
+          category: "New STIG Library Available",
+          message: `STIG Library ${originalFilename} is now available! `,
+        },
+      });
+    }
 
-    return { success: true, filecount: `${extractedCount}`, reqbody };
+    return { success: true, filecount: `${results}`, reqbody };
   } else {
+    logger.error(`User: ${user?.email} Failed STIG Library Upload:${originalFilename}`);
     return {
       success: !libraryNameAttributes.error,
       errorMessage: libraryNameAttributes.errorMessage,

@@ -77,7 +77,7 @@ async function loginUser() {
       console.log("Login error caught:", error);
     }
   }
-};
+}
 </script>
 
 <template>
@@ -206,7 +206,6 @@ async function loginUser() {
       >
         Sign in
       </button>
-      <Footer />
     </div>
     <LoginFailed :show="dialogOpen" :dialog-open="dialogOpen" @change="dialogOpen = false" />
   </form>
