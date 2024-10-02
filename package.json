@@ -38,7 +38,7 @@
     "nuxt-headlessui": "~1.1.4",
     "prettier": "~3.1.0",
     "prettier-plugin-tailwindcss": "~0.5.7",
-    "typescript": "~5.2.2"
+    "typescript": "~5.6.2"
   },
   "dependencies": {
     "@heroicons/vue": "~2.0.18",
