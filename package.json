@@ -24,7 +24,7 @@
     "@types/formidable": "~3.4.5",
     "@types/jsonwebtoken": "~9.0.3",
     "@types/ldapjs": "^3.0.6",
-    "@types/libxmljs": "^0.18.12",
+    "@types/libxmljs": "^0.18.13",
     "@types/luxon": "~3.3.4",
     "@types/node": "~18.17.3",
     "@types/xml2js": "~0.4.12",
