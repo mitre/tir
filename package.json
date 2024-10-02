@@ -22,7 +22,7 @@
     "@types/adm-zip": "~0.5.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/formidable": "~3.4.5",
-    "@types/jsonwebtoken": "~9.0.3",
+    "@types/jsonwebtoken": "~9.0.7",
     "@types/ldapjs": "^3.0.6",
     "@types/libxmljs": "^0.18.12",
     "@types/luxon": "~3.3.4",
