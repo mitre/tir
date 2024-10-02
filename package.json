@@ -59,7 +59,7 @@
     "postgres": "~3.3.5",
     "sequelize": "~6.32.1",
     "sqlite3": "~5.1.6",
-    "tsx": "^4.7.1",
+    "tsx": "^4.19.1",
     "umzug": "~3.4.0",
     "winston": "~3.11.0",
     "winston-syslog": "~2.7.0",
