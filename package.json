@@ -57,7 +57,7 @@
     "pg-hstore": "~2.3.4",
     "pinia": "^2.1.7",
     "postgres": "~3.3.5",
-    "sequelize": "~6.32.1",
+    "sequelize": "~6.37.4",
     "sqlite3": "~5.1.6",
     "tsx": "^4.7.1",
     "umzug": "~3.4.0",
