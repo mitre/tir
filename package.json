@@ -47,7 +47,7 @@
     "adm-zip": "~0.5.10",
     "bcryptjs": "^2.4.3",
     "exceljs": "~4.3.0",
-    "formidable": "~3.5.1",
+    "formidable": "~3.5.2",
     "into-stream": "~8.0.0",
     "jsonwebtoken": "~9.0.2",
     "ldapjs": "^3.0.7",
