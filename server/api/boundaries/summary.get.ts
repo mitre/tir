@@ -1,20 +1,30 @@
+import { Op } from "sequelize";
 import {
   Assessment,
   AssessmentItem,
   Boundary,
+  EvaluationItem,
   Override,
   Stig,
   StigData,
   StigLibrary,
   System,
   Boundary_User,
-  User,
-  BoundaryRole,
+  Evaluation,
 } from "../../../db/models";
-import { FindingCounts } from "../../utils/findings";
+import { initializeCounts } from "../../utils/findings";
 import { PerfTimer } from "../../utils/perfTimer";
 import { decodeToken } from "../../utils/currentUser";
-import { Op } from "sequelize";
+import { NessusPlugin } from "~/db/models/nessusPlugin";
+import { NessusReportItem } from "~/db/models/nessusReportItem";
+import { Cve } from "~/db/models/cve";
+import { NessusReport } from "~/db/models/nessusReport";
+import { BoundarySumary, CveEntry, NessusReportEntry, VulnEntry } from "~/types/boundarySummary";
+import { VulnCounts } from "~/types/nessus";
+import { FindingCounts } from "~/types/findings";
+import { Tier } from "~/db/models/tier";
+import { PolicyDocument } from "~/db/models/policyDocument";
+import { StigOverride } from "~/db/models/stigOverride";
 
 export default defineEventHandler(async (event) => {
   const perfTimer = new PerfTimer();
@@ -27,16 +37,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const rawToken = getCookie(event, "tirtoken");
-  let userId: number;
-  if (rawToken) {
-    userId = decodeToken(rawToken);
-  } else {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Unknown User.",
-    });
-  }
+  const checkResult = await userCheck(event, undefined, query.BoundaryId.toString(), undefined);
 
   const BoundaryId = parseInt(query.BoundaryId?.toString(), 10);
 
@@ -55,6 +56,14 @@ export default defineEventHandler(async (event) => {
           {
             model: Stig,
             attributes: ["id", "title", "version", "stigRelease", "stigDate"],
+            include: [
+              {
+                model: Evaluation,
+                attributes: ["id", "lastUpdate"],
+                where: { BoundaryId: query.BoundaryId },
+                required: false,
+              },
+            ],
           },
         ],
       },
@@ -65,9 +74,10 @@ export default defineEventHandler(async (event) => {
         model: Boundary_User,
       },
       {
-        model: User,
-        attributes: ["id", "firstName", "lastName", "email"],
-        as: "owner",
+        model: Tier,
+      },
+      {
+        model: PolicyDocument,
       },
     ],
     where: {
@@ -88,14 +98,19 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (
-    !boundary.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId) &&
-    boundary.dataValues.owner.dataValues.id !== userId
-  ) {
+  if (!checkResult.BoundaryRoleId) {
     throw createError({
       statusCode: 401,
       statusMessage: "Permission Not Granted. Not a member of this Enclave",
     });
+  }
+
+  if (query.authOnly) {
+    return {
+      status: "success",
+      code: 200,
+      message: "User is Authorized.",
+    };
   }
 
   const boundaryInfo = {
@@ -103,6 +118,10 @@ export default defineEventHandler(async (event) => {
     name: boundary.name,
     StigLibraryId: boundary.StigLibrary.id,
     stigLibrary: boundary.StigLibrary.filename,
+    PolicyDocumentId: boundary.PolicyDocumentId,
+    PolicyDocument: boundary.PolicyDocument,
+    TierId: boundary.TierId,
+    Tier: boundary.Tier?.name,
   };
 
   const allFindingsOrdered = await StigData.findAll({
@@ -110,7 +129,7 @@ export default defineEventHandler(async (event) => {
     include: [
       {
         model: AssessmentItem,
-        attributes: ["status"],
+        attributes: ["status", "statusOverride", "severityOverride"],
         required: true,
         include: [
           {
@@ -152,7 +171,58 @@ export default defineEventHandler(async (event) => {
     ],
   });
 
+  const vulnSummary = await NessusPlugin.findAll({
+    attributes: ["id", "pluginId", "pluginName", "riskFactor"],
+    include: [
+      { model: Cve, attributes: ["id", "cveId"], required: true, through: { attributes: [] } },
+      {
+        model: NessusReportItem,
+        attributes: [
+          "id",
+          "pluginOutput",
+          "cvssTemporalScore",
+          "cvss3TemporalScore",
+          "statusOverride",
+          "severityOverride",
+        ],
+        required: true,
+        include: [
+          {
+            model: NessusReport,
+            attributes: ["id"],
+            required: true,
+            include: [
+              {
+                model: System,
+                attributes: ["id", "name"],
+                required: true,
+                include: [
+                  {
+                    model: Boundary,
+                    attributes: [],
+                    where: { id: BoundaryId },
+                    required: true,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+
   const overrides = await Override.findAll({
+    include: {
+      model: System,
+      where: {
+        BoundaryId,
+      },
+    },
+  });
+
+  const stigOverrides = await StigOverride.findAll({
+    where: { type: "status" },
     include: {
       model: System,
       where: {
@@ -173,7 +243,7 @@ export default defineEventHandler(async (event) => {
     title: string;
     version: string;
     date: string;
-    // lastUpdate: Date;
+    lastUpdate: string;
     findings: FindingCounts;
   };
 
@@ -197,7 +267,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (!uniqueFinding.Stigs[0].id) {
+    if (!uniqueFinding.Stigs[0] || !uniqueFinding.Stigs[0].id) {
       break;
     }
 
@@ -205,14 +275,14 @@ export default defineEventHandler(async (event) => {
       const assessmentItem = uniqueFinding.AssessmentItems[j];
       const assessment = assessmentItem.Assessment!;
 
-      const foundOverride = overrides.find(
+      const foundOverride = stigOverrides.find(
         (override) =>
           override.SystemId === assessment.SystemId && override.StigDatumId === uniqueFinding.id,
       );
 
       let status;
       if (foundOverride) {
-        status = foundOverride.status;
+        status = foundOverride.value;
       } else {
         status = assessmentItem.status;
       }
@@ -271,12 +341,128 @@ export default defineEventHandler(async (event) => {
       boundaryView[i].title = details.title;
       boundaryView[i].version = `v${details.version}r${details.stigRelease}`;
       boundaryView[i].date = details.stigDate;
-      // boundaryView[i].lastUpdate = details?.dataValues.updatedAt;
+      if (details.Evaluations[0]) {
+        boundaryView[i].lastUpdate = details.Evaluations[0].lastUpdate;
+      }
     }
   }
-  perfTimer.globalSummaryPrint();
 
-  return { boundaryInfo, boundaryView, systemView, uniqueCounts, totalCounts };
+  const severityToValue = {
+    None: 0,
+    Low: 1,
+    Medium: 2,
+    High: 3,
+    Critical: 4,
+  };
+
+  const valueToSeverity = {
+    0: "None",
+    1: "Low",
+    2: "Medium",
+    3: "High",
+    4: "Critical",
+  };
+
+  const vulnView: VulnEntry[] = [];
+  const notOpenVulns: VulnEntry[] = [];
+  const vulnUniqueCounts: VulnCounts = { Critical: 0, High: 0, Medium: 0, Low: 0, None: 0 };
+  const vulnTotalCounts: VulnCounts = { Critical: 0, High: 0, Medium: 0, Low: 0, None: 0 };
+
+  for (let i = 0; i < vulnSummary.length; i++) {
+    const cvesInVuln: CveEntry[] = [];
+    const nessusReportItems: NessusReportEntry[] = [];
+    const statusSummary = initializeCounts();
+    let severitySummary: number = severityToValue[vulnSummary[i].riskFactor];
+    let severityOverriden = false;
+
+    for (const reportItem of vulnSummary?.[i]?.NessusReportItems || []) {
+      const reportEntry: NessusReportEntry = {
+        id: reportItem.id,
+        pluginOutput: reportItem.pluginOutput,
+        cvss3TemporalScore: reportItem.cvss3TemporalScore,
+        cvssTemporalScore: reportItem.cvssTemporalScore,
+        severityOverride: reportItem.severityOverride,
+        statusOverride: reportItem.statusOverride,
+        NessusReport: {
+          id: reportItem.NessusReportId,
+          System: {
+            id: reportItem.NessusReport!.System!.id,
+            name: reportItem.NessusReport!.System!.name,
+          },
+        },
+      };
+      if (reportItem.statusOverride) {
+        const currentFinding = {
+          Open: reportItem.statusOverride === "Open" ? 1 : 0,
+          NotAFinding: reportItem.statusOverride === "NotAFinding" ? 1 : 0,
+          Not_Reviewed: reportItem.statusOverride === "Not_Reviewed" ? 1 : 0,
+          Not_Applicable: reportItem.statusOverride === "Not_Applicable" ? 1 : 0,
+        };
+        addFindings(statusSummary, currentFinding);
+      }
+
+      if (reportItem.severityOverride) {
+        if (severityOverriden) {
+          if (reportItem.severityOverride > severitySummary) {
+            severitySummary = reportItem.severityOverride;
+          }
+        } else {
+          severityOverriden = true;
+          severitySummary = reportItem.severityOverride;
+        }
+      }
+      nessusReportItems.push(reportEntry);
+    }
+
+    for (const cve of vulnSummary?.[i]?.Cves || []) {
+      const cveEntry: CveEntry = {
+        id: cve.id,
+        cveId: cve.cveId,
+      };
+      cvesInVuln.push(cveEntry);
+    }
+
+    const vulnItem: VulnEntry = {
+      id: vulnSummary[i].id,
+      pluginId: vulnSummary[i].pluginId,
+      pluginName: vulnSummary[i].pluginName,
+      riskFactor: valueToSeverity[severitySummary],
+      riskOverride: severityOverriden,
+      status: uniqueTransform(statusSummary),
+      Cves: cvesInVuln,
+      NessusReportItems: nessusReportItems,
+    };
+
+    if (vulnItem.status === "Open") {
+      addSingleCount(vulnUniqueCounts, vulnItem.riskFactor, 1);
+
+      addSingleCount(
+        vulnTotalCounts,
+        vulnItem.riskFactor,
+        vulnSummary?.[i]?.NessusReportItems?.length ?? 0,
+      );
+
+      vulnView.push(vulnItem);
+    } else {
+      notOpenVulns.push(vulnItem);
+    }
+  }
+
+  vulnView.push(...notOpenVulns);
+
+  perfTimer.globalSummaryPrint();
+  const boundarySummary: BoundarySumary = {
+    boundaryInfo,
+    boundaryView,
+    systemView,
+    vulnView,
+    uniqueCounts,
+    totalCounts,
+    vulnTotalCounts,
+    vulnUniqueCounts,
+  };
+
+  return boundarySummary;
 
   function findOrAddSystemById(
     id: number,
@@ -314,10 +500,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // function initializeCounts(): FindingStatus {
-  //   return { open: 0, closed: 0, notApplicable: 0, notReviewed: 0 };
-  // }
-
   function findOrAddStigById(id: number, findings: FindingCounts): void {
     const existingSystem = boundaryView.find((stigEntry) => stigEntry.id === id);
 
@@ -329,7 +511,7 @@ export default defineEventHandler(async (event) => {
         title: "",
         version: "",
         date: "",
-        // lastUpdate: new Date(),
+        lastUpdate: "",
         findings,
       };
       boundaryView.push(newStig);
@@ -344,19 +526,33 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // function uniqueTransformCounts(findings: FindingStatus): FindingStatus {
-  //   const { open, closed, notApplicable, notReviewed } = findings;
+  function addCounts<T extends { [key: string]: number }>(count1: T, count2: T): T {
+    const result = {} as T;
 
-  //   if (open) {
-  //     return { open: 1, closed: 0, notApplicable: 0, notReviewed: 0 };
-  //   } else if (notReviewed) {
-  //     return { open: 0, closed: 0, notApplicable: 0, notReviewed: 1 };
-  //   } else if (closed) {
-  //     return { open: 0, closed: 1, notApplicable: 0, notReviewed: 0 };
-  //   } else if (notApplicable) {
-  //     return { open: 0, closed: 0, notApplicable: 1, notReviewed: 0 };
-  //   } else {
-  //     return { open: 0, closed: 0, notApplicable: 0, notReviewed: 0 };
-  //   }
-  // }
+    (Object.keys(count1) as (keyof T)[]).forEach((key) => {
+      result[key] = (count1[key] + count2[key]) as T[keyof T];
+    });
+
+    return result;
+  }
+
+  function addCountsSafe<T extends { [key: string]: number }>(count1: T, count2: T): T {
+    const result = {} as T;
+
+    const allKeys = new Set([...Object.keys(count1), ...Object.keys(count2)]);
+
+    allKeys.forEach((key) => {
+      result[key as keyof T] = ((count1[key] || 0) + (count2[key] || 0)) as T[keyof T];
+    });
+
+    return result;
+  }
+
+  function addSingleCount<T extends { [key: string]: number }>(
+    target: T,
+    key: keyof T,
+    value: number,
+  ): void {
+    target[key] = ((target[key] || 0) + value) as T[keyof T];
+  }
 });

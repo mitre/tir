@@ -3,7 +3,13 @@ import { User, Timezone, UserRole } from "../../../db/models";
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const { firstName, lastName, email, UserRoleId, TimezoneName } = body;
-
+  const checkResult = await userCheck(event, undefined, undefined, undefined);
+  if (checkResult.UserRoleId !== 1) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Insufficient Permissions.",
+    });
+  }
   // check if user exist
   const userExist = await User.findOne({ where: { email } });
   if (userExist) {

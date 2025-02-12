@@ -38,10 +38,133 @@
                       class="ml-3 inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     >
                       <PlusIcon class="-ml-0.5 h-5 w-5 rounded-md bg-indigo-500" aria-hidden="true" />
-                      System
+                      {{ assetView.alias }}
                     </button>
                   </div>
                 </div>
+                <ul role="list" class="mt-4 divide-y divide-white/5 rounded-lg shadow-sm">
+                  <li
+                    v-for="(system, index) in summary.systemView"
+                    :key="system.id"
+                    class="rounded-lg hover:bg-gray-400 dark:hover:bg-gray-950"
+                  >
+                    <Disclosure v-slot="{ open }">
+                      <DisclosureButton
+                        :class="[
+                          open ? 'rounded-t-lg bg-white dark:bg-gray-950 ' : 'rounded-lg bg-gray-100 dark:bg-gray-900',
+                          'text-md flex h-16 w-full items-center justify-between px-4 py-2 text-left font-medium text-gray-800 hover:bg-gray-400 focus:outline-none focus-visible:ring focus-visible:ring-purple-500  focus-visible:ring-opacity-75 dark:text-white dark:hover:bg-gray-950',
+                        ]"
+                      >
+                        {{ system.name }}
+                        <div>
+                          <button
+                            @click.stop="[copySystem(system.name, copyExistingSystem(system.name))]"
+                            type="button"
+                            class="mr-4 font-semibold text-indigo-600 hover:text-indigo-500"
+                          >
+                            Duplicate
+                          </button>
+                        </div>
+                      </DisclosureButton>
+                      <DisclosurePanel
+                        class="text-md flex h-80 w-full rounded-b-lg bg-gray-100 px-4 py-2 text-left font-medium text-gray-800 focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75 dark:bg-gray-900 dark:text-white"
+                      >
+                        <div class="pr-4 sm:col-span-2">
+                          <span for="system" class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"
+                            >System Name</span
+                          >
+                          <div class="mt-2">
+                            <input
+                              v-model="summary.systemView.name"
+                              type="text"
+                              name="system"
+                              class="block w-full rounded-md border-0 bg-white py-1.5 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-500 dark:bg-white/5 dark:text-white dark:ring-gray-300 sm:text-sm sm:leading-6"
+                            />
+                          </div>
+                        </div>
+
+                        <div class="w-96 sm:col-span-2">
+                          <Combobox v-model="selectedStig" multiple>
+                            <ComboboxLabel class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"
+                              >STIGs
+                            </ComboboxLabel>
+                            <div class="relative mt-2">
+                              <ComboboxInput
+                                class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-10 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-600 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-white/5 dark:text-white dark:ring-gray-300 sm:text-sm sm:leading-6"
+                                @change="query = $event.target.value"
+                                :display-value="(stig) => stig?.name"
+                              />
+                              <ComboboxButton
+                                class="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none"
+                              >
+                                <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                              </ComboboxButton>
+
+                              <ComboboxOptions
+                                v-if="filteredStigs.length > 0"
+                                class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white/5 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                              >
+                                <ComboboxOption
+                                  v-for="item in filteredStigs"
+                                  :key="item.id"
+                                  :value="item"
+                                  as="template"
+                                  v-slot="{ active, selected }"
+                                >
+                                  <li
+                                    @click="[addTempStig(index, item.id, item.title), (query = '')]"
+                                    :class="[
+                                      'relative cursor-default select-none py-2 pl-3 pr-9',
+                                      active ? 'bg-indigo-600 text-white' : 'text-gray-600 dark:text-gray-200',
+                                    ]"
+                                  >
+                                    <span :class="['block', selected && 'font-semibold']">
+                                      {{ item.name }}
+                                    </span>
+
+                                    <span
+                                      v-if="selected"
+                                      :class="[
+                                        'absolute inset-y-0 right-0 flex items-center pr-4',
+                                        active ? 'text-white' : 'text-indigo-600',
+                                      ]"
+                                    >
+                                      <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                                    </span>
+                                  </li>
+                                </ComboboxOption>
+                              </ComboboxOptions>
+                            </div>
+                          </Combobox>
+                        </div>
+                        <div class="ml-6 w-96 sm:col-span-2">
+                          <h1 class="block text-sm font-medium leading-6 text-gray-800 dark:text-white">
+                            Applied STIGs:
+                          </h1>
+
+                          <ul
+                            role="list"
+                            class="max-h-72 scroll-pb-2 scroll-pt-11 divide-y divide-white/5 overflow-y-auto overflow-y-auto"
+                          >
+                            <li
+                              v-for="stig in system.stigsApplied"
+                              :key="stig.stigId"
+                              class="relative flex items-center space-x-4 py-2 hover:bg-gray-500/10"
+                            >
+                              <div class="flex items-center gap-x-5">
+                                <h2 class="flex min-w-0 text-sm font-normal leading-6 text-gray-800 dark:text-gray-200">
+                                  <a class="flex gap-x-2">
+                                    <span>{{ summary.boundaryView.find((item) => item.id === stig)?.title }}</span>
+                                  </a>
+                                </h2>
+                              </div>
+                            </li>
+                          </ul>
+                        </div>
+                      </DisclosurePanel>
+                    </Disclosure>
+                  </li>
+                </ul>
                 <ul role="list" class="mt-4 divide-y divide-white/5 rounded-lg shadow-sm">
                   <li
                     v-for="(system, index) in store.SystemStigData"
@@ -55,7 +178,7 @@
                           'text-md flex h-16 w-full items-center justify-between px-4 py-2 text-left font-medium text-gray-800 hover:bg-gray-400 focus:outline-none focus-visible:ring focus-visible:ring-purple-500  focus-visible:ring-opacity-75 dark:text-white dark:hover:bg-gray-950',
                         ]"
                       >
-                        System {{ index }}
+                        {{ assetView.alias }} {{ index }}
                         <div>
                           <button
                             @click.stop="copySystem(system.Name, SystemStigData[index].TempStigList)"
@@ -77,8 +200,8 @@
                         class="text-md flex h-80 w-full rounded-b-lg bg-gray-100 px-4 py-2 text-left font-medium text-gray-800 focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75 dark:bg-gray-900 dark:text-white"
                       >
                         <div class="pr-4 sm:col-span-2">
-                          <span for="system" class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"
-                            >System Name</span
+                          <span for="system" class="block text-sm font-medium leading-6 text-gray-800 dark:text-white">
+                            {{ assetView.alias }} Name</span
                           >
                           <div class="mt-2">
                             <input
@@ -182,7 +305,7 @@
                   class="w-sm inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   @click="[$emit('openClose', false), reloadNuxtApp({ ttl: 100 })]"
                 >
-                  Back to Boundary
+                  Back to {{ boundaryView.alias }}
                 </button>
 
                 <button
@@ -190,7 +313,7 @@
                   class="w-sm ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   @click="[quickAddSystems()]"
                 >
-                  Create Systems
+                  Create {{ inflection.pluralize(assetView.alias) }}
                 </button>
               </div>
               <TransitionRoot as="template" :show="loading">
@@ -232,17 +355,23 @@
                             </div>
                             <div class="text-center">
                               <DialogTitle as="h3" class="text-base font-semibold leading-6 text-white"
-                                >Creating Systems
+                                >Creating {{ assetView.alias }}
                               </DialogTitle>
                               <div class="mb-12 mt-2">
                                 <p class="text-sm text-white">Please Wait...</p>
                               </div>
-                              <div class="absolute left-1/2 top-3/4 -translate-x-1/2 -translate-y-1/2">
-                                <svg
-                                  class="h-7 w-7 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"
-                                  viewBox="0 0 24 24"
-                                ></svg>
-                              </div>
+
+                              <UProgress
+                                animation="carousel"
+                                color="indigo"
+                                :value="loadingProgress"
+                                :max="[
+                                  'Waiting to start',
+                                  `Creating ${assetView.alias}...`,
+                                  'Importing Data...',
+                                  'Done!',
+                                ]"
+                              />
                             </div>
                           </div>
                         </DialogPanel>
@@ -257,7 +386,7 @@
         <ErrorNotification
           v-if="showErrorNotification"
           :show="showErrorNotification"
-          :msg="errorMsg"
+          :error="errorObject"
           @show="showErrorNotification = false"
         />
       </div>
@@ -284,7 +413,7 @@ import {
 } from "@headlessui/vue";
 import { CheckIcon, PlusIcon, ChevronUpDownIcon } from "@heroicons/vue/24/outline";
 import { XMarkIcon } from "@heroicons/vue/20/solid";
-
+import inflection from "inflection";
 import { storeToRefs } from "pinia";
 import { useQuickAddStore } from "~~/stores/QuickAdd";
 
@@ -305,9 +434,10 @@ const props = defineProps({
 const { boundaryId, libraryId } = props;
 let { openMembers } = props;
 const showErrorNotification = ref(false);
-const errorMsg = ref();
+const errorObject = ref();
 const loading = ref(false);
 const store = useQuickAddStore();
+const loadingProgress = ref(0);
 // const { TempStigList } = store;
 const { SystemStigData } = storeToRefs(store);
 
@@ -321,9 +451,7 @@ function addTempStig(index, stigID, stigName) {
 function deleteTempStig(StigId, index) {
   store.deleteTempStigList(StigId, index);
 }
-function removeSystem(systemId) {
-  store.deleteSystem(systemId);
-}
+
 /// List Logic
 
 const stigs = {
@@ -344,12 +472,26 @@ const filteredStigs = computed(() =>
         return item.title.toLowerCase().includes(query.value.toLowerCase());
       }),
 );
+
+// getting system info such as system name, and boundaryView
+const { data: summary } = await useFetch("/api/boundaries/summary", {
+  method: "GET",
+  query: { BoundaryId: boundaryId },
+});
+
+// for the term alias
+const { data: currentAlias } = await useFetch("/api/config/alias");
+// renders the current alias
+const assetView = currentAlias.value.find((alias) => alias.term === "System");
+const boundaryView = currentAlias.value.find((alias) => alias.term === "Boundary");
 const emit = defineEmits(["openClose"]);
 /// ///// Create Systems
 async function quickAddSystems() {
+  loadingProgress.value = 0;
   loading.value = true;
   for (let i = 0; i < store.SystemStigData.length; i++) {
     try {
+      loadingProgress.value = 1;
       await $fetch("/api/systems/create", {
         method: "POST",
         body: { name: store.SystemStigData[i].Name, BoundaryId: boundaryId },
@@ -358,12 +500,13 @@ async function quickAddSystems() {
       console.log("Create Error");
       loading.value = false;
       openMembers = false;
-      errorMsg.value = err.data.statusMessage;
+      errorObject.value = err;
       showErrorNotification.value = true;
       setTimeout(() => (showErrorNotification.value = false), 6000);
     } finally {
       const systemId = await getSystemId(store.SystemStigData[i].Name);
       try {
+        loadingProgress.value = 2;
         for (let index = 0; index < store.SystemStigData[i].TempStigList.length; index++) {
           await useFetch("/api/systems/stig/add", {
             method: "POST",
@@ -374,13 +517,14 @@ async function quickAddSystems() {
             },
           });
         }
+        loadingProgress.value = 3;
       } catch {
         console.log("ERROR");
       }
     }
   }
-  loading.value = false;
-  emit("openClose", false);
+  setTimeout(() => (loading.value = false), 2000);
+  setTimeout(() => emit("openClose", false), 2000);
 }
 async function getSystemId(systemName) {
   const { data: SystemList } = await useFetch("/api/systems/list", {
@@ -399,5 +543,17 @@ function copySystem(name, list) {
   for (let i = 0; i < test.length; i++) {
     store.addTempStigList(copyIndex, test[i].StigId, test[i].name);
   }
+}
+
+function copyExistingSystem(systemName) {
+  const system = summary.value.systemView.find((item) => item.name === systemName);
+  let systemStigList = [];
+  for (let i = 0; i < system.stigsApplied.length; i++) {
+    systemStigList.push({
+      StigId: system.stigsApplied[i],
+      name: summary.value.boundaryView.find((item) => item.id === system.stigsApplied[i])?.title,
+    });
+  }
+  return systemStigList;
 }
 </script>

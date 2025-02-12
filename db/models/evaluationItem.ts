@@ -10,8 +10,7 @@ import {
   type BelongsToManyAddAssociationMixin,
 } from "sequelize";
 import type { Milestone, User } from ".";
-
-type levels = "Very High" | "High" | "Moderate" | "Low" | "Very Low";
+import type { levels } from "~/types/evaluation";
 
 // order of InferAttributes & InferCreationAttributes is important.
 export class EvaluationItem extends Model<

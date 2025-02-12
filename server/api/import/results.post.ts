@@ -5,41 +5,24 @@ import { parseXml, XMLDocument } from "libxmljs";
 import formidable from "formidable";
 import AdmZip from "adm-zip";
 import { DateTime } from "luxon";
-import { importChecklist } from "../../utils/checklist";
+import { importChecklist, importChecklistV3 } from "../../utils/checklist";
 import { importXccdf } from "../../utils/xccdf";
 import { System, Boundary, Boundary_User } from "../../../db/models";
+import { ChecklistV3 } from "../../utils/checklist_v3";
+import { importNessus, NessusMatch } from "~/server/utils/nessus";
 
 export default defineEventHandler(async (event) => {
   const body = await proccessNodeRequest(event.node.req);
-
-  const rawToken = getCookie(event, "tirtoken");
-  let userId: number;
-  if (rawToken) {
-    userId = decodeToken(rawToken);
-  } else {
+  if (!body.BoundaryId) {
     throw createError({
       statusCode: 401,
-      statusMessage: "Unknown User.",
+      statusMessage: "Assign system to import.",
     });
   }
-  const boundary = await Boundary.findByPk(body.BoundaryId[0], {
-    attributes: ["id", "name", "ownerId"],
-    include: [
-      {
-        model: Boundary_User,
-      },
-    ],
-  });
-  const isOwner = boundary?.dataValues.ownerId === userId;
-  const isMember =
-    boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId) !==
-    undefined;
-  if (isOwner || isMember) {
-    if (
-      !isOwner &&
-      boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId)
-        .BoundaryRoleId === 3
-    ) {
+  const checkResult = await userCheck(event, undefined, body.BoundaryId[0], undefined);
+
+  if (checkResult.BoundaryRoleId) {
+    if (checkResult.BoundaryRoleId === 4) {
       throw createError({
         statusCode: 401,
         statusMessage: "Reviewers are unable to edit Boundaries",
@@ -76,8 +59,11 @@ export default defineEventHandler(async (event) => {
           if (body.SystemId) {
             systemId = body.SystemId[j] || body.SystemId[0];
           } else if (body.SystemName) {
-            systemId = await createOrFindSystem(body.SystemName[0], body.BoundaryId);
-          } else {
+            systemId = await createOrFindSystem(
+              body.SystemName[i] || body.SystemName[0],
+              body.BoundaryId,
+            );
+          } else if (path.extname(baseFilename) !== ".nessus") {
             const systemName = path.basename(path.dirname(fileList[j]));
             systemId = await createOrFindSystem(systemName, body.BoundaryId);
           }
@@ -90,8 +76,17 @@ export default defineEventHandler(async (event) => {
             }
           }
 
+          if (path.extname(baseFilename) === ".nessus") {
+            await importNessus(fileData, JSON.parse(body.systemsMatchArray[i]));
+          }
+
           if (path.extname(baseFilename) === ".ckl") {
             await importChecklist(fileData, systemId);
+          }
+
+          if (path.extname(baseFilename) === ".cklb") {
+            const checklistData: ChecklistV3 = JSON.parse(fileData);
+            await importChecklistV3(checklistData, systemId);
           }
 
           if (dirList.findIndex((o) => o === path.dirname(fileList[j])) === -1) {
@@ -172,7 +167,12 @@ const extractLibrary = async (sourceZip: string, outputDirectory: string): Promi
     recursive: true,
   }).forEach((nestedFile) => {
     const filePath = path.join(temporaryExtraction, nestedFile);
-    if (path.extname(nestedFile) === ".ckl" || path.extname(nestedFile) === ".xml") {
+    if (
+      path.extname(nestedFile) === ".ckl" ||
+      path.extname(nestedFile) === ".cklb" ||
+      path.extname(nestedFile) === ".xml" ||
+      path.extname(nestedFile) === ".nessus"
+    ) {
       fileList.push(filePath);
     }
   });

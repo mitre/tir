@@ -1,13 +1,13 @@
 import { DateTime } from "luxon";
 import * as dbModels from "../../db/models";
-import { databaseLogger } from "../utils/logger";
+import { migrator, seeder } from "~/db/umzug.js";
 
 export default defineNitroPlugin(async () => {
   try {
     dbModels.UserRole.init;
     await sequelize.authenticate();
 
-    sequelize.addHook("beforeValidate", (model) => {
+    await sequelize.addHook("beforeValidate", (model) => {
       if (!model.dataValues.creationDate) {
         model.dataValues.creationDate = "";
       }
@@ -16,18 +16,21 @@ export default defineNitroPlugin(async () => {
       }
     });
 
-    sequelize.addHook("beforeCreate", (model) => {
+    await sequelize.addHook("beforeCreate", (model) => {
       model.dataValues.creationDate = DateTime.now().toISO();
       model.dataValues.lastUpdate = DateTime.now().toISO();
     });
 
-    sequelize.addHook("beforeUpdate", (model) => {
+    await sequelize.addHook("beforeUpdate", (model) => {
       model.dataValues.lastUpdate = DateTime.now().toISO();
     });
-
-    // await sequelize.sync({ alter: true });
-    databaseLogger.info("Datatbase Started.");
+    
+    const migrateResults = await migrator.up();
+    const seederResults = await seeder.up();
+    
+    logger.info({ service: "database", message: "Datatbase Started." });
   } catch (error) {
     console.log(error);
+    logger.error({ service: "database", message: error });
   }
 });

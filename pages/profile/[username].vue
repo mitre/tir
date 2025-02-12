@@ -224,7 +224,7 @@
                                 Your new project access token is avaliable below, press the clipboard Icon to copy!
                               </p>
                               <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                                This window will only apperaed once! Pop up will close in 30 seconds!
+                                This window will only appear once! Pop up will close in 30 seconds!
                               </p>
                             </div>
                           </div>

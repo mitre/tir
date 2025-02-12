@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { getFindingsSheet, FindingSheetOptions, catFromSeverity } from "../findings";
+import { getVulnSummary, severityFromOverride } from "../vulnerabilities";
 import { Boundary, Classification } from "../../../db/models";
 
 export async function generateFindings(
@@ -68,7 +69,7 @@ export async function generateFindings(
       },
     },
     {
-      width: 10,
+      width: 16,
       style: {
         font: { name: "Calibri", size: 10 },
         alignment: { horizontal: "left", vertical: "top", wrapText: true },
@@ -151,7 +152,25 @@ export async function generateFindings(
     "Mitigations",
     "Notes",
   ];
-
+  enum Columns {
+    itemId,
+    securityKey,
+    systemsAffected,
+    control,
+    cci,
+    source,
+    stigId,
+    catFromSeverity,
+    rawSeverity,
+    vuln,
+    status,
+    check,
+    fix,
+    findingDetails,
+    recommendations,
+    mitigations,
+    notes,
+  }
   sheet.insertRow(1, headers);
 
   sheet.getRow(1).font = { name: "Times New Roman", size: 12, bold: true };
@@ -176,6 +195,12 @@ export async function generateFindings(
   };
 
   const findingsSheet = await getFindingsSheet(boundaryId, findingSheetOptions);
+  const vulnResults = await getVulnSummary(boundaryId, findingSheetOptions, false);
+
+  function nessusToFindingStatus(nessusStatus: string): string {
+    if (nessusStatus === null) return "Open";
+    return nessusStatus;
+  }
 
   for (const row of findingsSheet.Findings) {
     const newIndex = poamArray.length + 1;
@@ -184,7 +209,7 @@ export async function generateFindings(
       newIndex.toString(),
       row.securityKey,
       row.systemsAffected.join("\n"),
-      row.control.join("\n"),
+      row.control,
       row.cci.join("\n"),
       row.source,
       row.stigId,
@@ -200,6 +225,49 @@ export async function generateFindings(
       row.notes,
     ];
     poamArray.push(newRow);
+  }
+
+  if (vulnResults) {
+    for (const result of vulnResults) {
+      const newRow: string[] = new Array(21).fill("");
+      newRow[Columns.itemId] = (poamArray.length + 1).toString();
+      newRow[Columns.securityKey] = `Plugin ID: ${result.pluginId.toString()}`;
+      newRow[Columns.control] = "RA-05";
+      newRow[Columns.source] = result.pluginName;
+
+      newRow[Columns.vuln] = `${result.description}\n`;
+      newRow[Columns.check] = `${result.synopsis}\n`;
+      newRow[Columns.fix] = `${result.solution}\n`;
+
+      for (const nessusBoundary of result.NessusPlugin_Boundaries) {
+        newRow[Columns.recommendations] = nessusBoundary.EvaluationItem.Recommendations;
+        newRow[Columns.mitigations] = nessusBoundary.EvaluationItem.Mitigations;
+        newRow[Columns.notes] = nessusBoundary.EvaluationItem.Poam_Comments;
+      }
+
+      for (const reportItem of result.NessusReportItems) {
+        if (reportItem.severityOverride) {
+          newRow[Columns.rawSeverity] += `${reportItem.NessusReport?.System
+            .name}:\n${severityFromOverride(reportItem.severityOverride)}\n`;
+        } else {
+          newRow[Columns.rawSeverity] +=
+            `${reportItem.NessusReport?.System.name}:\n${result.riskFactor}\n`;
+        }
+
+        newRow[Columns.status] += `${reportItem.NessusReport?.System
+          .name}: \n${nessusToFindingStatus(reportItem.statusOverride)}\n`;
+        newRow[Columns.systemsAffected] += `${reportItem.NessusReport?.System.name}\n`;
+        newRow[Columns.findingDetails] +=
+          `${reportItem.NessusReport?.System.name}:\nPlugin Output:\n ${reportItem.pluginOutput}\nCVE :\n`;
+
+        for (const cve of result.Cves) {
+          newRow[Columns.findingDetails] += ` ${cve.cveId}\n`;
+        }
+        newRow[Columns.findingDetails] += `\n`;
+      }
+
+      poamArray.push(newRow);
+    }
   }
 
   interface BoundaryWithClassification extends Boundary {

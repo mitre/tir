@@ -7,6 +7,7 @@ if (config.usesqlite === "true") {
   initSequelize = new Sequelize({
     dialect: "sqlite",
     storage: "db/tirdb.sqlite",
+    logQueryParameters: true,
     logging: false,
   });
 } else {

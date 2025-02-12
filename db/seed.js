@@ -1,1 +1,2 @@
-require("./umzug").seeder.runAsCLI();
+import { seeder } from "./umzug.js";
+seeder.runAsCLI();

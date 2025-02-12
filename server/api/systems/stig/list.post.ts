@@ -11,22 +11,11 @@ import {
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const systemId = body.SystemId;
+  await userCheck(event, body.SystemId, undefined, undefined);
 
   const boundary = await Boundary.findOne({
     include: [{ model: System, where: { id: systemId } }],
   });
-
-  // const stigs = await Stig.findAll({
-  //   include: [
-  //     {
-  //       model: StigLibrary,
-  //       where: { id: boundary?.StigLibraryId },
-  //     },
-  //     { model: System, where: { id: systemId } },
-  //   ],
-  // });
-
-  // return stigs;
 
   const system = (await System.findOne({
     where: { id: systemId },
@@ -37,6 +26,11 @@ export default defineEventHandler(async (event) => {
           {
             model: StigLibrary,
             where: { id: boundary?.StigLibraryId },
+          },
+          {
+            model: Assessment,
+            where: { SystemId: systemId, succeededByAssessmentId: null },
+            required: false,
           },
         ],
       },

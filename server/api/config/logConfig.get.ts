@@ -1,26 +1,22 @@
-import * as fs from "fs";
+import { getLogConfig } from "~/server/utils/logger";
 
 export default defineEventHandler(async (event) => {
-  const logConfigPath = "config/logConfig.json";
-
-  try {
-    if (fs.existsSync(logConfigPath)) {
-      fs.accessSync(logConfigPath, fs.constants.R_OK);
-      const fileContent = fs.readFileSync(logConfigPath, "utf-8");
-      const logConfig = JSON.parse(fileContent);
-      return logConfig;
+  const checkResult = await userCheck(event, undefined, undefined, undefined);
+  if (checkResult.UserRoleId === 1) {
+    try {
+      return await getLogConfig();
+    } catch (err) {
+      logger.error("Unable to read log configuration");
+      console.log(err);
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Erorr reading log configuration",
+      });
     }
-    return {
-      logPath: "tmp",
-      syslogTarget: "",
-      syslogPort: 0,
-      logLevel: "warning",
-    };
-  } catch (err) {
-    logger.error("Unable to read log configuration");
+  } else {
     throw createError({
-      statusCode: 404,
-      statusMessage: "Erorr reading log configuration",
+      statusCode: 401,
+      statusMessage: "Insufficient Permissions.",
     });
   }
 });

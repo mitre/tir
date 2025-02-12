@@ -1,38 +1,25 @@
-import * as fs from 'fs';
+import { TirNotifications_User } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
+  const checkResult = await userCheck(event, undefined, undefined, undefined);
 
-  const filePath = 'config/alertTest.json';
-  
-  let alertArray: any[] = [];
-
-  if (fs.existsSync(filePath)) {
-    // Read the existing JSON file
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
-    alertArray = JSON.parse(fileContent);
-  }
-  
   const body = await readBody(event);
-  const idToSetToDelete = body.id;
+  const deleteNotification = await TirNotifications_User.findOne({
+    where: { TirNotificationId: body.id, UserId: checkResult.user.id },
+  });
 
-  const updatedAlerts = alertArray.filter(obj => obj.id !== parseInt(idToSetToDelete,10));
+  if (deleteNotification) {
+    try {
+      deleteNotification.destroy();
 
-
-  const jsonString = JSON.stringify(updatedAlerts, null, 2);
-  
-  if(alertArray.length - 1 === updatedAlerts.length){
-    try{
-      const fileWriteResult = fs.writeFileSync(filePath, jsonString, 'utf8');
-    
-      return {success: true}
-    }catch{
-      return {success: false}
-    }  
-  }else{
+      return { success: true };
+    } catch {
+      return { success: false };
+    }
+  } else {
     throw createError({
       statusCode: 404,
-      statusMessage: 'Alert id not found',
-    })
+      statusMessage: "Alert id not found",
+    });
   }
-  
 });

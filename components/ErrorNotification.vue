@@ -13,21 +13,34 @@
       >
         <div
           v-if="show"
-          class="pointer-events-auto mt-12 w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5"
+          class="pointer-events-auto mt-12 w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-600"
         >
           <div class="p-4">
             <div class="flex items-start">
               <div class="flex-shrink-0">
-                <XCircleIcon class="h-6 w-6 text-red-400" aria-hidden="true" />
+                <CheckCircleIcon v-if="success" class="h-6 w-6 text-green-400" aria-hidden="true" />
+                <XCircleIcon v-else class="h-6 w-6 text-red-400" aria-hidden="true" />
               </div>
-              <div class="ml-3 w-0 flex-1 pt-0.5">
-                <p class="text-sm font-bold text-gray-900">Error:</p>
-                <p class="mt-1 text-sm font-medium text-gray-500">{{ msg }}</p>
+              <div class="ml-3 w-0 flex-1">
+                <!-- <p v-if="success" class="text-sm font-bold text-gray-900">Message:</p>
+                <p v-else class="text-sm font-bold text-gray-900">Error:</p> -->
+
+                <div v-if="error.data.statusMessage.length > 0" class="text-sm text-gray-500 dark:text-gray-100">
+                  <p class="pr-1 font-medium text-gray-800 dark:text-white">Status:</p>
+                  {{ error.data.statusMessage }}
+                </div>
+                <div
+                  v-if="!msgMatch && error.data.message.length > 0"
+                  class="mt-1 text-sm text-gray-500 dark:text-gray-100"
+                >
+                  <p class="pr-1 font-medium text-gray-800 dark:text-white">Message:</p>
+                  {{ error.data.message }}
+                </div>
               </div>
               <div class="ml-4 flex flex-shrink-0">
                 <button
                   type="button"
-                  class="inline-flex rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  class="inline-flex rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:bg-gray-600 dark:text-gray-800 dark:hover:text-gray-500"
                   @click="$emit('show', false)"
                 >
                   <span class="sr-only">Close</span>
@@ -43,18 +56,24 @@
 </template>
 
 <script setup>
-import { XCircleIcon } from "@heroicons/vue/24/outline";
+import { XCircleIcon, CheckCircleIcon } from "@heroicons/vue/24/outline";
 import { XMarkIcon } from "@heroicons/vue/20/solid";
 const props = defineProps({
   show: {
     type: Boolean,
     required: true,
   },
-  msg: {
-    type: String,
-    required: true,
+  success: {
+    type: Boolean,
+    required: false,
+    default: false,
   },
+  error: { type: Object, default() {} },
 });
 
-const { show, msg } = props;
+const { error, show, success } = props;
+const msgMatch = ref(false);
+if (error.data.statusMessage === error.data.message) {
+  msgMatch.value = true;
+}
 </script>

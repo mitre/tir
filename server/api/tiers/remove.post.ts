@@ -1,27 +1,9 @@
-import { Tier, User, Tier_User, UserRole } from "../../../db/models";
+import { Tier, Tier_User } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
-  const rawToken = getCookie(event, "tirtoken");
-  let userId: number;
-  if (rawToken) {
-    userId = decodeToken(rawToken);
-  } else {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Unknown User.",
-    });
-  }
-
-  const user = await User.findByPk(userId, {
-    attributes: ["email"],
-    include: [
-      {
-        model: UserRole,
-        attributes: ["id", "name"],
-      },
-    ],
-  });
   const body = await readBody(event);
+  const checkResult = await userCheck(event, undefined, undefined, body.id);
+
   const tier = await Tier.findByPk(body.id, {
     include: [
       {
@@ -29,38 +11,39 @@ export default defineEventHandler(async (event) => {
       },
     ],
   });
+  if (!tier) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Tier could not be found.",
+    });
+  }
+  const subTiers = await Tier.findAll({ where: { parentId: body.id } });
+  if (subTiers.length > 0) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Please remove any Companies nested within the one you are trying to delete.",
+    });
+  }
+
   // console.log(tier?.dataValues.Tier_Users.find((o: { UserId: number }) => o.UserId === userId));
-  if (tier?.dataValues.ownerId !== userId && user?.dataValues.UserRole.id !== 1) {
-    if (tier?.dataValues.Tier_Users.find((o: { UserId: number }) => o.UserId === userId)) {
-      if (
-        tier?.dataValues.Tier_Users.find((o: { UserId: number }) => o.UserId === userId)
-          .TierRoleId === 1
-      ) {
-        await tier?.destroy();
-        logger.info({
-          service: "Tiers",
-          message: `${user?.email} Successfully Deleted: ${tier.name}`,
-        });
-      } else {
-        logger.error(`Insufficient Permissions to delete ${tier.name}. User: ${user?.email}`);
-        throw createError({
-          statusCode: 401,
-          statusMessage: "Must be an Admin, Owner, or Co-Owner of this Company to delete.",
-        });
-      }
-    } else {
-      logger.error(`Insufficient Permissions to delete ${tier?.name}. User: ${user?.email}`);
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Must be an Admin, Owner, or Co-Owner of this Company to delete.",
-      });
-    }
-  } else {
+  if (
+    checkResult.TierRoleId === 1 ||
+    checkResult.TierRoleId === 2 ||
+    checkResult.UserRoleId === 1
+  ) {
     await tier?.destroy();
     logger.info({
       service: "Tiers",
-      message: `${user?.email} Successfully Deleted: ${tier?.name}`,
+      message: `${checkResult.user?.email} Successfully Deleted: ${tier.name}`,
+    });
+    return { success: 1 };
+  } else {
+    logger.error(
+      `Insufficient Permissions to delete ${tier.name}. User: ${checkResult.user?.email}`,
+    );
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Must be an Admin, Owner, or Co-Owner of this Company to delete.",
     });
   }
-  return { success: 1 };
 });

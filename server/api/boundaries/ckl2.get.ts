@@ -1,7 +1,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as crypto from "crypto";
-import intoStream from "into-stream";
+import { Readable } from "node:stream";
 import { sendStream } from "h3";
 import { parseStringPromise } from "xml2js";
 import { buildCklString, getSI_DataByName } from "../../utils/checklist";
@@ -10,28 +10,18 @@ import { zipDirectoryContents } from "~/server/utils/zip";
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
-  let singleStigPerCkl = false;
-
   if (!query.BoundaryId) {
     throw createError({
       statusCode: 400,
       statusMessage: `BoundaryId required.`,
     });
   }
+  const checkResult = await userCheck(event, undefined, query.BoundaryId?.toString(), undefined);
+
+  let singleStigPerCkl = false;
 
   if (query.SingleStigPerCkl === "true") {
     singleStigPerCkl = true;
-  }
-
-  const rawToken = getCookie(event, "tirtoken");
-  let userId: number;
-  if (rawToken) {
-    userId = decodeToken(rawToken);
-  } else {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Unknown User.",
-    });
   }
 
   const BoundaryId = parseInt(query.BoundaryId?.toString(), 10);
@@ -51,11 +41,6 @@ export default defineEventHandler(async (event) => {
       {
         model: System,
       },
-      {
-        model: User,
-        attributes: ["id", "firstName", "lastName", "email"],
-        as: "owner",
-      },
     ],
     where: {
       id: BoundaryId,
@@ -69,10 +54,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (
-    !boundary.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId) &&
-    boundary.dataValues.owner.dataValues.id !== userId
-  ) {
+  if (!checkResult.BoundaryRoleId) {
     throw createError({
       statusCode: 401,
       statusMessage: "Permission Not Granted. Not a member of this Enclave",
@@ -130,7 +112,9 @@ export default defineEventHandler(async (event) => {
   zipDirectoryContents(dirPath, zipFileName);
 
   const data: Buffer = await fs.readFile(zipFileName);
-  const stream = intoStream(data);
+  const stream = new Readable();
+  stream.push(data);
+  stream.push(null);
 
   setResponseHeader(event, "Content-Disposition", `attachment; filename="${boundary.name}.zip"`);
   setResponseHeader(event, "Content-Type", "application/octet-stream");

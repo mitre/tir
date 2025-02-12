@@ -43,91 +43,51 @@
 
                 <dl class="mt-6 space-y-6 divide-y divide-gray-100 border-t border-gray-200 text-sm leading-6">
                   <div class="pt-6 sm:flex">
-                    <dt class="font-small text-gray-800 dark:text-white sm:w-64 sm:flex-none sm:pr-6">Terminology</dt>
-
-                    <!-- creating tern -->
-
-                    <form>
-                      <div class="col-span-full">
-                        <table>
+                    <div class="font-medium text-gray-800 dark:text-white sm:w-64 sm:flex-none sm:pr-6">
+                      Terminology
+                    </div>
+                    <div class="mt-1 flex justify-between sm:mt-0 sm:flex-auto">
+                      <div class="text-gray-800 dark:text-white">
+                        <table class="min-w-full">
                           <thead>
                             <tr>
-                              <th class="px-6 py-6 text-sm font-medium text-black dark:text-white">Default</th>
-                              <th class="px-6 py-6 text-sm font-medium text-black dark:text-white">Current</th>
-                              <th class="px-6 py-6 text-sm font-medium text-black dark:text-white">New Term</th>
+                              <th class="px-4 py-2">Term</th>
+                              <th class="px-4 py-2">Alias</th>
                             </tr>
                           </thead>
-                          <tr>
-                            <td class="px-6 py-6 text-sm font-medium text-black dark:text-white">
-                              {{ inflection.pluralize(tierView.term) }}
-                            </td>
-                            <td class="px-6 py-6 text-sm font-medium text-black dark:text-white">
-                              {{ inflection.pluralize(tierView.alias) }}
-                            </td>
-                            <td>
-                              <input
-                                v-model="newAlias"
-                                name="new_term"
-                                autocomplete="new-term"
-                                class="block w-full rounded-md border-0 bg-black/5 py-1.5 text-black shadow-sm ring-1 ring-inset ring-black/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 dark:bg-white/5 dark:text-white dark:ring-white/10 sm:text-sm sm:leading-6"
-                              />
-                            </td>
-                          </tr>
-                          <tr>
-                            <td class="px-6 py-6 text-sm font-medium text-black dark:text-white">
-                              {{ inflection.pluralize(boundaryView.term) }}
-                            </td>
-                            <td class="px-6 py-6 text-sm font-medium text-black dark:text-white">
-                              {{ inflection.pluralize(boundaryView.alias) }}
-                            </td>
-                            <td>
-                              <input
-                                v-model="confirmnewAlias"
-                                name="confirm_term"
-                                autocomplete="new-term"
-                                class="block w-full rounded-md border-0 bg-black/5 py-1.5 text-black shadow-sm ring-1 ring-inset ring-black/10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 dark:bg-white/5 dark:text-white dark:ring-white/10 sm:text-sm sm:leading-6"
-                              />
-                            </td>
-                          </tr>
+                          <tbody>
+                            <tr v-for="(item, index) in aliases" :key="index">
+                              <td class="text-sm font-medium text-gray-900 dark:text-white">{{ item.term }}</td>
+                              <td class="px-7 text-sm font-medium text-gray-900">
+                                <input
+                                  v-model="item.alias"
+                                  type="text"
+                                  class="w-full rounded border-indigo-400 px-3 py-1"
+                                />
+                              </td>
+                            </tr>
+                          </tbody>
                         </table>
-                        <br />
                       </div>
 
-                      <div class="mt-8 flex">
+                      <div class="flex w-1/4 items-center justify-end">
+                        <ShieldCheckIcon
+                          v-if="aliasUpdateGood"
+                          :class="['m-2 h-6 w-6 font-light text-green-500', { 'animate-pulse': aliasUpdate }]"
+                        />
+                        <XCircleIcon
+                          v-if="aliasUpdateError"
+                          :class="['m-2 h-6 w-6 font-light text-red-500', { 'animate-pulse': aliasUpdate }]"
+                        />
                         <button
-                          class="rounded-md bg-indigo-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-                          @click="[editAlias()]"
+                          class="font-semibold text-indigo-600 hover:text-indigo-500"
+                          type="button"
+                          @click="saveAliases"
                         >
-                          Update
+                          Save
                         </button>
-                        <transition
-                          enter-active-class="transform ease-out duration-300 transition"
-                          enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
-                          enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
-                          leave-active-class="transition ease-in duration-300"
-                          leave-from-class="opacity-100"
-                          leave-to-class="opacity-0"
-                        >
-                          <div v-if="matchError" class="animate-fade ml-4 pt-2 text-sm text-red-500">
-                            <ExclamationTriangleIcon class="inline-block h-5 w-5" aria-hidden="true" /> Terms do not
-                            match!
-                          </div>
-                        </transition>
-                        <transition
-                          enter-active-class="transform ease-out duration-300 transition"
-                          enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
-                          enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
-                          leave-active-class="transition ease-in duration-300"
-                          leave-from-class="opacity-100"
-                          leave-to-class="opacity-0"
-                        >
-                          <div v-if="changeSuccessful" class="animate-fade ml-4 pt-2 text-sm text-green-500">
-                            <ShieldCheckIcon class="inline-block h-5 w-5" aria-hidden="true" /> Terminology has been set
-                            successfully!
-                          </div>
-                        </transition>
                       </div>
-                    </form>
+                    </div>
                   </div>
 
                   <div class="pt-6 sm:flex">
@@ -184,9 +144,9 @@
                         </div>
                       </div>
                       <button
-                        @click="verifyImport()"
-                        type="button"
                         class="font-semibold text-indigo-600 hover:text-indigo-500"
+                        type="button"
+                        @click="verifyImport()"
                       >
                         Import
                       </button>
@@ -199,12 +159,6 @@
         </div>
       </div>
     </div>
-    <ErrorNotification
-      v-if="showErrorNotification"
-      :show="showErrorNotification"
-      :msg="errorMsg"
-      @show="showErrorNotification = false"
-    />
     <TransitionRoot as="template" :show="loading">
       <Dialog as="div" class="relative z-10" @close="loading = false">
         <TransitionChild
@@ -263,10 +217,17 @@
         </div>
       </Dialog>
     </TransitionRoot>
+    <ErrorNotification
+      v-if="showErrorNotification"
+      :show="showErrorNotification"
+      :error="errorObject"
+      @show="showErrorNotification = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { watch } from "vue";
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
 import {
   BellIcon,
@@ -277,9 +238,12 @@ import {
   ExclamationCircleIcon,
   XMarkIcon,
   ShieldCheckIcon,
+  XCircleIcon,
 } from "@heroicons/vue/24/outline";
-import inflection from "inflection";
 import { useTestStore } from "~~/stores/HeaderValues";
+import type { TirAlias } from "~/db/models/tirAlias";
+import { useAliasStore } from "~~/stores/AliasStorage";
+const alias = useAliasStore();
 onBeforeMount(() => {
   store.changeUsername("Administration");
 });
@@ -291,36 +255,66 @@ const siteCert = ref<HTMLInputElement | null>(null);
 const siteError = ref(false);
 const caError = ref(false);
 const showErrorNotification = ref(false);
-const errorMsg = ref();
+const errorObject = ref();
 const loading = ref(false);
 const certImportSuccess = ref(false);
-const termEdit = ref(false);
-const confirmnewAlias = ref("");
-const newAlias = ref("");
-var matchError = ref(false);
-var changeSuccessful = ref(false);
+const aliasUpdateGood = ref(false);
+const aliasUpdateError = ref(false);
+const aliasUpdate = ref(false);
 
-//for the term alias
-const { data: currentAlias } = await useFetch("/api/boundaries/alias");
-//renders the current alias
-const tierView = ref(currentAlias.value && currentAlias.value[0]);
-const boundaryView = ref(currentAlias.value && currentAlias.value[1]);
+const { data: aliases } = await useFetch<TirAlias[]>("/api/config/alias");
 
-//button for alias to be updated
-async function editAlias() {
-  try {
-    const { error } = await useFetch("/api/boundaries/alias", {
-      method: "PUT",
-      body: {
-        Tier: newAlias,
-        Boundary: confirmnewAlias,
+async function saveAliases() {
+  if (aliases.value) {
+    const aliasMap: Record<string, string> = aliases.value.reduce(
+      (map: Record<string, string>, aliasEntry: TirAlias) => {
+        map[aliasEntry.term] = aliasEntry.alias;
+        return map;
       },
-    });
-    if (error.value != null) {
-      console.log("Alias dose not exists");
+      {},
+    );
+    try {
+      await $fetch("/api/config/alias", {
+        method: "PUT",
+        body: aliasMap,
+      });
+      aliasUpdateGood.value = true;
+    } catch {
+      aliasUpdateError.value = true;
+    } finally {
+      aliasUpdate.value = true;
+      location.reload();
     }
-    setTimeout(() => location.reload(), 2000);
-  } finally {
+
+    watch(
+      aliasUpdate,
+      (newValue) => {
+        if (newValue) {
+          setTimeout(() => {
+            aliasUpdate.value = false;
+          }, 3000);
+          setTimeout(() => {
+            aliasUpdateGood.value = false;
+            aliasUpdateError.value = false;
+          }, 6000);
+        }
+      },
+      { immediate: true },
+    );
+
+    const newAliases = await useFetch<TirAlias[]>("/api/config/alias");
+
+    aliases.value = newAliases.data.value;
+    const aliasMapUpdated: Record<string, string> = aliases.value.reduce(
+      (map: Record<string, string>, aliasEntry: TirAlias) => {
+        map[aliasEntry.term] = aliasEntry.alias;
+        return map;
+      },
+      {},
+    );
+    alias.CompanyAlias = aliasMapUpdated.Company;
+    alias.BoundaryAlias = aliasMapUpdated.Boundary;
+    alias.SystemAlias = aliasMapUpdated.System;
   }
 }
 
@@ -370,7 +364,7 @@ async function importCert() {
       setTimeout(() => siteStatus(), 5000);
     } catch (err) {
       loading.value = false;
-      errorMsg.value = err.data.statusMessage;
+      errorObject.value = err;
       showErrorNotification.value = true;
       setTimeout(() => (showErrorNotification.value = false), 6000);
     }

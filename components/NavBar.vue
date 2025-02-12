@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-full">
-    <!-- <div class="bg-gray-800 pb-32"> -->
-    <Disclosure as="nav" class="bg-white shadow dark:bg-gray-800" v-slot="{ open }">
+    <Disclosure v-slot="{ open }" as="nav" class="bg-white shadow dark:bg-gray-800">
       <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div class="">
           <div class="flex h-16 items-center justify-between px-4 sm:px-0">
@@ -15,7 +14,6 @@
                     v-for="item in navigation"
                     :key="item.name"
                     :href="item.href"
-                    @click="[checkTab(item.name), router.push(item.href)]"
                     :class="[
                       item.current
                         ? 'bg-gray-200 dark:bg-gray-900 dark:text-white'
@@ -23,14 +21,14 @@
                       'rounded-md px-3 py-2 text-sm font-medium',
                     ]"
                     :aria-current="item.current ? 'page' : undefined"
+                    @click="[checkTab(item.name), router.push(item.href)]"
                     >{{ item.name }}
                   </a>
                   <a
-                    v-if="currentUser.UserRole.id === 1 || currentUser.UserRole.id === 99"
                     v-for="item in adminNavigation"
+                    v-if="currentUser.UserRole.id === 1 || currentUser.UserRole.id === 99"
                     :key="item.name"
                     :href="item.href"
-                    @click="checkTab(item.name)"
                     :class="[
                       item.current
                         ? 'bg-gray-200 dark:bg-gray-900 dark:text-white'
@@ -38,6 +36,7 @@
                       'rounded-md px-3 py-2 text-sm font-medium',
                     ]"
                     :aria-current="item.current ? 'page' : undefined"
+                    @click="checkTab(item.name)"
                     >{{ item.name }}
                   </a>
                 </div>
@@ -52,7 +51,6 @@
                     :class="open ? 'text-gray-950 dark:text-white' : 'text-gray-500 dark:text-gray-400'"
                     class="flex max-w-xs items-center rounded-full text-sm hover:text-black dark:bg-gray-800 dark:hover:text-white"
                   >
-                    <!-- <span>About</span> -->
                     <QuestionMarkCircleIcon
                       :class="open ? 'dark:text-white-300' : 'dark:text-gray-400'"
                       class="h-8 w-8 transition duration-150 ease-in-out group-hover:text-white"
@@ -156,7 +154,9 @@
                             <div class="mx-1 flex min-w-0">
                               <div />
                               <div class="min-w-0 flex-auto">
-                                <p class="text-sm font-semibold leading-6 text-gray-900">{{ alert.category }}</p>
+                                <p class="text-sm font-semibold leading-6 text-gray-900">
+                                  {{ alert.NotificationCategory.category }}
+                                </p>
                                 <p class="mt-1 truncate text-xs leading-5 text-gray-500">{{ alert.message }}</p>
                               </div>
                               <button @click="() => resetInput(alert)">
@@ -176,8 +176,8 @@
                         </ul>
                         <div class="flex justify-center rounded-b-md bg-gray-200">
                           <button
-                            @click="showPopup = true"
                             class="mx-3 my-1.5 flex w-48 items-center justify-center rounded-md bg-indigo-600 py-2 text-sm font-semibold text-white shadow-sm ring-1 ring-gray-300 hover:bg-indigo-500 focus-visible:outline-offset-0"
+                            @click="showPopup = true"
                           >
                             View all
                           </button>
@@ -190,7 +190,7 @@
                 <!-- Alert Pop up window -->
                 <div
                   v-if="showPopup"
-                  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20 dark:bg-white"
+                  class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20 dark:bg-white/20"
                 >
                   <div class="max-h-[600px] w-[1024px] max-w-5xl rounded-lg bg-gray-100 py-10 dark:bg-gray-900">
                     <div class="flex-auto px-8">
@@ -230,19 +230,19 @@
                           <tr
                             v-for="alert in sortedAlerts"
                             :key="alert.id"
-                            :class="{ 'bg-gray-200 dark:bg-gray-800': !alert.read }"
+                            :class="{ 'bg-gray-200 dark:bg-gray-800': !alert.TirNotifications_Users[0].read }"
                           >
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-800 dark:text-gray-300">
-                              {{ formartAlertDate(alert.date) }}
+                              {{ formartAlertDate(alert.creationDate) }}
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-800 dark:text-gray-300">
-                              {{ alert.category }}
+                              {{ alert.NotificationCategory.category }}
                             </td>
                             <td class="whitespace-pre-line px-3 py-4 text-sm text-gray-800 dark:text-gray-300">
                               {{ alert.message }}
                             </td>
                             <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                              <button @click="deleteTheAlert(alert.id)" class="text-red-600 hover:text-red-900">
+                              <button class="text-red-600 hover:text-red-900" @click="deleteTheAlert(alert.id)">
                                 <TrashIcon class="h-5 w-5" aria-hidden="true" />
                               </button>
                             </td>
@@ -251,8 +251,8 @@
                       </table>
                     </div>
                     <button
-                      @click="showPopup = false"
                       class="front-bold mx-8 mt-4 rounded bg-red-500 px-4 py-2 text-white hover:bg-red-700"
+                      @click="showPopup = false"
                     >
                       Close
                     </button>
@@ -275,15 +275,24 @@
 </template>
 
 <script setup>
-import { Disclosure, Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
+import {
+  Disclosure,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+  Popover,
+  PopoverButton,
+  PopoverPanel,
+} from "@headlessui/vue";
 import { XMarkIcon, UserIcon, BellIcon, TrashIcon, QuestionMarkCircleIcon } from "@heroicons/vue/24/outline";
-import { useTestStore } from "~~/stores/HeaderValues";
-import { useBreadcrumbStore } from "~~/stores/Breadcrumb";
 import { storeToRefs } from "pinia";
 import { ref, computed } from "vue";
-import { Popover, PopoverButton, PopoverPanel } from "@headlessui/vue";
 import { ChevronDownIcon } from "@heroicons/vue/20/solid";
 import { DateTime } from "luxon";
+import inflection from "inflection";
+import { useBreadcrumbStore } from "~~/stores/Breadcrumb";
+import { useTestStore } from "~~/stores/HeaderValues";
 
 const id = useId();
 const store = useTestStore();
@@ -293,9 +302,6 @@ const isMenuOpen = ref(false);
 const showPopup = ref(false);
 
 const colorMode = useColorMode();
-
-// const username = ref("");
-
 const breadStore = useBreadcrumbStore();
 
 // is for the Alert Bell Below
@@ -327,12 +333,12 @@ const resetInput = async (alert) => {
   // calling the API to mark as read
   await markAsRead(alertId);
 
-  //find the alert in curentAlert.value n marking it as read
+  // find the alert in curentAlert.value n marking it as read
   const alertIndex = currentAlert.value.findIndex((a) => a.id === alertId);
   if (alertIndex !== -1) {
-    currentAlert.value[alertIndex].read = true;
+    currentAlert.value[alertIndex].TirNotifications_Users[0].read = true;
 
-    //trigger reactivity
+    // trigger reactivity
     currentAlert.value = [...currentAlert.value];
   } else {
     console.error("Alert not found in currentAlert.value");
@@ -362,10 +368,7 @@ const deleteTheAlert = async (alertId) => {
   }
 };
 
-// const currentUser = useCookie('current-user')
-
-///////Check User Role
-
+/// ////Check User Role
 const { data: currentUser } = await useFetch("/api/auth/currentUser");
 if (currentUser.value?.Theme) {
   colorMode.preference = currentUser.value.Theme.name.toLowerCase();
@@ -373,16 +376,11 @@ if (currentUser.value?.Theme) {
   colorMode.preference = "system";
 }
 
-await $fetch("/api/users/checkAlert", {
-  method: "GET",
-  query: { userId: currentUser.value.id },
-});
-
 const { data: currentAlert } = await useFetch("/api/config/alert", {
   method: "GET",
   query: { userId: currentUser.value.id },
 });
-// console.log("Current Alert", currentAlert);
+
 // Makes the newst alert come on top in the pop up window view all
 const sortedAlerts = computed(() => {
   if (!currentAlert.value) {
@@ -390,12 +388,12 @@ const sortedAlerts = computed(() => {
   }
   return currentAlert.value
     .slice()
-    .sort((a, b) => DateTime.fromISO(b.date).toMillis() - DateTime.fromISO(a.date).toMillis());
+    .sort((a, b) => DateTime.fromISO(b.creationDate).toMillis() - DateTime.fromISO(a.creationDate).toMillis());
 });
 
 // The number of alerts for the notification bell
 const unreadAlertCount = computed(() => {
-  return currentAlert.value.filter((alert) => !alert.read).length;
+  return currentAlert.value.filter((alert) => !alert.TirNotifications_Users[0].read).length;
 });
 
 const { data: currentAbout } = await useFetch("/api/config/about");
@@ -418,22 +416,17 @@ function formartAlertDate(isoDate) {
     hour12: true,
   });
 }
+const { data: aliases } = await useFetch("/api/config/alias");
+const boundaryAlias = aliases.value.find((item) => item.term === "Boundary").alias;
 
-const user = {
-  name: "Power User",
-  email: "poweruser@tir.com",
-  imageUrl: UserIcon,
-};
 const navigation = [
   { name: "Dashboard", href: "/home", current: decodeURIComponent(route.fullPath) === "/home" },
   {
-    name: "Boundaries",
-    href: "/company-boundaries",
-    current: decodeURIComponent(route.fullPath) === "/company-boundaries",
+    name: inflection.pluralize(boundaryAlias),
+    href: "/company-boundary",
+    current: decodeURIComponent(route.fullPath) === "/company-boundary",
   },
   { name: "Libraries", href: "/libraries", current: decodeURIComponent(route.fullPath) === "/libraries" },
-  // { name: 'Administration', href: '/administration/general', current: (decodeURIComponent(route.fullPath) === '/administration/team-members') ||
-  //   (decodeURIComponent(route.fullPath) ==='/administration/general')},
 ];
 const adminNavigation = [
   {
@@ -450,17 +443,17 @@ const userNavigation = [
 ];
 const userBell = computed(() => {
   return currentAlert.value
-    .filter((alert) => !alert.read)
+    .filter((alert) => !alert.TirNotifications_Users[0].read)
     .map((alert) => ({
       ...alert,
-      userId: alert.userId,
-      category: `Alert: ${alert.category}`,
+      userId: alert.TirNotifications_Users[0].UserId,
+      category: `Alert: ${alert.NotificationCategory.category}`,
       message: alert.message,
-      read: alert.read,
+      read: alert.TirNotifications_Users[0].read,
       href: "#",
-      date: formartAlertDate(alert.date),
+      date: formartAlertDate(alert.creationDate.date),
     }))
-    .sort((a, b) => DateTime.fromISO(b.date).toMillis() - DateTime.fromISO(a.date).toMillis());
+    .sort((a, b) => DateTime.fromISO(b.creationDate).toMillis() - DateTime.fromISO(a.creationDate).toMillis());
 });
 
 function checkTab(name) {

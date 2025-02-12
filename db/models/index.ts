@@ -5,6 +5,7 @@ import {
   type BelongsToManyHasAssociationMixin,
 } from "sequelize";
 
+import { DataTypes } from "sequelize";
 import { User } from "./user";
 import { Timezone } from "./timezone";
 import { Boundary } from "./boundary";
@@ -34,24 +35,24 @@ import { StigIdent } from "./stigIdent";
 import { Classification } from "./classification";
 import { StigAlias } from "./stigAlias";
 import { TirAlias } from "./tirAlias";
-
-Boundary.belongsTo(User, {
-  as: "owner",
-  onDelete: "SET NULL",
-});
+import { Protocol } from "./protocols";
+import { NessusPluginFamily } from "./nessusPluginFamily";
+import { NessusServiceName } from "./nessusServiceName";
+import { NessusPlugin } from "./nessusPlugin";
+import { NessusReport } from "./nessusReport";
+import { NessusReportItem } from "./nessusReportItem";
+import { Cve } from "./cve";
+import { CveOverride } from "./cveOverride";
+import { NessusOverride } from "./nessusOverride";
+import { TirNotification } from "./tirNotifications";
+import { NotificationCategory } from "./notificationCategory";
+import { StigOverride } from "./stigOverride";
 
 User.belongsTo(UserRole);
 UserRole.hasOne(User);
 
 User.belongsTo(Timezone);
 Timezone.hasOne(User);
-
-Tier.belongsTo(User, {
-  as: "owner",
-  foreignKey: { allowNull: true },
-  onDelete: "SET NULL",
-  onUpdate: "CASCADE",
-});
 
 Tier.belongsTo(Tier, {
   as: "parent",
@@ -106,7 +107,7 @@ export const MilestoneDates_User = sequelize.define(
 Milestone.belongsToMany(User, { through: MilestoneDates_User });
 User.belongsToMany(Milestone, { through: MilestoneDates_User });
 
-const Stig_StigData = sequelize.define("Stig_StigData", {}, { timestamps: false });
+export const Stig_StigData = sequelize.define("Stig_StigData", {}, { timestamps: false });
 StigData.belongsToMany(Stig, { through: Stig_StigData });
 Stig.belongsToMany(StigData, { through: Stig_StigData });
 
@@ -140,18 +141,6 @@ StigData.belongsToMany(StigResponsibility, { through: StigData_StigResponsibilit
 const StigLibrary_Stig = sequelize.define("StigLibrary_Stig", {}, { timestamps: false });
 Stig.belongsToMany(StigLibrary, { through: StigLibrary_Stig });
 StigLibrary.belongsToMany(Stig, { through: StigLibrary_Stig });
-
-// export interface StigLibraryInterface extends StigLibrary {
-//   addStig: BelongsToManyAddAssociationMixin<Stig, number>;
-//   removeStig: BelongsToManyRemoveAssociationMixin<Stig, number>;
-//   getStigs: () => Promise<Stig[]>;
-// }
-
-// export interface StigInterface extends Stig {
-//   addStigData: BelongsToManyAddAssociationMixin<StigData, number>;
-//   removeStigData: BelongsToManyRemoveAssociationMixin<StigData, number>;
-//   getStigDatum: () => Promise<StigData[]>;
-// }
 
 export interface StigLibraryWithStigs extends StigLibrary {
   Stigs: Stig[];
@@ -198,24 +187,17 @@ EvaluationItem.belongsTo(StigData, {
 });
 StigData.hasMany(EvaluationItem, { onDelete: "RESTRICT", onUpdate: "CASCADE" });
 
-export const EvaluationItem_Milestone = sequelize.define(
-  "EvaluationItem_Milestone",
-  {},
-  { timestamps: false },
-);
-EvaluationItem.belongsToMany(Milestone, { through: EvaluationItem_Milestone });
-Milestone.belongsToMany(EvaluationItem, { through: EvaluationItem_Milestone });
-
 EvaluationItem.hasMany(Milestone, {
   foreignKey: { allowNull: false },
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
 
-export interface MilestoneInterface extends Milestone {
-  addEvaluationItem: BelongsToManyAddAssociationMixin<EvaluationItem, number>;
-  removeEvaluationItem: BelongsToManyRemoveAssociationMixin<EvaluationItem, number>;
-}
+Milestone.belongsTo(EvaluationItem, {
+  foreignKey: { allowNull: false },
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
 
 Evaluation.belongsTo(Boundary, { onDelete: "CASCADE", onUpdate: "CASCADE" });
 Boundary.hasMany(Evaluation, { onDelete: "CASCADE", onUpdate: "CASCADE" });
@@ -278,17 +260,6 @@ export const StigData_StigIdent = sequelize.define("StigData_StigIdent", {}, { t
 StigData.belongsToMany(StigIdent, { through: StigData_StigIdent });
 StigIdent.belongsToMany(StigData, { through: StigData_StigIdent });
 
-// export interface StigDataInterface extends StigData {
-//   addStigResponsibility: BelongsToManyAddAssociationMixin<StigResponsibility, number>;
-//   removeStigResponsibility: BelongsToManyRemoveAssociationMixin<StigResponsibility, number>;
-//   getStigResponsibility: () => Promise<StigResponsibility[]>;
-//   addStigReference: BelongsToManyAddAssociationMixin<StigReference, number>;
-//   removeStigReference: BelongsToManyRemoveAssociationMixin<StigReference, number>;
-//   getStigReference: () => Promise<StigReference[]>;
-//   addStigIdent: BelongsToManyAddAssociationMixin<StigIdent, number>;
-//   removeStigIdent: BelongsToManyRemoveAssociationMixin<StigIdent, number>;
-// }
-
 Classification.hasOne(Boundary, { onDelete: "RESTRICT", onUpdate: "CASCADE" });
 Boundary.belongsTo(Classification, { onDelete: "RESTRICT", onUpdate: "CASCADE" });
 
@@ -298,6 +269,81 @@ Assessment.belongsTo(Assessment, {
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
 });
+
+Protocol.hasOne(NessusReportItem, { onDelete: "RESTRICT", onUpdate: "CASCADE" });
+NessusServiceName.hasOne(NessusReportItem, { onDelete: "RESTRICT", onUpdate: "CASCADE" });
+
+System.hasOne(NessusReport, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+NessusReport.belongsTo(System, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+
+NessusReport.hasMany(NessusReportItem, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+NessusReportItem.belongsTo(NessusReport, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+
+NessusPlugin.hasMany(NessusReportItem, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+NessusReportItem.belongsTo(NessusPlugin, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+
+NessusPluginFamily.hasOne(NessusPlugin, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+NessusPlugin.belongsTo(NessusPluginFamily, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+
+export const Cve_NessusPlugin = sequelize.define("Cve_NessusPlugin", {}, { timestamps: false });
+NessusPlugin.belongsToMany(Cve, { through: Cve_NessusPlugin });
+Cve.belongsToMany(NessusPlugin, { through: Cve_NessusPlugin });
+
+export const Cve_System = sequelize.define("Cve_System", {}, { timestamps: false });
+System.belongsToMany(Cve, { through: Cve_System });
+Cve.belongsToMany(System, { through: Cve_System });
+
+EvaluationItem.hasMany(NessusReportItem, { onDelete: "SET NULL", onUpdate: "CASCADE" });
+NessusReportItem.belongsTo(EvaluationItem, { onDelete: "SET NULL", onUpdate: "CASCADE" });
+
+CveOverride.belongsTo(System, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+System.hasMany(CveOverride, { onDelete: "NO ACTION", onUpdate: "CASCADE" });
+CveOverride.belongsTo(Cve, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+Cve.hasMany(CveOverride, { onDelete: "NO ACTION", onUpdate: "CASCADE" });
+
+NessusOverride.belongsTo(System, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+System.hasMany(NessusOverride, { onDelete: "NO ACTION", onUpdate: "CASCADE" });
+NessusOverride.belongsTo(NessusPlugin, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+NessusPlugin.hasMany(NessusOverride, { onDelete: "NO ACTION", onUpdate: "CASCADE" });
+
+export const NessusPlugin_Boundary = sequelize.define(
+  "NessusPlugin_Boundary",
+  {},
+  { timestamps: false },
+);
+Boundary.belongsToMany(NessusPlugin, { through: NessusPlugin_Boundary });
+NessusPlugin.belongsToMany(Boundary, { through: NessusPlugin_Boundary });
+NessusPlugin.hasMany(NessusPlugin_Boundary);
+Boundary.hasMany(NessusPlugin_Boundary);
+EvaluationItem.hasOne(NessusPlugin_Boundary);
+NessusPlugin_Boundary.belongsTo(EvaluationItem);
+NessusPlugin_Boundary.belongsTo(Boundary);
+
+export const TirNotifications_User = sequelize.define(
+  "TirNotifications_User",
+  {
+    read: {
+      type: DataTypes.BOOLEAN,
+    },
+  },
+  { timestamps: false },
+);
+TirNotification.belongsToMany(User, {
+  through: TirNotifications_User,
+});
+User.belongsToMany(TirNotification, {
+  through: TirNotifications_User,
+});
+
+TirNotification.hasMany(TirNotifications_User);
+User.hasMany(TirNotifications_User);
+TirNotification.belongsTo(NotificationCategory);
+NotificationCategory.hasOne(TirNotification);
+
+StigOverride.belongsTo(System, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+System.hasMany(StigOverride, { onDelete: "NO ACTION", onUpdate: "CASCADE" });
+StigOverride.belongsTo(StigData, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+StigData.hasMany(StigOverride, { onDelete: "NO ACTION", onUpdate: "CASCADE" });
 
 export {
   User,
@@ -329,4 +375,7 @@ export {
   Classification,
   StigAlias,
   TirAlias,
+  Protocol,
+  TirNotification,
+  NotificationCategory,
 };

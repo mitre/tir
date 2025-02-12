@@ -1,51 +1,34 @@
-import { AssessmentItem, Boundary, Boundary_User } from "../../../db/models";
+import { DateTime } from "luxon";
+import { Assessment, AssessmentItem } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-
-  const rawToken = getCookie(event, "tirtoken");
-  let userId: number;
-  if (rawToken) {
-    userId = decodeToken(rawToken);
-  } else {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Unknown User.",
-    });
-  }
-
-  const boundary = await Boundary.findByPk(body.BoundaryId, {
-    attributes: ["id", "name", "ownerId"],
-    include: [
-      {
-        model: Boundary_User,
-      },
-    ],
-  });
-  const isOwner = boundary?.dataValues.ownerId === userId;
-  const isMember =
-    boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId) !==
-    undefined;
-
-  if (isOwner || isMember) {
-    if (
-      !isOwner &&
-      boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId)
-        .BoundaryRoleId === 3
-    ) {
+  const checkResult = await userCheck(event, undefined, body.BoundaryId, undefined);
+  body.lastUpdate = DateTime.now().toISO();
+  if (checkResult.UserRoleId === 2 && checkResult.BoundaryRoleId) {
+    if (checkResult.BoundaryRoleId === 4) {
       throw createError({
         statusCode: 401,
         statusMessage: "Reviewers are unable to Edit Assessments",
       });
     } else {
-      const assessmentItem = await AssessmentItem.findByPk(body.id);
-
+      const assessmentItem = await AssessmentItem.findOne({
+        where: { id: body.id },
+        include: [
+          {
+            model: Assessment,
+            where: { succeededByAssessmentId: null },
+          },
+        ],
+      });
       if (assessmentItem) {
         for (const key in body) {
           assessmentItem.setDataValue(key, body[key]);
         }
-
+        assessmentItem.Assessment?.setDataValue("lastUpdate", body.lastUpdate);
         assessmentItem.save();
+        assessmentItem.Assessment?.save();
+
         return { error: false };
       } else {
         return { error: true, errorMsg: `Assessment Item: ${body.id} not found.` };

@@ -2,76 +2,57 @@ import * as fs from "fs";
 import * as path from "path";
 import { IncomingMessage } from "http";
 import formidable from "formidable";
+import AdmZip from "adm-zip";
 import { verifyCciList, importCciList } from "../../utils/cci";
-import { User } from "~/db/models";
 
 export default defineEventHandler(async (event) => {
-  const rawToken = getCookie(event, "tirtoken");
-  let userId: number;
-  if (rawToken) {
-    userId = decodeToken(rawToken);
-  } else {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Unknown User.",
-    });
-  }
-
-  const user = await User.findByPk(userId, {
-    attributes: ["email"],
-  });
-
+  const checkResult = await userCheck(event, undefined, undefined, undefined);
   const config = useRuntimeConfig();
-
-  console.log("Starting Upload");
 
   const body = await proccessNodeRequest(event.node.req);
 
   const uploadedFiles = body.file;
-
   const dirList: string[] = [];
+  let fileList: string[];
+  const newFileName = path.join(config.temp_folder, uploadedFiles[0].originalFilename);
 
-  for (let i = 0; i < uploadedFiles.length; i++) {
-    const newFileName = path.join(config.temp_folder, uploadedFiles[i].originalFilename);
+  const newDir = path.dirname(newFileName);
+  if (!fs.existsSync(newDir)) {
+    fs.mkdirSync(newDir, { recursive: true });
+  }
 
-    const newDir = path.dirname(newFileName);
-    if (!fs.existsSync(newDir)) {
-      fs.mkdirSync(newDir, { recursive: true });
-    }
+  fs.renameSync(uploadedFiles[0].filepath, newFileName);
+  if (path.extname(newFileName) === ".zip") {
+    fileList = await processZip(newFileName, config.temp_folder);
+  } else {
+    fileList = [newFileName];
+  }
 
-    fs.renameSync(uploadedFiles[i].filepath, newFileName);
-    const fileList = [newFileName];
-    for (let j = 0; j < fileList.length; j++) {
-      const baseFilename = path.basename(fileList[j]);
+  for (let j = 0; j < fileList.length; j++) {
+    const baseFilename = path.basename(fileList[j]);
 
+    if (path.extname(baseFilename) === ".xml") {
       const fileData = fs.readFileSync(fileList[j], "utf-8");
-      console.log("File", path.extname(baseFilename));
-
-      if (path.extname(baseFilename) === ".xml") {
-        const verifyResults = (await verifyCciList(fileData)).error;
-
-        if ((await verifyCciList(fileData)).result) {
-          console.log("CCI Verified");
-          const result = await importCciList(fileData);
-          if (!result.success) {
-            throw createError({
-              statusCode: 415,
-              statusMessage: result.error,
-            });
-          }
-          console.log("Import CCI: ", result);
-        } else {
+      const verifyResults = verifyCciList(fileData).errormsg;
+      if (verifyCciList(fileData).result) {
+        const result = await importCciList(fileData);
+        if (!result.success) {
           throw createError({
             statusCode: 415,
-            statusMessage: `${verifyResults}`,
+            statusMessage: result.error,
           });
         }
       } else {
         throw createError({
           statusCode: 415,
-          statusMessage: "Unsupported File Type.",
+          statusMessage: `${verifyResults}`,
         });
       }
+    } else {
+      throw createError({
+        statusCode: 415,
+        statusMessage: "Unsupported File Type.",
+      });
     }
   }
 
@@ -82,7 +63,7 @@ export default defineEventHandler(async (event) => {
   }
   logger.info({
     service: "Library",
-    message: `User: ${user?.email} Uploaded CCI Matrix`,
+    message: `User: ${checkResult.user?.email} Uploaded CCI Matrix`,
   });
   return { success: true };
 });
@@ -108,3 +89,33 @@ function proccessNodeRequest(req: IncomingMessage): Promise<Record<string, any>>
     });
   });
 }
+
+const processZip = async (zipFile: string, outputPath: string): Promise<string[]> => {
+  if (!fs.existsSync(outputPath)) {
+    fs.mkdirSync(outputPath, { recursive: true });
+  }
+
+  const filelist = await extractLibrary(zipFile, outputPath);
+
+  return filelist;
+};
+
+const extractLibrary = async (sourceZip: string, outputDirectory: string): Promise<string[]> => {
+  const temporaryExtraction = path.join(outputDirectory, "tempExtraction");
+  const mainZip = new AdmZip(sourceZip);
+  const fileList: string[] = [];
+  await mainZip.extractAllTo(temporaryExtraction, true);
+
+  fs.readdirSync(temporaryExtraction, {
+    encoding: "utf8",
+    recursive: true,
+  }).forEach((nestedFile) => {
+    const filePath = path.join(temporaryExtraction, nestedFile);
+    if (path.extname(nestedFile) === ".xml") {
+      fileList.push(filePath);
+    }
+  });
+
+  fs.rmSync(sourceZip);
+  return fileList;
+};

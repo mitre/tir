@@ -193,6 +193,23 @@
                     <div class="relative flex items-start">
                       <div class="flex h-6 items-center">
                         <input
+                          id="cklv3"
+                          v-model="cklOptions"
+                          value="cklb"
+                          aria-describedby="comments-description"
+                          type="checkbox"
+                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                        />
+                      </div>
+                      <div class="ml-3 text-sm leading-6">
+                        <label for="cklv3" class="font-medium text-gray-800 dark:text-white"
+                          >Checklist Version 3 (.cklb)</label
+                        >
+                      </div>
+                    </div>
+                    <div class="relative flex items-start">
+                      <div class="flex h-6 items-center">
+                        <input
                           id="singleStigPerCkl"
                           v-model="cklOptions"
                           value="SingleStigPerCkl"
@@ -211,36 +228,6 @@
                         </p>
                       </div>
                     </div>
-                    <!-- <div class="relative flex items-start">
-                      <div class="flex h-6 items-center">
-                        <input
-                          id="candidates"
-                          aria-describedby="candidates-description"
-                          name="candidates"
-                          type="checkbox"
-                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                        />
-                      </div>
-                      <div class="ml-3 text-sm leading-6">
-                        <label for="candidates" class="font-medium text-gray-800 dark:text-white">Option 2</label>
-                        <p id="candidates-description" class="text-gray-300">Explanation for Option 2.</p>
-                      </div>
-                    </div>
-                    <div class="relative flex items-start">
-                      <div class="flex h-6 items-center">
-                        <input
-                          id="offers"
-                          aria-describedby="offers-description"
-                          name="offers"
-                          type="checkbox"
-                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                        />
-                      </div>
-                      <div class="ml-3 text-sm leading-6">
-                        <label for="offers" class="font-medium text-gray-800 dark:text-white">Option 3</label>
-                        <p id="offers-description" class="text-gray-300">Explanation for Option 3.</p>
-                      </div>
-                    </div> -->
                   </div>
                 </fieldset>
                 <div class="mt-5 sm:mt-6">
@@ -250,6 +237,66 @@
                     @click="cklDownload"
                   >
                     Download Checklist
+                  </button>
+                </div>
+              </div>
+              <div v-if="tab4">
+                <div class="mt-3 text-center sm:mt-5">
+                  <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-800 dark:text-white"
+                    >STIG Security Assessment Creation
+                  </DialogTitle>
+                  <div class="mt-2">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Download STIG Security Assessment Below</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 sm:mt-6">
+                  <button
+                    type="button"
+                    class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    @click="ssaDownload"
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
+              <div v-if="tab5">
+                <div class="mt-3 text-center sm:mt-5">
+                  <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-800 dark:text-white"
+                    >Nessus
+                  </DialogTitle>
+                  <div class="mt-2">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Download Nessus Export Below</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 sm:mt-6">
+                  <button
+                    type="button"
+                    class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    @click="nessusDownload"
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
+              <div v-if="tab6">
+                <div class="mt-3 text-center sm:mt-5">
+                  <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-800 dark:text-white"
+                    >PPSM
+                  </DialogTitle>
+                  <div class="mt-2">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Download PPSM Below</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 sm:mt-6">
+                  <button
+                    type="button"
+                    class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    @click="ppsmDownload"
+                  >
+                    Download
                   </button>
                 </div>
               </div>
@@ -280,7 +327,10 @@ const props = defineProps({
 });
 const checkedStatus = ref([]);
 const { boundaryId, open, boundaryName } = props;
-
+const { data: summary } = await useFetch("/api/boundaries/summary", {
+  method: "GET",
+  query: { BoundaryId: boundaryId },
+});
 // const open = ref(true)
 // console.log(boundaryId)
 // const emits = defineEmits(['showExport']);
@@ -353,16 +403,109 @@ const cklDownload = async () => {
   cklOptions.value.forEach((option) => {
     queryParams.append(option, true);
   });
+  if (cklOptions.value[0] === "cklb" || cklOptions.value[1] === "cklb") {
+    await fetch(`/api/export/cklv3?${queryParams}`, {
+      method: "GET",
+    })
+      .then((response) => response.blob())
+      .then((blob) => {
+        const url = window.URL.createObjectURL(new Blob([blob], { type: "application/zip" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `${boundaryName}-ChecklistsV3.zip`);
 
-  await fetch(`/api/boundaries/ckl2?${queryParams}`, {
-    method: "GET",
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+      });
+  } else {
+    await fetch(`/api/boundaries/ckl2?${queryParams}`, {
+      method: "GET",
+    })
+      .then((response) => response.blob())
+      .then((blob) => {
+        const url = window.URL.createObjectURL(new Blob([blob], { type: "application/zip" }));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `${boundaryName}-Checklists.zip`);
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+      });
+  }
+};
+
+const ssaDownload = async () => {
+  const bodyData = {
+    BoundaryId: boundaryId,
+    boundaryView: summary.value.boundaryView,
+  };
+  await fetch("/api/boundaries/ssaDownload", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(bodyData),
   })
     .then((response) => response.blob())
     .then((blob) => {
-      const url = window.URL.createObjectURL(new Blob([blob], { type: "application/zip" }));
+      const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `${boundaryName}-Checklists.zip`);
+      link.setAttribute("download", `${boundaryName}-STIG-Security-Assessment.xlsx`);
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      document.body.removeChild(link);
+    });
+};
+
+const nessusDownload = async () => {
+  const { data: currentUser } = await useFetch("/api/auth/currentUser");
+
+  const queryParams = new URLSearchParams();
+  queryParams.append("BoundaryId", boundaryId);
+  queryParams.append("userEmail", currentUser.value.email);
+  await fetch(`/api/boundaries/nessus?${queryParams}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+    .then((response) => response.blob())
+    .then((blob) => {
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${boundaryName}_NessusExport.csv`);
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      document.body.removeChild(link);
+    });
+};
+
+const ppsmDownload = async () => {
+  const { data: currentUser } = await useFetch("/api/auth/currentUser");
+
+  const queryParams = new URLSearchParams();
+  queryParams.append("BoundaryId", boundaryId);
+  queryParams.append("userEmail", currentUser.value.email);
+  await fetch(`/api/boundaries/ppsm?${queryParams}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+    .then((response) => response.blob())
+    .then((blob) => {
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${boundaryName}_ppsm.xlsx`);
 
       document.body.appendChild(link);
 
@@ -375,16 +518,46 @@ const cklDownload = async () => {
 const tab1 = ref(true);
 const tab2 = ref(false);
 const tab3 = ref(false);
+const tab4 = ref(false);
+const tab5 = ref(false);
+const tab6 = ref(false);
 function tabeLogic(index) {
   if (index === 0) {
     tab2.value = false;
     tab3.value = false;
+    tab4.value = false;
+    tab5.value = false;
+    tab6.value = false;
   } else if (index === 1) {
     tab1.value = false;
     tab3.value = false;
+    tab4.value = false;
+    tab5.value = false;
+    tab6.value = false;
   } else if (index === 2) {
     tab1.value = false;
     tab2.value = false;
+    tab4.value = false;
+    tab5.value = false;
+    tab6.value = false;
+  } else if (index === 3) {
+    tab1.value = false;
+    tab2.value = false;
+    tab3.value = false;
+    tab5.value = false;
+    tab6.value = false;
+  } else if (index === 4) {
+    tab1.value = false;
+    tab2.value = false;
+    tab3.value = false;
+    tab4.value = false;
+    tab6.value = false;
+  } else if (index === 5) {
+    tab1.value = false;
+    tab2.value = false;
+    tab3.value = false;
+    tab4.value = false;
+    tab5.value = false;
   }
 }
 
@@ -392,5 +565,8 @@ const tabs = [
   { name: "POAM", href: "#", current: tab1 },
   { name: "Findings", href: "#", current: tab2 },
   { name: "Checklist", href: "#", current: tab3 },
+  { name: "STIG Security Assessment", href: "#", current: tab4 },
+  { name: "Nessus", href: "#", current: tab5 },
+  { name: "PPSM", href: "#", current: tab6 },
 ];
 </script>

@@ -15,6 +15,8 @@ import { PolicyDocument } from "./policyDocument";
 import { User } from "./user";
 import { Classification } from "./classification";
 import { Tier } from "./tier";
+import type { NessusPlugin } from "./nessusPlugin";
+import type { EvaluationItem } from "./evaluationItem";
 
 export class Boundary extends Model<InferAttributes<Boundary>, InferCreationAttributes<Boundary>> {
   declare id: CreationOptional<number>;
@@ -27,19 +29,21 @@ export class Boundary extends Model<InferAttributes<Boundary>, InferCreationAttr
   declare PolicyDocumentId: ForeignKey<PolicyDocument["id"]>;
   declare ClassificationId: ForeignKey<Classification["id"]>;
   declare TierId: ForeignKey<Tier["id"]>;
-  declare ownerId: ForeignKey<User["id"]>;
-
+  declare NessusPlugins?: NonAttribute<NessusPlugin[]>;
+  declare EvaluationItems?: NonAttribute<EvaluationItem[]>;
   declare Systems?: NonAttribute<System[]>;
   declare StigLibrary?: NonAttribute<StigLibrary>;
   declare Classification?: NonAttribute<Classification>;
+  declare Tier?: NonAttribute<Tier>;
+  declare PolicyDocument?: NonAttribute<PolicyDocument>;
 
   declare static associations: {
     Systems: Association<Boundary, System>;
     StigLibrary: Association<Boundary, StigLibrary>;
-    ownerId: Association<Boundary, User>;
     ClassificationId: Association<Boundary, Classification>;
     Classification: Association<Boundary, Classification>;
     TierId: Association<Boundary, Tier>;
+    NessusPlugin: Association<Boundary, NessusPlugin>;
   };
 }
 

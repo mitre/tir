@@ -88,7 +88,6 @@ export const importCciList = async (
       }
 
       if (item.references && item.references.reference) {
-        console.log(item.$.id);
         let references = item.references.reference;
 
         if (!Array.isArray(references)) {

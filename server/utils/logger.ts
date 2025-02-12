@@ -1,17 +1,40 @@
-import * as fs from "fs";
 import * as winston from "winston";
+import DailyRotateFile from "winston-daily-rotate-file";
 import { SyslogTransportOptions, Syslog } from "winston-syslog";
+import { TirConfig } from "~/db/models/tirConfig";
+import * as configUtil from "~/server/utils/tirConfig";
 
-const logConfigPath = "config/logConfig.json";
-const configAvailable = checkLogs(logConfigPath);
+const defaultConsoleLogLevel =
+  process.env.NODE_ENV !== "production" && process.env.TIR_DEBUG?.toLocaleLowerCase() === "true"
+    ? "debug"
+    : "info";
 
-let logPath = "tmp";
+const logConfigPrefix = "logger";
 
-if (configAvailable) {
-  const fileContent = fs.readFileSync(logConfigPath, "utf-8");
-  const logConfig = JSON.parse(fileContent);
-  logPath = logConfig.logPath;
-}
+export type LogConfig = {
+  fileLogEnabled: boolean;
+  syslogLogEnabled: boolean;
+  logPath?: string;
+  syslogTarget?: string;
+  syslogPort?: number;
+  consoleLogLevel?: string;
+  fileLogLevel?: string;
+  syslogLogLevel?: string;
+  zipArchive?: boolean;
+  maxSize?: number;
+  maxDays?: number;
+};
+
+const defaultLogConfig: LogConfig = {
+  fileLogEnabled: true,
+  syslogLogEnabled: false,
+  logPath: "tmp",
+  fileLogLevel: "info",
+  syslogLogLevel: "info",
+  zipArchive: false,
+  maxSize: 10,
+  maxDays: 7,
+};
 
 export const logger = winston.createLogger({
   levels: winston.config.syslog.levels,
@@ -32,48 +55,129 @@ export const logger = winston.createLogger({
   ),
   // defaultMeta: { service: 'user-service' },
   transports: [
-    new winston.transports.File({ filename: `${logPath}/error.log`, level: "error" }),
-    new winston.transports.File({ filename: `${logPath}/combined.log` }),
+    new winston.transports.Console({
+      format: winston.format.simple(),
+      level: defaultConsoleLogLevel,
+    }),
   ],
 });
 
-// if (process.env.NODE_ENV !== "production") {
-logger.add(
-  new winston.transports.Console({
-    format: winston.format.simple(),
-  }),
-);
-// }
-
-if (configAvailable) {
-  const fileContent = fs.readFileSync(logConfigPath, "utf-8");
-  const logConfig = JSON.parse(fileContent);
-
-  if (logConfig.syslogTarget && logConfig.syslogPort) {
-    const opt: SyslogTransportOptions = {
-      host: logConfig.syslogTarget,
-      port: logConfig.syslogPort,
-      protocol: "udp4",
-      app_name: "TIR",
-      // eol: '\n'
-    };
-
-    logger.add(new Syslog(opt));
-  }
+function getBoolValue(logConfig: TirConfig[], valName: string): boolean | undefined {
+  return configUtil.getBoolValue(logConfig, logConfigPrefix, valName);
+}
+function getStringValue(logConfig: TirConfig[], valName: string): string | undefined {
+  return configUtil.getStringValue(logConfig, logConfigPrefix, valName);
+}
+function getNumValue(logConfig: TirConfig[], valName: string): number | undefined {
+  return configUtil.getNumValue(logConfig, logConfigPrefix, valName);
 }
 
-function checkLogs(filePath: string): boolean {
-  try {
-    if (fs.existsSync(filePath)) {
-      fs.accessSync(filePath, fs.constants.R_OK);
-      fs.accessSync(filePath, fs.constants.W_OK);
-      return true;
+export async function getLogConfig(): Promise<LogConfig> {
+  const logConfig = await configUtil.getConfigValues(logConfigPrefix);
+
+  if (!logConfig) {
+    return defaultLogConfig;
+  }
+
+  return {
+    fileLogEnabled: getBoolValue(logConfig, "fileLogEnabled") ?? defaultLogConfig.fileLogEnabled,
+    syslogLogEnabled:
+      getBoolValue(logConfig, "syslogLogEnabled") ?? defaultLogConfig.syslogLogEnabled,
+    logPath: getStringValue(logConfig, "logPath") ?? defaultLogConfig.logPath,
+    syslogTarget: getStringValue(logConfig, "syslogTarget"),
+    syslogPort: getNumValue(logConfig, "syslogPort"),
+    consoleLogLevel:
+      getStringValue(logConfig, "consoleLogLevel") ?? defaultLogConfig.consoleLogLevel,
+    fileLogLevel: getStringValue(logConfig, "fileLogLevel") ?? defaultLogConfig.fileLogLevel,
+    syslogLogLevel: getStringValue(logConfig, "syslogLogLevel"),
+    zipArchive: getBoolValue(logConfig, "zipArchive") ?? defaultLogConfig.zipArchive,
+    maxSize: getNumValue(logConfig, "maxSize") ?? defaultLogConfig.maxSize,
+    maxDays: getNumValue(logConfig, "maxDays") ?? defaultLogConfig.maxDays,
+  };
+}
+
+export async function setLogValue<T extends boolean | string | number>(
+  valName: string,
+  value: T,
+): Promise<void> {
+  logger.notice({
+    service: "config",
+    message: `Config ${valName} has been changed to ${value}`,
+  });
+  await configUtil.setValue(logConfigPrefix, valName, value);
+}
+
+export function updateFileLogging(settings: LogConfig) {
+  const fileTransport = new DailyRotateFile({
+    filename: "tir-%DATE%.log",
+    datePattern: "YYYY-MM-DD",
+    zippedArchive: settings.zipArchive,
+    maxSize: `${settings.maxSize}m`,
+    maxFiles: `${settings.maxDays}d`,
+    dirname: settings.logPath,
+  });
+
+  fileTransport.on("new", (newFilename) => {
+    if (settings.fileLogEnabled) {
+      const rolloverLogRegex = /\.\d{1,3}\.(log|gz)$/;
+      if (rolloverLogRegex.test(newFilename)) {
+        logger.warning(`Max log file size reached. Created new File ${newFilename}.`);
+      } else {
+        logger.notice(`A new log file has been created: ${newFilename}`);
+      }
     }
-    return false;
-  } catch (err) {
-    return false;
+  });
+
+  const oldFileTransport = logger.transports.find(
+    (transport) => transport instanceof DailyRotateFile,
+  );
+
+  if (oldFileTransport) {
+    logger.notice(`Log file settings have been changed.  Stopping Log File.`);
+    logger.remove(oldFileTransport);
+  }
+
+  if (settings.fileLogEnabled) {
+    logger.add(fileTransport);
+    logger.notice({ service: "logger", message: `New log settings applied.` });
   }
 }
 
-export const databaseLogger = logger.child({ service: "database" });
-export const importLibraryLogger = logger.child({ service: "importLibrary" });
+export function updateSyslogLogging(settings: LogConfig) {
+  const options: SyslogTransportOptions = {
+    host: settings.syslogTarget,
+    port: settings.syslogPort,
+    protocol: "udp4",
+    app_name: "TIR",
+  };
+
+  const oldSyslogTransport = logger.transports.find((transport) => transport instanceof Syslog);
+
+  if (oldSyslogTransport) {
+    logger.notice(`Syslog settings have been changed.  Stopping Syslog Transport.`);
+
+    logger.remove(oldSyslogTransport);
+  }
+
+  if (settings.syslogLogEnabled) {
+    logger.add(new Syslog(options));
+    logger.notice(`New syslog settings applied. Started Syslog Transport`);
+  }
+}
+
+export function updateConsoleLogging(setting: LogConfig) {
+  const consoleTransport = logger.transports.find(
+    (transport) => transport instanceof winston.transports.Console,
+  );
+  if (consoleTransport) {
+    logger.notice({
+      service: "logger",
+      message: `Changing console logging level to ${setting.consoleLogLevel}`,
+    });
+    consoleTransport.level = setting.consoleLogLevel;
+    logger.notice({
+      service: "logger",
+      message: `Console logging level changed to ${setting.consoleLogLevel}`,
+    });
+  }
+}

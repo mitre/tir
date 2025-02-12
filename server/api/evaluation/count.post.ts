@@ -2,7 +2,7 @@ import { Assessment, AssessmentItem } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-
+  await userCheck(event, undefined, undefined, undefined);
   const assessmentQueryResults = await Assessment.findOne({
     where: {
       SystemId: body.SystemId,

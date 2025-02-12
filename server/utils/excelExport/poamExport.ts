@@ -1,7 +1,9 @@
 import ExcelJS from "exceljs";
-import { Boundary, CciItem, CciReference, User, Classification } from "../../../db/models";
-import { getIndexesByCciIds } from "../cci";
-import { text } from "stream/consumers";
+import { getVulnSummary } from "../vulnerabilities";
+import { Boundary, CciItem, CciReference, User, Classification } from "~/db/models";
+import { getIndexesByCciIds } from "~/server/utils/cci";
+import { catFromSeverity } from "~/server/utils/findings";
+import { getVulnSummary } from "../vulnerabilities";
 
 export async function generatePoam(
   boundaryId: number,
@@ -10,14 +12,6 @@ export async function generatePoam(
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Sheet1");
   sheet.views = [{ zoomScale: 80 }];
-
-  // const baseFont = {name: 'Calibri', size: 10};
-  // sheet.columns.forEach(column => {
-  //     column.style = {
-  //         font: baseFont,
-  //         alignment: { horizontal: 'center', vertical: 'top', wrapText: true}
-  //     }
-  // });
 
   sheet.columns = [
     {
@@ -223,7 +217,7 @@ export async function generatePoam(
   const headers: string[] = [
     "POA&M Item ID",
     "Control Vulnerability Description",
-    "Security Control Number (NC/NA controls only)",
+    "Controls / APs",
     "Office/Org",
     "Security Checks",
     "Resources Required",
@@ -234,7 +228,7 @@ export async function generatePoam(
     "Status",
     "Comments",
     "Raw Severity",
-    "Mitigations (in-house and in conjunction with the Navy CSSP)",
+    "Mitigations",
     "Severity",
     "Relevance of Threat",
     "Likelihood",
@@ -243,6 +237,7 @@ export async function generatePoam(
     "Residual Risk Level",
     "Recommendations",
   ];
+
   sheet.autoFilter = "A7:U7";
   sheet.insertRow(7, headers);
   sheet.getColumn("A").alignment = { horizontal: "center", vertical: "top" };
@@ -306,10 +301,6 @@ export async function generatePoam(
   const dateCell = sheet.getCell("D2");
   dateCell.value = new Date();
   dateCell.style = { numFmt: "DD-MMM-YYYY", alignment: { horizontal: "left", vertical: "top" } };
-  // sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "007A33" } };
-
-  // sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "007A33" } };
-  // CUI, classified, unclassified, confidential, secret, top secret
   sheet.getCell("A2").value = "Date Exported:";
   sheet.getCell("A2").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "C0C0C0" } };
   sheet.getCell("A3").value = "Exported By:";
@@ -321,8 +312,6 @@ export async function generatePoam(
   sheet.getCell("A6").value = "DoD IT Registration No:";
   sheet.getCell("A6").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "C0C0C0" } };
 
-  // sheet.getColumn("J").font = { name: "Calibri", size: 10, bold: true };
-  // sheet.getColumn("M").font = { name: "Calibri", size: 10, bold: true };
   sheet.getCell("I2").font = { name: "Calibri", size: 10, bold: true };
   sheet.getCell("I2").value = "System Type:";
   sheet.getCell("I2").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "C0C0C0" } };
@@ -355,29 +344,32 @@ export async function generatePoam(
 
   const poamArray: string[][] = [];
 
-  const poamItemId = 0;
-  const controlVulnDesc = 1;
-  const securityControlNumber = 2;
-  const officeOrg = 3;
-  const securityChecks = 4;
-  const resoucesRequired = 5;
-  const scheduledCompDate = 6;
-  const milestoneWithCompDate = 7;
-  const milestoneChanges = 8;
-  const sourceIdentifyingVuln = 9;
-  const status = 10;
-  const comments = 11;
-  const rawSeverity = 12;
-  const mitigations = 13;
-  const severity = 14;
-  const relevanceOfThreat = 15;
-  const likelihood = 16;
-  const impact = 17;
-  const impactDesc = 18;
-  const residualRiskLevel = 19;
-  const recommendations = 20;
+  enum Columns {
+    poamItemId,
+    controlVulnDesc,
+    securityControlNumber,
+    officeOrg,
+    securityChecks,
+    resoucesRequired,
+    scheduledCompDate,
+    milestoneWithCompDate,
+    milestoneChanges,
+    sourceIdentifyingVuln,
+    status,
+    comments,
+    rawSeverity,
+    mitigations,
+    severity,
+    relevanceOfThreat,
+    likelihood,
+    impact,
+    impactDesc,
+    residualRiskLevel,
+    recommendations,
+  }
 
   const results = await getEvaluationSummary(boundaryId, undefined, true);
+  const vulnResults = await getVulnSummary(boundaryId, undefined, true);
 
   interface BoundaryWithClassification extends Boundary {
     Classification?: Classification;
@@ -418,51 +410,130 @@ export async function generatePoam(
     ],
   });
 
+  function assessmentToPoamStatus(assessmentStatus: string): string {
+    if (assessmentStatus === "Open") return "In-Progress";
+    if (assessmentStatus === "NotAFinding") return "Closed";
+    if (assessmentStatus === "Not_Applicable") return "Not Applicable";
+    if (assessmentStatus === "Not_Reviewed") return "Open";
+    return "Unknown";
+  }
+  function nessusToPoamStatus(nessusStatus: string): string {
+    if (nessusStatus === "Open") return "In-Progress";
+    if (nessusStatus === "NotAFinding") return "Closed";
+    if (nessusStatus === "Not_Applicable") return "Not Applicable";
+    if (nessusStatus === "Not_Reviewed") return "Open";
+    if (nessusStatus === null) return "In-Progress";
+    return "Unknown";
+  }
+
   for (const stig of results) {
     for (const stigData of stig.StigData) {
       const newRow: string[] = new Array(21).fill("");
 
-      newRow[poamItemId] = (poamArray.length + 1).toString();
+      newRow[Columns.poamItemId] = (poamArray.length + 1).toString();
 
-      newRow[controlVulnDesc] =
+      newRow[Columns.controlVulnDesc] =
         `Title:\n${stigData.rule_title}\n\nDescription:\n${stigData.vuln_discuss}\n\n`;
-      newRow[securityChecks] = stigData.vuln_num;
-      newRow[status] = stigData.status;
-      newRow[sourceIdentifyingVuln] = stig.title;
-      newRow[rawSeverity] = stigData.severity;
-      newRow[securityControlNumber] = getIndexesByCciIds(
-        stigData.StigIdents.map((item) => item.text),
-        cciItems,
-      ).join("\n");
+      newRow[Columns.securityChecks] = stigData.vuln_num;
+      newRow[Columns.status] = assessmentToPoamStatus(stigData.status);
+      newRow[Columns.sourceIdentifyingVuln] = stig.title;
+      newRow[Columns.rawSeverity] = catFromSeverity(stigData.severity)
+        .toLowerCase()
+        .substring("cat ".length);
+      if (stigData.StigIdents.length > 0) {
+        const control = getIndexesByCciIds(
+          stigData.StigIdents.map((item) => item.text),
+          cciItems,
+        ).join("\n");
+        if (control === "") {
+          newRow[Columns.securityControlNumber] = "CM-6";
+          logger.info({
+            service: "Boundary",
+            message: `Control not found, default Control CM-6 added for POAM Item ID: ${
+              newRow[Columns.poamItemId]
+            } `,
+          });
+        } else {
+          newRow[Columns.securityControlNumber] = control;
+        }
+      } else {
+        newRow[Columns.securityControlNumber] = "CM-6";
+        logger.info({
+          service: "Boundary",
+          message: `CCI not found, default Control CM-6 added for POAM Item ID: ${
+            newRow[Columns.poamItemId]
+          } `,
+        });
+      }
 
       for (const evaluationItem of stigData.EvaluationItems) {
-        newRow[officeOrg] = evaluationItem.Office_Org;
-        newRow[resoucesRequired] = evaluationItem.Resources_Required;
-        newRow[scheduledCompDate] = evaluationItem.Scheduled_Completion_Date;
-        newRow[milestoneChanges] = evaluationItem.Milestone_Changes;
-        newRow[mitigations] = evaluationItem.Mitigations;
-        newRow[severity] = evaluationItem.Severity;
-        newRow[relevanceOfThreat] = evaluationItem.Relevance_of_Threat;
-        newRow[likelihood] = evaluationItem.Likelihood;
-        newRow[impact] = evaluationItem.Impact;
-        newRow[residualRiskLevel] = evaluationItem.Residual_Risk_Level;
-        newRow[impactDesc] = evaluationItem.Impact_Description;
-        newRow[recommendations] = evaluationItem.Recommendations;
-        newRow[comments] = evaluationItem.Poam_Comments;
+        newRow[Columns.officeOrg] = evaluationItem.Office_Org;
+        newRow[Columns.resoucesRequired] = evaluationItem.Resources_Required;
+        newRow[Columns.scheduledCompDate] = evaluationItem.Scheduled_Completion_Date;
+        newRow[Columns.milestoneChanges] = evaluationItem.Milestone_Changes;
+        newRow[Columns.mitigations] = evaluationItem.Mitigations;
+        newRow[Columns.severity] = evaluationItem.Severity;
+        newRow[Columns.relevanceOfThreat] = evaluationItem.Relevance_of_Threat;
+        newRow[Columns.likelihood] = evaluationItem.Likelihood;
+        newRow[Columns.impact] = evaluationItem.Impact;
+        newRow[Columns.residualRiskLevel] = evaluationItem.Residual_Risk_Level;
+        newRow[Columns.impactDesc] = evaluationItem.Impact_Description;
+        newRow[Columns.recommendations] = evaluationItem.Recommendations;
+        newRow[Columns.comments] = evaluationItem.Poam_Comments;
 
         for (const milestone of evaluationItem.Milestones) {
-          newRow[milestoneWithCompDate] +=
+          newRow[Columns.milestoneWithCompDate] +=
             `Milestone: ${milestone.item}\nCompletion Date: ${milestone.completion_date}\n\n`;
         }
 
-        newRow[controlVulnDesc] += `Affected:\n`;
+        newRow[Columns.controlVulnDesc] += `Affected:\n`;
         for (const assessmentItem of stigData.AssessmentItems) {
-          newRow[controlVulnDesc] += `${assessmentItem.Assessment.System.name}\n`;
+          newRow[Columns.controlVulnDesc] += `${assessmentItem.Assessment.System.name}\n`;
         }
       }
 
       poamArray.push(newRow);
     }
+  }
+  for (const result of vulnResults) {
+    const newRow: string[] = new Array(21).fill("");
+    newRow[Columns.poamItemId] = (poamArray.length + 1).toString();
+    newRow[Columns.controlVulnDesc] = `Description:\n${result.description}\n\n`;
+    newRow[Columns.securityControlNumber] = "RA-05";
+    newRow[Columns.securityChecks] = `Plugin ID: ${result.pluginId.toString()}`;
+    newRow[Columns.sourceIdentifyingVuln] = result.pluginName;
+
+    for (const nessusBoundary of result.NessusPlugin_Boundaries) {
+      newRow[Columns.officeOrg] = nessusBoundary.EvaluationItem.Office_Org;
+      newRow[Columns.resoucesRequired] = nessusBoundary.EvaluationItem.Resources_Required;
+      newRow[Columns.scheduledCompDate] = nessusBoundary.EvaluationItem.Scheduled_Completion_Date;
+      newRow[Columns.milestoneChanges] = nessusBoundary.EvaluationItem.Milestone_Changes;
+      newRow[Columns.mitigations] = nessusBoundary.EvaluationItem.Mitigations;
+      newRow[Columns.severity] = nessusBoundary.EvaluationItem.Severity;
+      newRow[Columns.relevanceOfThreat] = nessusBoundary.EvaluationItem.Relevance_of_Threat;
+      newRow[Columns.likelihood] = nessusBoundary.EvaluationItem.Likelihood;
+      newRow[Columns.impact] = nessusBoundary.EvaluationItem.Impact;
+      newRow[Columns.residualRiskLevel] = nessusBoundary.EvaluationItem.Residual_Risk_Level;
+      newRow[Columns.impactDesc] = nessusBoundary.EvaluationItem.Impact_Description;
+      newRow[Columns.recommendations] = nessusBoundary.EvaluationItem.Recommendations;
+      newRow[Columns.comments] = nessusBoundary.EvaluationItem.Poam_Comments;
+
+      for (const milestone of nessusBoundary.EvaluationItem.Milestones) {
+        newRow[Columns.milestoneWithCompDate] +=
+          `Milestone: ${milestone.item}\nCompletion Date: ${milestone.completion_date}\n\n`;
+      }
+    }
+    newRow[Columns.controlVulnDesc] += `Affected:\n`;
+
+    for (const reportItem of result.NessusReportItems) {
+      newRow[Columns.status] += `${reportItem.NessusReport?.System.name}\n ${nessusToPoamStatus(
+        reportItem.statusOverride,
+      )}\n`;
+      newRow[Columns.rawSeverity] +=
+        `${reportItem.NessusReport?.System.name}:\n ${result.riskFactor}\n`;
+      newRow[Columns.controlVulnDesc] += `${reportItem.NessusReport?.System.name}\n`;
+    }
+    poamArray.push(newRow);
   }
 
   sheet.insertRows(8, poamArray, "o");

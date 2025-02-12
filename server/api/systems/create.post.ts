@@ -2,32 +2,13 @@ import { System, User, UserRole, Boundary, Boundary_User } from "../../../db/mod
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  body.lastUpdate = Date.now();
-  const rawToken = getCookie(event, "tirtoken");
-  let userId: number;
-  if (rawToken) {
-    userId = decodeToken(rawToken);
-  } else {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Unknown User.",
-    });
-  }
+  const checkResult = await userCheck(event, undefined, body.BoundaryId, undefined);
 
-  const boundary = await Boundary.findByPk(body.BoundaryId, {
-    attributes: ["id", "name", "ownerId"],
-    include: [
-      {
-        model: Boundary_User,
-      },
-    ],
-  });
+  body.lastUpdate = Date.now();
+
   let system: any;
-  if (boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId)) {
-    if (
-      boundary?.dataValues.Boundary_Users.find((o: { UserId: number }) => o.UserId === userId)
-        .BoundaryRoleId === 3
-    ) {
+  if (checkResult.BoundaryRoleId) {
+    if (checkResult.BoundaryRoleId === 4) {
       throw createError({
         statusCode: 401,
         statusMessage: "Reviewers are unable to edit Boundaries",
@@ -35,8 +16,11 @@ export default defineEventHandler(async (event) => {
     } else {
       system = await System.create(body);
     }
-  } else if (boundary?.dataValues.ownerId === userId) {
-    system = await System.create(body);
+  } else {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Insufficient Permissions.",
+    });
   }
 
   return system;

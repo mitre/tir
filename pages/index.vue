@@ -4,8 +4,6 @@ import LoginForm from "../components/login/LoginForm.vue";
 
 const config = useRuntimeConfig();
 const ldapEnabled = config.public.ldap_enabled === "true" || config.public.ldap_enabled === true;
-const ldapEnabledRaw = config.public.ldap_enabled;
-const ldaphost = config.ldap_host;
 
 definePageMeta({
   layout: false,

@@ -88,11 +88,11 @@
                           <div class="relative bg-white p-4 dark:bg-gray-700">
                             <div class="mr-4 flex items-center">
                               <input
-                                @click.stop="[(selectAll = !selectAll), updateCheckboxes()]"
                                 id="inline-checkbox"
                                 type="checkbox"
                                 :checked="selectAll"
                                 class="h-4 w-4 rounded border-gray-400 bg-white text-indigo-600 ring-offset-gray-600 focus:ring-2 focus:ring-indigo-600 dark:bg-gray-700"
+                                @click.stop="[(selectAll = !selectAll), updateCheckboxes()]"
                               />
                               <label
                                 for="inline-checkbox"
@@ -102,12 +102,12 @@
                             </div>
                             <div class="mr-4 mt-2 flex items-center">
                               <input
-                                @click="[(openFilter = !openFilter), updateCheckboxes()]"
                                 id="inline-2-checkbox"
                                 type="checkbox"
                                 value=""
                                 :checked="openFilter"
                                 class="h-4 w-4 rounded border-gray-400 bg-white text-indigo-600 ring-offset-gray-800 focus:ring-2 focus:ring-indigo-600 dark:bg-gray-700"
+                                @click="[(openFilter = !openFilter), updateCheckboxes()]"
                               />
                               <label
                                 for="inline-2-checkbox"
@@ -117,12 +117,12 @@
                             </div>
                             <div class="mr-4 mt-2 flex items-center">
                               <input
-                                @click="[(notAFindingFilter = !notAFindingFilter), updateCheckboxes()]"
                                 id="inline-3-checkbox"
                                 type="checkbox"
                                 value=""
                                 :checked="notAFindingFilter"
                                 class="h-4 w-4 rounded border-gray-400 bg-gray-100 bg-white text-indigo-600 ring-offset-gray-800 focus:ring-2 focus:ring-indigo-600 dark:bg-gray-700"
+                                @click="[(notAFindingFilter = !notAFindingFilter), updateCheckboxes()]"
                               />
                               <label
                                 for="inline-3-checkbox"
@@ -132,12 +132,12 @@
                             </div>
                             <div class="mr-4 mt-2 flex items-center">
                               <input
-                                @click="[(notApplicableFilter = !notApplicableFilter), updateCheckboxes()]"
                                 id="inline-4-checkbox"
                                 type="checkbox"
                                 value=""
                                 :checked="notApplicableFilter"
                                 class="h-4 w-4 rounded border-gray-400 bg-gray-100 bg-white text-indigo-600 ring-offset-gray-800 focus:ring-2 focus:ring-indigo-600 dark:bg-gray-700"
+                                @click="[(notApplicableFilter = !notApplicableFilter), updateCheckboxes()]"
                               />
                               <label
                                 for="inline-4-checkbox"
@@ -147,12 +147,12 @@
                             </div>
                             <div class="mt-2 flex items-center">
                               <input
-                                @click="[(notReviewedFilter = !notReviewedFilter), updateCheckboxes()]"
                                 id="inline-5-checkbox"
                                 type="checkbox"
                                 value=""
                                 :checked="notReviewedFilter"
                                 class="h-4 w-4 rounded border-gray-400 bg-white text-indigo-600 ring-offset-gray-800 focus:ring-2 focus:ring-indigo-500 focus:ring-indigo-600 dark:bg-gray-700"
+                                @click="[(notReviewedFilter = !notReviewedFilter), updateCheckboxes()]"
                               />
                               <label
                                 for="inline-5-checkbox"
@@ -192,11 +192,11 @@
                           class="absolute z-10 mt-10 max-h-60 w-40 overflow-auto rounded-md bg-white py-1 text-base text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-700"
                         >
                           <ListboxOption
-                            as="template"
                             v-for="stat in status"
                             :key="stat.title"
-                            :value="stat"
                             v-slot="{ active, selected }"
+                            as="template"
+                            :value="stat"
                           >
                             <li
                               :class="[
@@ -222,8 +222,8 @@
                         </ListboxOptions>
                       </transition>
                       <button
-                        @click="setSelectedStatus()"
                         class="ml-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        @click="setSelectedStatus()"
                       >
                         Set
                       </button>
@@ -256,11 +256,11 @@
                           class="absolute z-10 mt-10 max-h-60 w-40 overflow-auto rounded-md bg-white py-1 text-base text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-700"
                         >
                           <ListboxOption
-                            as="template"
                             v-for="stat in overrideStatus"
                             :key="stat.title"
-                            :value="stat"
                             v-slot="{ active, selected }"
+                            as="template"
+                            :value="stat"
                           >
                             <li
                               :class="[
@@ -286,8 +286,8 @@
                         </ListboxOptions>
                       </transition>
                       <button
-                        @click="setSelectedOverride()"
                         class="ml-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        @click="setSelectedOverride()"
                       >
                         Set
                       </button>
@@ -297,17 +297,17 @@
               </div>
 
               <div class="max-h-96 overflow-y-auto">
-                <Disclosure as="div" v-for="(system, index) in systemListChecks" class="mt-2">
+                <Disclosure v-for="(system, index) in systemListChecks" as="div" class="mt-2">
                   <div
                     class="text-md grid h-16 grid-cols-12 items-center gap-4 rounded-lg bg-gray-200 px-4 py-2 text-left font-medium text-gray-800 hover:bg-gray-300 focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75 dark:bg-gray-300/5 dark:text-white dark:hover:bg-gray-900"
                   >
                     <div class="col-span-3">
                       <input
-                        @click.stop="[(system.check = !system.check)]"
                         :id="system"
                         type="checkbox"
                         :checked="system.check"
                         class="z-10 mr-4 h-4 w-4 rounded border-gray-600 bg-white text-indigo-600 ring-offset-gray-800 focus:ring-2 focus:ring-indigo-600 dark:bg-gray-700"
+                        @click.stop="[(system.check = !system.check)]"
                       />
                       {{ system.Assessment.System.name }}
                     </div>
@@ -336,18 +336,18 @@
                               class="fixed z-10 mt-10 max-h-60 w-40 overflow-auto rounded-md bg-white py-1 text-base text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-700"
                             >
                               <ListboxOption
-                                as="template"
                                 v-for="stat in status"
                                 :key="stat.title"
-                                :value="stat"
                                 v-slot="{ active, selected }"
+                                as="template"
+                                :value="stat"
                               >
                                 <li
-                                  @click="[(systemListChecks[index].status = stat.title)]"
                                   :class="[
                                     active ? 'bg-indigo-600 text-white' : 'text-gray-800 dark:text-gray-300',
                                     'relative cursor-default select-none py-2 pl-3 pr-9',
                                   ]"
+                                  @click="[(systemListChecks[index].status = stat.title)]"
                                 >
                                   <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">{{
                                     stat.title
@@ -394,18 +394,18 @@
                               class="fixed z-10 mt-10 max-h-60 w-40 overflow-auto rounded-md bg-white py-1 text-base text-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-700"
                             >
                               <ListboxOption
-                                as="template"
                                 v-for="stat in overrideStatus"
                                 :key="stat.title"
-                                :value="stat"
                                 v-slot="{ active, selected }"
+                                as="template"
+                                :value="stat"
                               >
                                 <li
-                                  @click="[newOverride(index, stat.title)]"
                                   :class="[
                                     active ? 'bg-indigo-600 text-white' : 'text-gray-800 dark:text-gray-300',
                                     'relative cursor-default select-none py-2 pl-3 pr-9',
                                   ]"
+                                  @click="[newOverride(index, stat.title)]"
                                 >
                                   <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">{{
                                     stat.title
@@ -433,8 +433,8 @@
 
               <div class="mt-32 flex justify-end">
                 <button
-                  @click="[saveChanges()]"
                   class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  @click="[saveChanges()]"
                 >
                   Save
                 </button>
@@ -444,10 +444,10 @@
         </div>
       </div>
       <ErrorNotification
-        class="z-20"
         v-if="showErrorNotification"
+        class="z-20"
         :show="showErrorNotification"
-        :msg="errorMsg"
+        :error="errorObject"
         @show="showErrorNotification = false"
       />
     </Dialog>
@@ -523,10 +523,10 @@ const setFindingStatus = ref();
 const setOverrideStatus = ref();
 
 const showErrorNotification = ref(false);
-const errorMsg = ref();
+const errorObject = ref();
 
-/////API Call
-var systemListChecks = ref([]);
+/// //API Call
+const systemListChecks = ref([]);
 const { data: systemList } = await useFetch("/api/evaluation/getSystems", {
   method: "GET",
   query: { params1: StigDataId, params2: BoundaryId },
@@ -574,7 +574,7 @@ async function saveChanges() {
         });
         if (systemListChecks.value[i].newOverride.create === true) {
           if (systemListChecks.value[i].newOverride.status !== "None") {
-            await useFetch("/api/override/create", {
+            await $fetch("/api/override/create", {
               method: "POST",
               body: {
                 status: systemListChecks.value[i].newOverride.status,
@@ -586,7 +586,7 @@ async function saveChanges() {
         } else if (systemListChecks.value[i].Assessment.System.Overrides.length !== 0) {
           // console.log('Edit Override')
           if (systemListChecks.value[i].Assessment.System.Overrides[0].status === "None") {
-            await useFetch("/api/override/delete", {
+            await $fetch("/api/override/delete", {
               method: "POST",
               body: {
                 SystemId: systemListChecks.value[i].Assessment.SystemId,
@@ -594,18 +594,19 @@ async function saveChanges() {
               },
             });
           } else {
-            await useFetch("/api/override/edit", {
+            await $fetch("/api/override/edit", {
               method: "PUT",
               body: {
                 id: systemListChecks.value[i].Assessment.System.Overrides[0].id,
                 name: systemListChecks.value[i].Assessment.System.Overrides[0].status,
+                SystemId: systemListChecks.value[i].Assessment.SystemId,
               },
             });
           }
         }
       } catch (err) {
         error = true;
-        errorMsg.value = err.data.statusMessage;
+        errorObject.value = err;
         showErrorNotification.value = true;
         setTimeout(() => (showErrorNotification.value = false), 6000);
       }
@@ -643,7 +644,7 @@ function setSelectedStatus() {
     }
   }
 }
-//Need to create Override when being changed from null before adding new override status
+// Need to create Override when being changed from null before adding new override status
 function setSelectedOverride() {
   for (let i = 0; i < systemListChecks.value.length; i++) {
     if (systemListChecks.value[i].check === true) {

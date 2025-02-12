@@ -19,6 +19,123 @@ import {
 } from "../../db/models";
 import { findOrCreateAssessment } from "./assessments";
 import { findStigByStigId } from "./stigLibrary";
+import { ChecklistV3, convertToV2Status } from "../utils/checklist_v3";
+
+export async function importChecklistV3(
+  cklbData: ChecklistV3,
+  systemId: number,
+): Promise<{ error: boolean; new: boolean }> {
+  // const jsonObj = await parseStringPromise(cklbData, { explicitArray: false });
+
+  const system = (await System.findByPk(systemId, {
+    include: {
+      model: Boundary,
+    },
+  })) as SystemInterface;
+
+  try {
+    for (const stigFromCkl of cklbData.stigs) {
+      let cklStigId = stigFromCkl.stig_id;
+      const stigMatchingCkl = await Stig.findOne({
+        where: {
+          stigid: stigFromCkl.stig_id,
+        },
+      });
+
+      if (!stigMatchingCkl) {
+        throw createError({
+          statusCode: 415,
+          statusMessage: `No STIG matching id "${stigMatchingCkl}" found in system's assigned Library`,
+        });
+      }
+
+      const alreadyHasStig = await system.hasStig(stigMatchingCkl.dataValues.id);
+      if (!alreadyHasStig) {
+        await system.addStig(stigMatchingCkl?.dataValues.id);
+      }
+
+      let assessmentToPopulate: Assessment;
+      const previousAssessment = await Assessment.findOne({
+        where: {
+          SystemId: systemId,
+          StigId: stigMatchingCkl?.dataValues.id,
+        },
+      });
+
+      if (previousAssessment) {
+        assessmentToPopulate = previousAssessment;
+        const assessmentItems = await AssessmentItem.findAll({
+          where: {
+            AssessmentId: previousAssessment.dataValues.id,
+          },
+        });
+        for (const ai of assessmentItems) {
+          console.log("Found AI", ai);
+          await ai.destroy();
+        }
+      } else {
+        const newAssessment = await findOrCreateAssessment(
+          systemId,
+          stigMatchingCkl.id,
+          cklbData.target_data.classification,
+          "",
+          stigFromCkl.uuid,
+        );
+        await createEvaluation(system?.dataValues.Boundary.id, stigMatchingCkl?.dataValues.id);
+        assessmentToPopulate = newAssessment;
+      }
+
+      const stigChecks = await StigData.findAll({
+        include: [
+          {
+            model: Stig,
+            where: { id: stigMatchingCkl?.dataValues.id },
+          },
+        ],
+      });
+
+      for (const cklVulnElement of stigFromCkl.rules) {
+        const vulnNum = cklVulnElement.group_tree[0].id;
+        const stigDatum = stigChecks.find((sd) => sd.vuln_num === vulnNum);
+        if (stigDatum) {
+          const [assessmentItem] = await AssessmentItem.findOrBuild({
+            where: {
+              AssessmentId: assessmentToPopulate.dataValues.id,
+              StigDatumId: stigDatum.id,
+            },
+          });
+
+          let thisSevOver,
+            thisSevJust = null;
+          if (cklVulnElement?.overrides.length == 0) {
+            thisSevOver = cklVulnElement?.overrides["severity"]["severity"];
+            thisSevJust = cklVulnElement?.overrides["severity"]["reason"];
+          }
+          assessmentItem.setDataValue("status", convertToV2Status(cklVulnElement?.status));
+          assessmentItem.setDataValue("comments", cklVulnElement?.comments);
+          assessmentItem.setDataValue("finding_details", cklVulnElement?.finding_details);
+          assessmentItem.setDataValue("severityOverride", thisSevOver);
+          assessmentItem.setDataValue("severityOverrideJustification", thisSevJust);
+          
+          try {
+            await assessmentItem.save();
+          } catch (error) {
+            logger.error(
+              `Error saving AssessmentItem: ${assessmentItem.id},StigId: ${cklStigId},V-Key: ${vulnNum}`,
+            );
+          }
+        } else {
+          logger.error(`Unable to find matching VKey for StigId: ${cklStigId},V-Key: ${vulnNum}`);
+        }
+      }
+    }
+    return { error: false, new: true };
+  } catch (error) {
+    logger.error(error);
+    console.log(error);
+    return { error: true, new: false };
+  }
+}
 
 export async function importChecklist(
   xmlData: string,
@@ -80,7 +197,7 @@ export async function importChecklist(
           getSI_DataByName(stigFromCkl.STIG_INFO.SI_DATA, "customname") || "",
           getSI_DataByName(stigFromCkl.STIG_INFO.SI_DATA, "uuid") || "",
         );
-
+        await createEvaluation(system?.dataValues.Boundary.id, stigMatchingCkl?.dataValues.id);
         assessmentToPopulate = newAssessment;
       }
 
@@ -109,11 +226,11 @@ export async function importChecklist(
           assessmentItem.setDataValue("comments", cklVulnElement?.COMMENTS);
           assessmentItem.setDataValue("finding_details", cklVulnElement?.FINDING_DETAILS);
           assessmentItem.setDataValue(
-            "severity_override",
+            "severityOverride",
             cklVulnElement?.SEVERITY_OVERRIDE === "" ? null : cklVulnElement?.SEVERITY_OVERRIDE,
           );
           assessmentItem.setDataValue(
-            "severity_justification",
+            "severityOverrideJustification",
             cklVulnElement?.SEVERITY_JUSTIFICATION,
           );
 
@@ -375,8 +492,8 @@ export async function buildCklString<T extends boolean>(
           status: assessmentItem.status,
           findingDetails: assessmentItem.finding_details,
           comments: assessmentItem.comments,
-          severityOverride: assessmentItem.severity_override,
-          OverrideJustification: assessmentItem.severity_justification,
+          severityOverride: assessmentItem.severityOverride,
+          OverrideJustification: assessmentItem.severityOverrideJustification,
         });
       }
     }

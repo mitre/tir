@@ -25,7 +25,7 @@
             leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
             <DialogPanel
-              class="relative max-w-4xl transform overflow-hidden rounded-lg bg-gray-100 px-4 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-900 sm:my-8 sm:w-full sm:p-6"
+              class="relative max-w-4xl transform rounded-lg bg-gray-100 px-4 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-900 sm:my-8 sm:w-full sm:p-6"
             >
               <div>
                 <h1 class="block text-lg font-light leading-6 text-gray-800 dark:text-white">
@@ -33,7 +33,7 @@
                 </h1>
                 <h1 class="mt-1 flex text-sm font-light text-gray-800 dark:text-white">
                   <UsersIcon class="mr-2 h-5 w-5 text-gray-800 dark:text-gray-100" aria-hidden="true" />Total Members:
-                  {{ entityList.length + 1 }}
+                  {{ entityList.length }}
                 </h1>
                 <div v-show="editMemberList">
                   <div class="max-w-contents mt-8 flex rounded-md">
@@ -122,13 +122,14 @@
                             class="absolute z-10 mt-2 w-36 origin-top-right divide-y divide-gray-200 overflow-hidden rounded-md bg-gray-100 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                           >
                             <ListboxOption
-                              v-for="option in Roles"
+                              v-for="(option, index) in Roles"
                               :key="option.id"
                               v-slot="{ active, selected }"
-                              as="template"
+                              as="div"
                               :value="option"
                             >
                               <li
+                                v-if="index !== 0"
                                 :class="[
                                   active ? 'bg-indigo-600 text-white' : 'text-gray-900',
                                   'cursor-pointer select-none p-4 text-sm',
@@ -171,11 +172,15 @@
                         <ExclamationTriangleIcon class="inline-block h-4 w-4" aria-hidden="true" /> Member already
                         added.
                       </div>
+                      <div v-else-if="roleError" class="animate-fade pt-2 text-sm text-red-500">
+                        <ExclamationTriangleIcon class="inline-block h-4 w-4" aria-hidden="true" /> Set another User to
+                        Owner First.
+                      </div>
                     </transition>
                   </div>
                 </div>
                 <div class="mt-2 flow-root">
-                  <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                  <div class="-mx-4 -my-2 sm:-mx-6 lg:-mx-8">
                     <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
                       <table class="min-w-full divide-y divide-gray-700">
                         <thead>
@@ -204,20 +209,7 @@
                             </th>
                           </tr>
                         </thead>
-                        <tbody class="max-h-16 divide-y divide-gray-800 overflow-y-auto">
-                          <tr>
-                            <td
-                              class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-800 dark:text-white sm:pl-0"
-                            >
-                              {{ data.owner.firstName }} {{ data.owner.lastName }}
-                            </td>
-
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-300">
-                              {{ data.owner.email }}
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-300">Owner</td>
-                          </tr>
-
+                        <tbody class="max-h-16 divide-y divide-gray-800">
                           <tr v-for="(entityUser, index) in entityList" :key="entityUser.UserId">
                             <td
                               class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-800 dark:text-white sm:pl-0"
@@ -249,7 +241,7 @@
                                     leave-to-class="opacity-0"
                                   >
                                     <ListboxOptions
-                                      class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                                      class="absolute z-10 mt-1 max-h-60 w-full rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
                                     >
                                       <ListboxOption
                                         v-for="person in Roles"
@@ -404,8 +396,9 @@ const filteredUsers = users.value.filter((o) => o.UserRoleId === 2);
 
 const query = ref("");
 const selectedPerson = ref(null);
-const memberType = ref(Roles.value[0]);
+const memberType = ref(Roles.value[1]);
 let userError = ref(false);
+const roleError = ref(false);
 
 const filteredPeople = computed(() =>
   query.value === ""
@@ -421,8 +414,8 @@ const filteredPeople = computed(() =>
 async function addMembers() {
   try {
     if (entityList.value.findIndex((o) => o.User.id === selectedPerson.value.id) !== -1) {
-      userError = true;
-      setAlertTimeout();
+      userError.value = true;
+      setTimeout(() => (userError.value = false), 3000);
     } else {
       const memberData = {
         UserId: selectedPerson.value.id,
@@ -447,13 +440,15 @@ async function removeMembers(userId) {
       UserId: userId,
       [`${entityType}Id`]: entityId,
     };
-    await useFetch(`${baseUrl.value}/users/remove`, {
+    await $fetch(`${baseUrl.value}/users/remove`, {
       method: "POST",
       body: removeData,
     });
     await refreshNuxtData("memberList");
     entityList.value = data.value[`${entityType}_Users`];
-  } finally {
+  } catch {
+    roleError.value = true;
+    setTimeout(() => (roleError.value = false), 3000);
     // await refreshNuxtData(count)
   }
 }
@@ -466,10 +461,13 @@ async function editMembers(userId) {
       [`${entityType}Id`]: entityId,
       [`${entityType}RoleId`]: selected.id,
     };
-    await useFetch(`${baseUrl.value}/users/edit`, {
+    await $fetch(`${baseUrl.value}/users/edit`, {
       method: "PUT",
       body: editData,
     });
+  } catch (err) {
+    roleError.value = true;
+    setTimeout(() => (roleError.value = false), 3000);
   } finally {
     await refreshNuxtData("memberList");
     entityList.value = data.value[`${entityType}_Users`];
@@ -478,9 +476,7 @@ async function editMembers(userId) {
 const edit = ref(false);
 let selected = ref();
 function updateSelected(userId) {
-  console.log(`${entityType} Role ID ${userId}`);
   selected = Roles.value[Roles.value.findIndex((o) => o.id === userId)];
-  console.log("selected", selected);
 }
 
 /// /// Alert
@@ -489,7 +485,7 @@ function setAlertTimeout() {
 }
 
 function hideNotification() {
-  userError = false;
+  userError.value = false;
   refreshNuxtData("memberList");
 }
 
@@ -497,8 +493,8 @@ function hideNotification() {
 // async function currentMember() {
 const editMemberList = ref("false");
 const { data: user } = await useFetch("/api/auth/currentUser", { method: "GET" });
-
-if (data.value.ownerId === user.value.id || user.value.UserRole.name === "Admin") {
+const owner = data.value[`${entityType}_Users`].find((o) => o[`${entityType}RoleId`] === 1);
+if (owner.UserId === user.value.id || user.value.UserRole.name === "Admin") {
   editMemberList.value = true;
 } else if (data.value.Tier_Users) {
   if (data.value.Tier_Users.findIndex((o) => o.UserId === user.value.id) !== -1) {

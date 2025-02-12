@@ -11,7 +11,6 @@ export class Tier extends Model<InferAttributes<Tier>, InferCreationAttributes<T
   declare id: CreationOptional<number>;
   declare name: string;
   declare parentId: number;
-  declare hasBoundaries: boolean;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
 }
@@ -31,10 +30,6 @@ Tier.init(
     },
     parentId: {
       type: DataTypes.INTEGER,
-    },
-    hasBoundaries: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
     },
     lastUpdate: {
       type: DataTypes.STRING(DATETIME_LENGTH),

@@ -2,6 +2,14 @@ import { User, Timezone } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
+  const checkResult = await userCheck(event, undefined, undefined, undefined);
+  if (checkResult.UserRoleId !== 1 && checkResult.user.id !== body.id) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Insufficient Permissions.",
+    });
+  }
+
   const user = await User.findByPk(body.id, { attributes: { exclude: ["password", "salt"] } });
 
   if (!user) {
@@ -15,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
   if (body.email) {
     if (body.email !== user?.email) {
-      const userExist = await User.findOne({ where: body.email });
+      const userExist = await User.findOne({ where: { email: body.email } });
       if (userExist) {
         logger.error(`Sorry, this email is taken ${body.email}`);
         throw createError({

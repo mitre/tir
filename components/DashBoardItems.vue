@@ -43,6 +43,6 @@
 <script setup>
 import inflection from "inflection";
 
-const { data: currentAlias } = await useFetch("/api/boundaries/alias");
-const boundaryView = ref(currentAlias.value[1]);
+const { data: currentAlias } = await useFetch("/api/config/alias");
+const boundaryView = currentAlias.value.find((alias) => alias.term === "Boundary");
 </script>

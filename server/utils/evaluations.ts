@@ -7,17 +7,26 @@ import {
   AssessmentItem,
   Assessment,
   System,
-  Override,
   Milestone,
   StigIdent,
 } from "../../db/models";
 import { uniqueTransform, addFindings } from "./findings";
+import { type FindingCounts } from "~/types/findings";
+import { StigOverride } from "~/db/models/stigOverride";
 
 export type EvalSummaryOverride = {
-  status: string;
-  System: {
-    name: string;
-  };
+  type: string;
+  value: string;
+  systemId: number;
+  systemName: string;
+  stigDatumId: number;
+  // System: {
+  //   id: number;
+  //   name: string;
+  // };
+  // StigData: {
+  //   id: number;
+  // };
 };
 
 export type EvalSummaryMilestone = {
@@ -46,12 +55,19 @@ export type EvalSummaryEvaluationItem = {
 };
 
 export type EvalSummaryAssessmentItem = {
+  id: number;
   status: string;
   comments: string;
   finding_details: string;
+  severityOverride: string;
+  severityOverrideJustification: string;
+  statusOverride: string;
+  statusOverrideJustification: string;
+
   Assessment: {
     id: number;
     System: {
+      id: number;
       name: string;
     };
   };
@@ -120,7 +136,7 @@ export async function createEvaluation(
   if (initialCheck) {
     console.log("Error.  Evaluation already exists.");
   } else {
-    console.log("Truely nothing out there.  Need to make one.");
+    console.log("Evaluation not found. Need to make one.");
 
     const newEvaluation = await Evaluation.create({
       BoundaryId: boundaryId,
@@ -145,6 +161,10 @@ export async function createEvaluation(
         StigDatumId: check.dataValues.id,
       });
     }
+    logger.info({
+      service: "Boundary",
+      message: `Creating Evaluation for ${stigChecks[0].Stigs[0].stigid} ID:${stigId} on BoundaryId: ${boundaryId}`,
+    });
   }
 
   return { error: false, errmsg: "" };
@@ -180,7 +200,16 @@ export async function getEvaluationSummary(
           {
             model: AssessmentItem,
             required: true,
-            attributes: ["status", "comments", "finding_details"],
+            attributes: [
+              "id",
+              "status",
+              "comments",
+              "finding_details",
+              "statusOverride",
+              "statusOverrideJustification",
+              "severityOverride",
+              "severityOverrideJustification",
+            ],
             where: statusWhereCluase,
             include: [
               {
@@ -193,7 +222,7 @@ export async function getEvaluationSummary(
                 include: [
                   {
                     model: System,
-                    attributes: ["name"],
+                    attributes: ["id", "name"],
                     where: { BoundaryId: boundaryId },
                     required: true,
                   },
@@ -218,12 +247,10 @@ export async function getEvaluationSummary(
             ],
           },
           {
-            model: Override,
-            attributes: ["status"],
+            model: StigOverride,
             include: [
               {
                 model: System,
-                attributes: ["name"],
                 where: { BoundaryId: boundaryId },
                 required: true,
               },
@@ -231,6 +258,7 @@ export async function getEvaluationSummary(
           },
           {
             model: StigIdent,
+            required: false,
             through: { attributes: [] },
             attributes: ["text"],
             where: {
@@ -248,7 +276,7 @@ export async function getEvaluationSummary(
   const evalSummary: EvalSummary[] = [];
 
   perfTimer.start("New Findings Object");
-  console.log(results);
+  // console.log(results);
   if (results?.length > 0) {
     for (const stig of results) {
       const evalSummaryItem: EvalSummary = {
@@ -307,12 +335,18 @@ export async function getEvaluationSummary(
           if (stigData.AssessmentItems) {
             for (const assessmentItem of stigData.AssessmentItems) {
               newAssessmentItems.push({
+                id: assessmentItem.id,
                 status: assessmentItem.status,
                 comments: assessmentItem.comments,
                 finding_details: assessmentItem.finding_details,
+                severityOverride: assessmentItem.severityOverride,
+                severityOverrideJustification: assessmentItem.severityOverrideJustification,
+                statusOverride: assessmentItem.statusOverride,
+                statusOverrideJustification: assessmentItem.statusOverrideJustification,
                 Assessment: {
                   id: assessmentItem.Assessment?.id!,
                   System: {
+                    id: assessmentItem.Assessment?.System?.id,
                     name: assessmentItem.Assessment?.System?.name!,
                   },
                 },
@@ -329,13 +363,21 @@ export async function getEvaluationSummary(
             }
           }
 
-          if (stigData.Overrides) {
-            for (const override of stigData.Overrides) {
+          if (stigData.StigOverrides) {
+            for (const override of stigData.StigOverrides ?? []) {
               const newOverride: EvalSummaryOverride = {
-                status: override.status,
-                System: {
-                  name: override.System.name,
-                },
+                type: override.type,
+                value: override.value,
+                systemId: override.System.id,
+                systemName: override.System.name,
+                stigDatumId: override.StigDatumId,
+                // System: {
+                //   id: override.System.id,
+                //   name: override.System.name,
+                // },
+                // StigData: {
+                //   id: override.StigData.id,
+                // },
               };
               overrides.push(newOverride);
 
@@ -344,11 +386,13 @@ export async function getEvaluationSummary(
               );
               if (index !== -1) {
                 const newCount = initializeCounts();
-                newCount[override.status]++;
-                systemFindingCounts[index] = {
-                  findings: newCount,
-                  systemName: override.System.name,
-                };
+                if (override.type === "status") {
+                  newCount[override.value]++;
+                  systemFindingCounts[index] = {
+                    findings: newCount,
+                    systemName: override.System.name,
+                  };
+                }
               }
             }
           }
@@ -405,7 +449,6 @@ export async function getEvaluationSummary(
         }
         evalSummary.push(evalSummaryItem);
       }
-      // type EvalSummaryOverride = {
     }
   } else {
     throw createError({
@@ -419,148 +462,3 @@ export async function getEvaluationSummary(
 
   return evalSummary;
 }
-
-// export async function getEvaluations(boundaryId: number, stigId?: number) {
-//   let whereClause;
-//   if (stigId) {
-//     whereClause = { BoundaryId: boundaryId, StigId: stigId };
-//   } else {
-//     whereClause = { BoundaryId: boundaryId };
-//   }
-
-//   const results = await Evaluation.findAll({
-//     where: whereClause,
-//     include: [
-//       {
-//         model: EvaluationItem,
-//         duplicating: false,
-//         include: [
-//           {
-//             model: StigData,
-//             duplicating: false,
-//             include: [
-//               {
-//                 model: AssessmentItem,
-//                 // attributes: ["status"],
-//                 duplicating: false,
-//                 include: [
-//                   {
-//                     model: Assessment,
-//                     // attributes: [],
-//                     duplicating: false,
-//                     required: true,
-//                     include: [
-//                       {
-//                         model: System,
-//                         // attributes: [],
-//                         duplicating: false,
-//                         where: {
-//                           BoundaryId: boundaryId,
-//                         },
-//                       },
-//                     ],
-//                   },
-//                 ],
-//               },
-//               {
-//                 model: Override,
-//                 include: [
-//                   {
-//                     model: System,
-//                     attributes: [],
-//                     duplicating: false,
-//                     where: {
-//                       BoundaryId: boundaryId,
-//                     },
-//                   },
-//                 ],
-//               },
-//               {
-//                 model: StigIdent,
-//               },
-//             ],
-//           },
-//           {
-//             model: Milestone,
-//             duplicating: false,
-//           },
-//         ],
-//       },
-//     ],
-//   });
-
-//   if (results.length === 0) {
-//     throw createError({
-//       statusCode: 404,
-//       statusMessage: "No Evaluation Found",
-//     });
-//   }
-
-//   type FindingStatus = {
-//     open: number;
-//     closed: number;
-//     notApplicable: number;
-//     notReviewed: number;
-//     [key: string]: number;
-//   };
-
-//   function addFindings(targetSum: FindingStatus, addends: FindingStatus) {
-//     for (const key in addends) {
-//       if (addends.hasOwnProperty(key)) {
-//         targetSum[key] += addends[key];
-//       }
-//     }
-//   }
-
-//   function uniqueTransform(findings: FindingStatus): string {
-//     const { open, closed, notApplicable, notReviewed } = findings;
-
-//     if (open) {
-//       return "Open";
-//     } else if (notReviewed) {
-//       return "Not_Reviewed";
-//     } else if (closed) {
-//       return "NotAFinding";
-//     } else if (notApplicable) {
-//       return "Not_Applicable";
-//     } else {
-//       return "";
-//     }
-//   }
-
-//   for (let x = 0; x < results.length; x++) {
-//     for (let i = 0; i < results[x].dataValues.EvaluationItems.length; i++) {
-//       const systemList: string[] = [];
-
-//       const tempCounts: FindingStatus = { open: 0, closed: 0, notApplicable: 0, notReviewed: 0 };
-//       for (
-//         let j = 0;
-//         j < results[x].dataValues.EvaluationItems[i].StigDatum.AssessmentItems.length;
-//         j++
-//       ) {
-//         const systemName =
-//           results[x].dataValues.EvaluationItems[i].StigDatum.AssessmentItems[j].Assessment.System
-//             .dataValues.name;
-//         if (systemList.findIndex((o) => o === systemName) === -1) {
-//           systemList.push(systemName);
-//         }
-//         const assessmentItemStatus =
-//           results[x].dataValues.EvaluationItems[i].StigDatum.AssessmentItems[j].status;
-//         const indexedFindings = {
-//           open: assessmentItemStatus === "Open" ? 1 : 0,
-//           closed: assessmentItemStatus === "NotAFinding" ? 1 : 0,
-//           notReviewed: assessmentItemStatus === "Not_Reviewed" ? 1 : 0,
-//           notApplicable: assessmentItemStatus === "Not_Applicable" ? 1 : 0,
-//         };
-
-//         addFindings(tempCounts, indexedFindings);
-//       }
-
-//       results[x].dataValues.EvaluationItems[i].dataValues.StigDatum.dataValues.status =
-//         uniqueTransform(tempCounts);
-//       // delete results[0].dataValues.EvaluationItems[i].dataValues.StigDatum.dataValues.AssessmentItems;
-//       results[x].dataValues.EvaluationItems[i].dataValues.systems = systemList;
-//     }
-//   }
-//   return results;
-// }

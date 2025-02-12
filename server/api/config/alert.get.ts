@@ -1,18 +1,30 @@
-import * as fs from "fs";
+import { NotificationCategory, TirNotification, TirNotifications_User } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
-  const filePath = "config/alertTest.json";
-
   const query = getQuery(event);
-  const desiredId = query.userId;
-
-  try {
-    const fileContent = fs.readFileSync(filePath, "utf-8");
-    const alertArray = JSON.parse(fileContent);
-    const filteredAlerts = alertArray.filter((obj) => obj.userId === parseInt(desiredId, 10));
-
-    return filteredAlerts;
-  } catch {
-    return [];
+  const desiredId = parseInt(query.userId, 10);
+  const checkResult = await userCheck(event, undefined, undefined, undefined);
+  if (checkResult.user.id === desiredId) {
+    try {
+      const userNotifications = await TirNotification.findAll({
+        include: [
+          {
+            model: TirNotifications_User,
+            where: { UserId: desiredId },
+          },
+          {
+            model: NotificationCategory,
+          },
+        ],
+      });
+      return userNotifications;
+    } catch {
+      return [];
+    }
+  } else {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Insufficient Permissions.",
+    });
   }
 });

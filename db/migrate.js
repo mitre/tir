@@ -1,1 +1,2 @@
-require("./umzug").migrator.runAsCLI();
+import { migrator } from "./umzug.js";
+migrator.runAsCLI();

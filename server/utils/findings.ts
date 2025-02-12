@@ -13,16 +13,9 @@ import {
   EvaluationItem,
 } from "../../db/models";
 import { getIndexesByCciIds } from "./cci";
+import { type FindingCounts } from "~/types/findings";
 
 // import findingsDownloadPost from "../api/boundaries/findingsDownload.post";
-
-export type FindingCounts = {
-  Open: number;
-  NotAFinding: number;
-  Not_Applicable: number;
-  Not_Reviewed: number;
-  [key: string]: number;
-};
 
 export type FindingSheetOptions = {
   Open: boolean;
@@ -34,7 +27,7 @@ export type FindingSheetOptions = {
 export type FindingsSheetItem = {
   securityKey: string; // assessmentItem.vuln_num *
   systemsAffected: string[]; // System.name
-  control: string[]; // lookup
+  control: string; // lookup
   cci: string[]; // StigIdents.text *
   source: string; // Assessment.Stig.title
   stigId: string; // StigData.rule_id*
@@ -117,6 +110,7 @@ export async function getFindingsSheet(
       {
         model: StigIdent,
         through: { attributes: [] },
+        required: false,
         attributes: ["text"],
         where: {
           system: {
@@ -191,6 +185,14 @@ export async function getFindingsSheet(
           mitigations = evalItem.Mitigations;
         }
       }
+      let indexResult = getIndexesByCciIds(identList, cciItems).join("\n");
+      if (indexResult === "" || indexResult === "\n" || indexResult.length === 0) {
+        indexResult = "CM-6";
+        logger.info({
+          service: "Boundary",
+          message: `Control not found, default Control CM-6 added for Finding  ${finding.vuln_num} `,
+        });
+      }
 
       const findingsSheetItem: FindingsSheetItem = {
         securityKey: finding.vuln_num,
@@ -201,7 +203,7 @@ export async function getFindingsSheet(
         fix: finding.fixtext,
         source: finding.AssessmentItems![0].Assessment!.Stig!.title,
         status: uniqueTransform(findingCounts),
-        control: getIndexesByCciIds(identList, cciItems),
+        control: indexResult,
         cci: identList,
         systemsAffected: systemsList,
         findingDetails: detailsList,
@@ -232,7 +234,7 @@ export function uniqueTransform(findings: FindingCounts): string {
   } else if (Not_Applicable) {
     return "Not_Applicable";
   } else {
-    return "Unknown";
+    return "Open";
   }
 }
 

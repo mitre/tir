@@ -21,8 +21,11 @@ export class AssessmentItem extends Model<
   declare status: string;
   declare finding_details: string;
   declare comments: string;
-  declare severity_override: CreationOptional<string>;
-  declare severity_justification: CreationOptional<string>;
+  declare severityOverride: CreationOptional<string>;
+  declare severityOverrideJustification: CreationOptional<string>;
+  declare statusOverride: CreationOptional<string>;
+  declare statusOverrideJustification: CreationOptional<string>;
+
   declare current: CreationOptional<string>;
   declare previousId: CreationOptional<number>;
   declare lastUpdate: CreationOptional<string>;
@@ -58,13 +61,21 @@ AssessmentItem.init(
     comments: {
       type: DataTypes.TEXT,
     },
-    severity_override: {
+    severityOverride: {
       type: DataTypes.ENUM,
       values: ["high", "medium", "low"],
       allowNull: true,
     },
-    severity_justification: {
+    severityOverrideJustification: {
       type: DataTypes.STRING,
+    },
+    statusOverride: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    statusOverrideJustification: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     current: {
       type: DataTypes.BOOLEAN,

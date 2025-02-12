@@ -16,12 +16,10 @@ const JWT_KEY = config.jwt_key as string;
 const SECRET_KEY = config.secret_key as string;
 
 export default defineEventHandler(async (event) => {
-  console.log("entered local flow");
   const body = await readBody(event);
   const email = body.email;
   const password = body.password;
 
-  console.log("entered local flow");
   const user = await User.findOne({ where: { email } });
   if (!user) {
     logger.info({
@@ -30,7 +28,7 @@ export default defineEventHandler(async (event) => {
     });
     throw createError({
       statusCode: 401,
-      statusMessage: "Unknown User",
+      statusMessage: "Unknown User.",
     });
   }
   const validPassword = verifyPassword(password, user.password, user.salt, SECRET_KEY);

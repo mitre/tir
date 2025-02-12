@@ -1,46 +1,23 @@
-import * as fs from "fs";
-import { DateTime } from "luxon";
+import { TirNotification, TirNotifications_User } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
-  const filePath = "config/alertTest.json";
-
-  let alertArray: any[] = [];
-
-  if (fs.existsSync(filePath)) {
-    // Read the existing JSON file
-    const fileContent = fs.readFileSync(filePath, "utf-8");
-    alertArray = JSON.parse(fileContent);
-  }
-
   const body = await readBody(event);
-  const userId = body.userId;
-  const category = body.category;
-  const message = body.message;
-
-  const maxId = alertArray.reduce((max, obj) => {
-    return obj.id > max ? obj.id : max;
-  }, 0);
-
-  const newId = maxId + 1;
-  const newObj = {
-    id: newId,
-    userId: userId,
-    category: body.category,
-    message: body.message,
-    read: false,
-    date: DateTime.now().toISO(),
-    dueDate: body.dueDate,
-    daysLeft: body.daysLeft,
-  };
-  alertArray.push(newObj);
-
-  const jsonString = JSON.stringify(alertArray, null, 2);
-
+  const BoundaryUsers = body.BoundaryUsers;
+  delete body.BoundaryUsers;
   try {
-    const fileWriteResult = fs.writeFileSync(filePath, jsonString, "utf8");
+    const newNotification = await TirNotification.create(body);
+
+    for (let i = 0; i < BoundaryUsers.length; i++) {
+      await newNotification.addUser(BoundaryUsers[i].UserId);
+      const userNotification = await TirNotifications_User.findOne({
+        where: { UserId: BoundaryUsers[i].UserId, TirNotificationId: newNotification.id },
+      });
+      userNotification?.setDataValue("read", false);
+      userNotification?.save();
+    }
 
     return { success: true };
-  } catch {
-    return { success: false };
+  } catch (err) {
+    return { success: err };
   }
 });

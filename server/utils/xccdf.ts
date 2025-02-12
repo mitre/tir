@@ -55,6 +55,7 @@ export async function importXccdf(xmlContent: string, systemId: number) {
       stigMatch.dataValues.id,
       // classification can be found in SCC rear-matter but not in OSCAP?
     );
+    await createEvaluation(system?.dataValues.Boundary.id, stigMatch.dataValues.id);
     assessmentToPopulate = newAssessment;
   }
 

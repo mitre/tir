@@ -1,29 +1,35 @@
-import intoStream from "into-stream";
+import { Readable } from "node:stream";
 import { sendStream } from "h3";
-import jwt from "jsonwebtoken";
 import { generatePoam } from "../../utils/excelExport/poamExport";
-import { User, Boundary, BoundaryInterface } from "../../../db/models";
+import { Boundary, BoundaryInterface } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
-  const rawToken = getCookie(event, "tirtoken");
-  const config = useRuntimeConfig();
-  const decodedToken = jwt.verify(rawToken, config.jwt_key) as { [key: string]: any };
-
-  const userId = decodedToken.userId;
-  const user = await User.findByPk(userId);
   const body = await readBody(event);
-  const boundary = (await Boundary.findByPk(body.BoundaryId)) as BoundaryInterface;
+  const checkResult = await userCheck(event, undefined, body.BoundaryId, undefined);
+  if (checkResult.BoundaryRoleId) {
+    const boundary = (await Boundary.findByPk(body.BoundaryId)) as BoundaryInterface;
 
-  const poamWorkBook = await generatePoam(body.BoundaryId, isNaN(userId) ? undefined : userId);
+    const poamWorkBook = await generatePoam(
+      body.BoundaryId,
+      isNaN(checkResult.user.id) ? undefined : checkResult.user.id,
+    );
 
-  const buffer = await poamWorkBook.xlsx.writeBuffer();
-  const stream = intoStream(buffer);
+    const buffer = await poamWorkBook.xlsx.writeBuffer();
+    const stream = new Readable();
+    stream.push(buffer);
+    stream.push(null);
 
-  setResponseHeader(event, "Content-Disposition", 'attachment; filename="POAM.txt"');
-  setResponseHeader(event, "Content-Type", "application/octet-stream");
-  logger.info({
-    service: "Boundary",
-    message: `${user?.email} Downloaded POAM for: ${boundary.name}`,
-  });
-  return sendStream(event, stream);
+    setResponseHeader(event, "Content-Disposition", 'attachment; filename="POAM.txt"');
+    setResponseHeader(event, "Content-Type", "application/octet-stream");
+    logger.info({
+      service: "Boundary",
+      message: `${checkResult.user?.email} Downloaded POAM for: ${boundary.name}`,
+    });
+    return sendStream(event, stream);
+  } else {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Insufficient Permissions.",
+    });
+  }
 });

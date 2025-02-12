@@ -1,0 +1,260 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:simpleType name="preferenceNameType">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <xs:simpleType name="preferenceValueType">
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <xs:complexType name="preferenceType">
+        <xs:sequence>
+            <xs:element name="name" type="preferenceNameType"/>
+            <xs:element name="value" type="preferenceValueType"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="serverPreferencesType">
+        <xs:sequence>
+            <xs:element name="preference" type="preferenceType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="preferencesType">
+        <xs:sequence>
+            <xs:element name="ServerPreferences" type="serverPreferencesType"/>
+            <xs:element name="PluginsPreferences" type="pluginPreferencesType"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="pluginPreferencesType">
+        <xs:sequence>
+            <xs:element name="item" type="pluginPreferenceItemType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="pluginPreferenceItemType">
+        <xs:sequence>
+            <xs:element name="pluginName" type="xs:string"/>
+            <xs:element name="pluginId" type="xs:integer"/>
+            <xs:element name="fullName" type="xs:string"/>
+            <xs:element name="preferenceName" type="xs:string"/>
+            <xs:element name="preferenceType" type="xs:string"/>
+            <xs:element name="preferenceValues" type="xs:string"/>
+            <xs:element name="selectedValue" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="policyType">
+        <xs:sequence>
+            <xs:element name="policyName" type="xs:string"/>
+            <xs:element name="Preferences" type="preferencesType"/>
+            <xs:element name="FamilySelection"/>
+            <xs:element name="IndividualPluginSelection"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="enumeratedTagNames">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="patch-summary-total-cves"/>
+            <xs:enumeration value="LastUnauthenticatedResults"/>
+            <xs:enumeration value="policy-used"/>
+            <xs:enumeration value="os"/>
+            <xs:enumeration value="operating-system-conf"/>
+            <xs:enumeration value="operating-system-method"/>
+            <xs:enumeration value="host-fqdns"/>
+            <xs:enumeration value="system-type"/>
+            <xs:enumeration value="operating-system"/>
+            <xs:enumeration value="sinfp-ml-prediction"/>
+            <xs:enumeration value="sinfp-signature"/>
+            <xs:enumeration value="host-fqdn"/>
+            <xs:enumeration value="host-rdns"/>
+            <xs:enumeration value="Credentialed_Scan"/>
+            <xs:enumeration value="HOST_END_TIMESTAMP"/>
+            <xs:enumeration value="HOST_END"/>
+            <xs:enumeration value="host-ip"/>
+            <xs:enumeration value="HOST_START_TIMESTAMP"/>
+            <xs:enumeration value="HOST_START"/>
+            <xs:enumeration value="ssh_default_shell"/>
+            <xs:enumeration value="ssh-auth-meth"/>
+            <xs:enumeration value="ssh-login-used"/>
+            <xs:enumeration value="ssh-fingerprint"/>
+            <xs:enumeration value="local-checks-proto"/>
+            <xs:enumeration value="LastAuthenticatedResults"/>
+            <xs:enumeration value="mac-address"/>
+            <xs:enumeration value="hostname"/>
+            <xs:enumeration value="smb-login-used"/>
+            <xs:enumeration value="virtual-mac-address"/>
+            <xs:enumeration value="mcafee_epo-agent-guid"/>
+            <xs:enumeration value="mcafee-epo-guid"/>
+            <xs:enumeration value="bios-uuid"/>
+            <xs:enumeration value="wmi-domain"/>
+            <xs:enumeration value="netbios-name"/>
+            <xs:enumeration value="host-ad-config"/>
+            <xs:enumeration value="TAG"/>
+            <xs:enumeration value="SecurityControls-0"/>
+            <xs:enumeration value="SecurityControls-1"/>
+            <xs:enumeration value="MS23-07"/>
+            <xs:enumeration value="MS23-06"/>
+            <xs:enumeration value="pd-156000-0"/>
+            <xs:enumeration value="pd-156000-1"/>
+            <xs:enumeration value="pd-156001-0"/>
+            <xs:enumeration value="pd-156000-1"/>
+            <xs:enumeration value="Apache_sites"/>
+            <xs:enumeration value="IIS_sites"/>
+            <xs:enumeration value="operating-system-unsupported"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="netstatRegEx">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="netstat-(listen|established)-(tcp|udp)(4|6|46)-[0-9]{1,4}"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="enumPortsRegEx">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="enumerated-ports-[0-9]{1,5}-(tcp|udp)"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="cpeRegEx">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="cpe(-[0-9]+)?"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="patchSummaryRegEx">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="patch-summary-(cve-num|txt|cves)-[0-9a-f]{32}"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="traceRegEx">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="traceroute-hop-[0-9]{1,3}"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="allowedTagNames">
+        <xs:union memberTypes="enumeratedTagNames netstatRegEx enumPortsRegEx cpeRegEx patchSummaryRegEx traceRegEx"/>
+    </xs:simpleType>
+    <xs:complexType name="HostPropertiesTagType" mixed="true">
+        <xs:attribute name="name" type="allowedTagNames" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="HostPropertiesType">
+        <xs:sequence>
+            <xs:element name="tag" maxOccurs="unbounded" type="HostPropertiesTagType"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="AttachmentType" mixed="true">
+        <xs:attribute name="name" type="xs:string"/>
+        <xs:attribute name="type" type="xs:string"/>
+    </xs:complexType>
+    <xs:simpleType name="ProtocolType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="tcp"/>
+            <xs:enumeration value="udp"/>
+            <xs:enumeration value="icmp"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="nessusDateType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\d{4}/(0[1-9]|1[0-2])/(0[1-9]|[12][0-9]|3[01])"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="ReportItemType">
+        <xs:sequence>
+            <xs:element name="age_of_vuln" type="xs:string" minOccurs="0"/>
+            <xs:element name="cisa-known-exploited" type="xs:string" minOccurs="0"/>
+            <xs:element name="agent" type="xs:string" minOccurs="0"/>
+            <xs:element name="always_run" type="xs:string" minOccurs="0"/>
+            <xs:element name="asset_categories" type="xs:string" minOccurs="0"/>
+            <xs:element name="asset_inventory" type="xs:string" minOccurs="0"/>
+            <xs:element name="asset_inventory_category" type="xs:string" minOccurs="0"/>
+            <xs:element name="bid" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="cert" type="xs:string" minOccurs="0"/>
+            <xs:element name="canvas_package" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="cea-id" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="cpe" type="xs:string" minOccurs="0"/>
+            <xs:element name="cve" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="cvss3_base_score" type="xs:string" minOccurs="0"/>
+            <xs:element name="cvss3_score_source" type="xs:string" minOccurs="0"/>
+            <xs:element name="cvss3_temporal_score" type="xs:string" minOccurs="0"/>
+            <xs:element name="cvss3_temporal_vector" type="xs:string" minOccurs="0"/>
+            <xs:element name="cvss3_vector" type="xs:string" minOccurs="0"/>
+            <xs:element name="cvssV3_impactScore" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="cvss_base_score" type="xs:string" minOccurs="0"/>
+            <xs:element name="cvss_score_rationale" type="xs:string" minOccurs="0"/>
+            <xs:element name="cvss_score_source" type="xs:string" minOccurs="0"/>
+            <xs:element name="cvss_temporal_score" type="xs:string" minOccurs="0"/>
+            <xs:element name="cvss_temporal_vector" type="xs:string" minOccurs="0"/>
+            <xs:element name="cvss_vector" type="xs:string" minOccurs="0"/>
+            <xs:element name="cwe" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="description" type="xs:string"/>
+            <xs:element name="exploit_code_maturity" type="xs:string" minOccurs="0"/>
+            <xs:element name="edb-id" type="xs:string" minOccurs="0"/>
+            <xs:element name="exploited_by_nessus" type="xs:string" minOccurs="0"/>
+            <xs:element name="exploit_available" type="xs:string" minOccurs="0"/>
+            <xs:element name="exploit_framework_metasploit" type="xs:string" minOccurs="0"/>
+            <xs:element name="exploit_framework_canvas" type="xs:string" minOccurs="0"/>
+            <xs:element name="exploit_ease" type="xs:string" minOccurs="0"/>
+            <xs:element name="exploitability_ease" type="xs:string" minOccurs="0"/>
+            <xs:element name="exploited_by_malware" type="xs:string" minOccurs="0"/>
+            <xs:element name="fname" type="xs:string"/>
+            <xs:element name="icsa" type="xs:string" minOccurs="0"/>
+            <xs:element name="metasploit_name" type="xs:string" minOccurs="0"/>
+            <xs:element name="in_the_news" type="xs:string" minOccurs="0"/>
+            <xs:element name="hardware_inventory" type="xs:string" minOccurs="0"/>
+            <xs:element name="generated_plugin" type="xs:string" minOccurs="0"/>
+            <xs:element name="iava" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="iavb" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="iavt" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="msft" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="mskb" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="jsa" type="xs:string" minOccurs="0"/>
+            <xs:element name="patch_publication_date" type="nessusDateType" minOccurs="0"/>
+            <xs:element name="os_identification" type="xs:string" minOccurs="0"/>
+            <xs:element name="plugin_modification_date" minOccurs="0" type="nessusDateType"/>
+            <xs:element name="plugin_name" type="xs:string"/>
+            <xs:element name="plugin_publication_date" type="nessusDateType"/>
+            <xs:element name="plugin_type" type="xs:string"/>
+            <xs:element name="product_coverage" type="xs:string" minOccurs="0"/>
+            <xs:element name="rhsa" type="xs:string" minOccurs="0"/>
+            <xs:element name="risk_factor" type="xs:string"/>
+            <xs:element name="script_version" type="xs:string"/>
+            <xs:element name="see_also" type="xs:string" minOccurs="0"/>
+            <xs:element name="solution" type="xs:string"/>
+            <xs:element name="stig_severity" type="xs:string" minOccurs="0"/>
+            <xs:element name="synopsis" type="xs:string"/>
+            <xs:element name="threat_intensity_last_28" type="xs:string" minOccurs="0"/>
+            <xs:element name="threat_recency" type="xs:string" minOccurs="0"/>
+            <xs:element name="threat_sources_last_28" type="xs:string" minOccurs="0"/>
+            <xs:element name="vpr_score" type="xs:string" minOccurs="0"/>
+            <xs:element name="vendor_severity" type="xs:string" minOccurs="0"/>
+            <xs:element name="vmsa" type="xs:string" minOccurs="0"/>
+            <xs:element name="unsupported_by_vendor" type="xs:string" minOccurs="0"/>
+            <xs:element name="thorough_tests" type="xs:string" minOccurs="0"/>
+            <xs:element name="vuln_publication_date" type="xs:string" minOccurs="0"/>
+            <xs:element name="xref" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="plugin_output" type="xs:string" minOccurs="0"/>
+            <xs:element name="attachment" type="AttachmentType" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="port" type="xs:integer"/>
+        <xs:attribute name="svc_name" type="xs:string"/>
+        <xs:attribute name="protocol" type="ProtocolType"/>
+        <xs:attribute name="severity" type="xs:integer"/>
+        <xs:attribute name="pluginID" type="xs:integer"/>
+        <xs:attribute name="pluginName" type="xs:string"/>
+        <xs:attribute name="pluginFamily" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="reportHostType">
+        <xs:sequence>
+            <xs:element name="HostProperties" type="HostPropertiesType"/>
+            <xs:element name="ReportItem" type="ReportItemType" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="reportType">
+        <xs:sequence>
+            <xs:element name="ReportHost" type="reportHostType" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string"/>
+    </xs:complexType>
+    <!-- Root element -->
+    <xs:element name="NessusClientData_v2">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Policy" type="policyType"/>
+                <xs:element name="Report" type="reportType" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

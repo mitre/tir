@@ -16,6 +16,7 @@ import { Stig } from "./stig";
 import { StigIdent } from "./stigIdent";
 import { EvaluationItem } from "./evaluationItem";
 import type { Override, StigReference, StigResponsibility } from ".";
+import type { StigOverride } from "~/db/models/stigOverride";
 
 export class StigData extends Model<InferAttributes<StigData>, InferCreationAttributes<StigData>> {
   declare id: CreationOptional<number>;
@@ -54,6 +55,7 @@ export class StigData extends Model<InferAttributes<StigData>, InferCreationAttr
   declare Stigs?: NonAttribute<Stig[]>;
   declare StigIdents?: NonAttribute<StigIdent[]>;
   declare Overrides?: NonAttribute<Override[]>;
+  declare StigOverrides?: NonAttribute<StigOverride[]>;
   declare StigResponsibilities?: NonAttribute<StigResponsibility[]>;
   declare StigReferences?: NonAttribute<StigReference[]>;
 
@@ -74,6 +76,7 @@ export class StigData extends Model<InferAttributes<StigData>, InferCreationAttr
     Overrides: Association<StigData, Override>;
     StigResponsibilities: Association<StigData, StigResponsibility>;
     StigReferences: Association<StigData, StigReference>;
+    StigOverride: Association<StigData, StigOverride>;
   };
 }
 

@@ -8,8 +8,10 @@ import {
   type NonAttribute,
   type BelongsToManyAddAssociationMixin,
   Association,
+  type ForeignKey,
 } from "sequelize";
-import type { User } from ".";
+import { EvaluationItem } from "~/db/models/evaluationItem";
+import { User } from "~/db/models/user";
 
 export class Milestone extends Model<
   InferAttributes<Milestone>,
@@ -20,7 +22,9 @@ export class Milestone extends Model<
   declare completion_date: string;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
+  declare EvaluationItemId: ForeignKey<EvaluationItem["id"]>;
   declare Users?: NonAttribute<User[]>;
+  declare EvaluationItem?: NonAttribute<EvaluationItem>;
 
   declare addUser: BelongsToManyAddAssociationMixin<User, number>;
 

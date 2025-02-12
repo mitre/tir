@@ -73,8 +73,8 @@ export const migrateBoundary = async (
             check.status = matchingCheck?.status;
             check.comments = matchingCheck?.comments;
             check.finding_details = matchingCheck?.finding_details;
-            check.severity_override = matchingCheck?.severity_override;
-            check.severity_justification = matchingCheck?.severity_justification;
+            check.severityOverride = matchingCheck?.severityOverride;
+            check.severityOverrideJustification = matchingCheck?.severityOverrideJustification;
             check.AssessmentId = newAssessment.id;
             await check.save();
           }
@@ -84,7 +84,10 @@ export const migrateBoundary = async (
     return { results: "Success" };
   } catch (error) {
     logger.error(error);
-    throw error;
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Error with Migration",
+    });
   }
 };
 

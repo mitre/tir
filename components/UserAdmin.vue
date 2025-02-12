@@ -61,7 +61,7 @@
                       </div>
                     </div>
                     <div class="mt-8 flow-root">
-                      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                      <div class="-mx-4 -my-2 sm:-mx-6 lg:-mx-8">
                         <div class="inline-block min-w-full py-2 align-middle sm:px-0 lg:px-8">
                           <table class="min-w-full divide-y divide-gray-700">
                             <thead>
@@ -120,7 +120,7 @@
                                       leave-to-class="transform opacity-0 scale-95"
                                     >
                                       <MenuItems
-                                        class="absolute right-0 z-10 mt-0.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none dark:bg-gray-800"
+                                        class="absolute right-0 z-10 mt-0.5 w-32 origin-top-right divide-y divide-black/20 rounded-md border border-gray-400/50 bg-white shadow-lg ring-1 ring-gray-900/5 focus:outline-none dark:divide-white/20 dark:border-white/50 dark:bg-gray-600"
                                       >
                                         <MenuItem v-slot="{ active }">
                                           <a
@@ -372,7 +372,7 @@
                                                             id="project-name"
                                                             v-model="newEmail"
                                                             required
-                                                            type="text"
+                                                            type="email"
                                                             name="project-name"
                                                             class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                                           />
@@ -381,7 +381,7 @@
                                                             id="project-name"
                                                             v-model="Email"
                                                             required
-                                                            type="text"
+                                                            type="email"
                                                             name="project-name"
                                                             class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                                           />
@@ -700,8 +700,9 @@
     </div>
     <ErrorNotification
       v-if="showErrorNotification"
+      class="z-50"
       :show="showErrorNotification"
-      :msg="errorMsg"
+      :error="errorObject"
       @show="showErrorNotification = false"
     />
   </div>
@@ -736,8 +737,6 @@ import {
   DocumentDuplicateIcon,
 } from "@heroicons/vue/24/outline";
 
-import { storeToRefs } from "pinia";
-import { useUserListStore } from "~~/stores/UserList";
 const timeZones = Intl.supportedValuesOf("timeZone");
 const open = ref(false);
 const openAlert = ref(false);
@@ -749,8 +748,7 @@ const Confirm = ref();
 const TimezoneName = ref(timeZones.at(1));
 const currentId = ref(null);
 const RoleId = ref(1);
-const { data: currentUser } = await useFetch("/api/auth/currentUser");
-// edit varibles
+
 const editId = ref("");
 const newFirstName = ref("");
 const newLastName = ref("");
@@ -763,24 +761,9 @@ const newRoleName = ref();
 const flag = ref(true);
 const editTimezoneName = ref();
 const router = useRouter();
-// const pwSucess = ref(false);
 const showErrorNotification = ref(false);
-const errorMsg = ref();
-const store2 = useUserListStore();
-const { deleteUserList } = store2;
-const { UserList } = storeToRefs(store2);
-function addUsers(UserName, currentDate) {
-  if (UserName.length === 0) {
-    return;
-  }
-  // invokes function in the store:
-  store2.addUserList(UserName, currentDate);
-}
-//
-const refreshAll = async () => {
-  await refreshNuxtData();
-};
-//
+const errorObject = ref();
+
 const { data } = await useFetch("/api/users");
 const { data: roles } = await useFetch("/api/users/roles");
 const selected = ref(roles.value[0]);
@@ -811,7 +794,7 @@ async function addUser() {
     open.value = false;
     location.reload();
   } catch (err) {
-    errorMsg.value = err.data.statusMessage;
+    errorObject.value = err;
     showErrorNotification.value = true;
     setTimeout(() => (showErrorNotification.value = false), 6000);
   }
@@ -820,12 +803,15 @@ async function addUser() {
 async function deleteUser(UserId) {
   //  console.log(UserId);
   try {
-    await useFetch("/api/users/delete", {
+    await $fetch("/api/users/delete", {
       method: "POST",
       body: { id: UserId },
     });
-  } finally {
     location.reload();
+  } catch (err) {
+    errorObject.value = err;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
   }
 }
 
@@ -848,11 +834,11 @@ async function editUser() {
         password: newReset.value,
       };
       console.log("updating PW for:", pwData.email);
-      await useFetch("/api/auth/setPW", {
+      await $fetch("/api/auth/setPW", {
         method: "POST",
         body: {
           email: newEmail.value,
-          password: newReset,
+          password: newReset.value,
         },
         headers: {
           "Content-Type": "application/json",
@@ -865,7 +851,7 @@ async function editUser() {
     open.value = false;
     location.reload();
   } catch (err) {
-    errorMsg.value = err.data.statusMessage;
+    errorObject.value = err;
     showErrorNotification.value = true;
     setTimeout(() => (showErrorNotification.value = false), 6000);
   }

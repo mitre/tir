@@ -1,6 +1,9 @@
-<script setup>
+<script setup lang="ts">
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
 import LoginFailed from "./LoginFailed.vue";
+import type { TirAlias } from "~/db/models/tirAlias";
+import { useAliasStore } from "~~/stores/AliasStorage";
+const alias = useAliasStore();
 
 const props = defineProps({
   authMethod: {
@@ -28,16 +31,12 @@ const currentUser = useCookie("current-user");
 const router = useRouter();
 
 async function loginUser() {
-  console.log("Starting Login: ", props.authMethod);
-  console.log(userInput.value.username.toLowerCase());
   if (
     userInput.value.username.length > 0 &&
     userInput.value.passwordField.length > 0 &&
     userInput.value.agree === true
   ) {
-    console.log("Login: Fields filled");
     try {
-      console.log("Calling login api");
       let apiError = null;
 
       if (props.authMethod === "Local") {
@@ -63,14 +62,28 @@ async function loginUser() {
       }
 
       if (apiError && apiError.value) {
-        console.log("Login error:", apiError);
         dialogOpen.value = true;
       } else {
-        console.log("Login successful");
-
         isAuthenticated.value = "true";
         currentUser.value = userInput.value.username;
 
+        const { data: aliases } = await useFetch<TirAlias[]>("/api/config/alias");
+
+        if (aliases.value) {
+          const aliasMap: Record<string, string> = aliases.value.reduce(
+            (map: Record<string, string>, aliasEntry: TirAlias) => {
+              map[aliasEntry.term] = aliasEntry.alias;
+              return map;
+            },
+            {},
+          );
+          alias.CompanyAlias = aliasMap.Company;
+          alias.BoundaryAlias = aliasMap.Boundary;
+          alias.SystemAlias = aliasMap.System;
+        }
+        await $fetch("/api/users/checkAlert", {
+          method: "GET",
+        });
         router.push("/home");
       }
     } catch (error) {
