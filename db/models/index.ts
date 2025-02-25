@@ -47,6 +47,7 @@ import { NessusOverride } from "./nessusOverride";
 import { TirNotification } from "./tirNotifications";
 import { NotificationCategory } from "./notificationCategory";
 import { StigOverride } from "./stigOverride";
+import { Session } from "./session";
 
 User.belongsTo(UserRole);
 UserRole.hasOne(User);
@@ -344,6 +345,9 @@ StigOverride.belongsTo(System, { onDelete: "CASCADE", onUpdate: "CASCADE" });
 System.hasMany(StigOverride, { onDelete: "NO ACTION", onUpdate: "CASCADE" });
 StigOverride.belongsTo(StigData, { onDelete: "CASCADE", onUpdate: "CASCADE" });
 StigData.hasMany(StigOverride, { onDelete: "NO ACTION", onUpdate: "CASCADE" });
+
+Session.belongsTo(User, { onUpdate: "CASCADE", onDelete: "CASCADE" });
+User.hasMany(Session, { onUpdate: "CASCADE", onDelete: "CASCADE" });
 
 export {
   User,

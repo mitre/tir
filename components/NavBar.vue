@@ -104,15 +104,20 @@
                           v-if="index === 0"
                           :href="item.href"
                           :class="[active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700']"
-                          >{{ item.name }}</a
                         >
-                        <a
+                          {{ item.name }}
+                        </a>
+                        <button
                           v-else
-                          :href="item.href"
-                          :class="[active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700']"
-                          @click="clearStorage()"
-                          >{{ item.name }}</a
+                          type="button"
+                          :class="[
+                            active ? 'bg-gray-100' : '',
+                            'block w-full px-4 py-2 text-left text-sm text-gray-700',
+                          ]"
+                          @click="handleLogout"
                         >
+                          {{ item.name }}
+                        </button>
                       </MenuItem>
                     </MenuItems>
                   </transition>
@@ -439,8 +444,27 @@ const adminNavigation = [
 ];
 const userNavigation = [
   { name: "Your Profile", href: "/profile/" + currentUser.value.email },
-  { name: "Sign out", href: "/logout" },
+  { name: "Sign out", href: "#" },
 ];
+
+const handleLogout = async () => {
+  try {
+    const { data, error } = await $fetch("/api/auth/logout", { method: "POST" });
+    if (error) {
+      console.error(`Logout failed: ${error.message}`);
+      return;
+    }
+
+    console.log("Logout successful, clearing storage and redirecting...");
+
+    localStorage.clear();
+    sessionStorage.clear();
+    await router.push("/");
+  } catch (e) {
+    console.error(`Unexpected error during logout: ${e.message}`);
+  }
+};
+
 const userBell = computed(() => {
   return currentAlert.value
     .filter((alert) => !alert.TirNotifications_Users[0].read)
