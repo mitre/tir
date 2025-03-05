@@ -25,6 +25,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   declare lastLogin: string;
   declare creationMethod: string;
   declare salt: string;
+  declare providerId: CreationOptional<string>;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
   declare UserRoleId: ForeignKey<UserRole["id"]>;
@@ -35,9 +36,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   declare Milestones?: NonAttribute<Milestone[]>;
   declare addEvaluationItem: HasManyAddAssociationMixin<EvaluationItem, number>;
 
-  public comparePassword = (inputPassword: string): Promise<boolean> => {
-    return bcrypt.compare(inputPassword, this.password);
-  };
+  declare UserRole: NonAttribute<UserRole>;
 
   declare static associations: {
     Boundaries: Association<User, Boundary>;
@@ -67,15 +66,15 @@ User.init(
       unique: true,
     },
     password: {
-      type: DataTypes.STRING(128),
+      type: DataTypes.STRING,
       allowNull: true,
     },
     organization: {
-      type: DataTypes.STRING(64),
+      type: DataTypes.STRING,
       allowNull: true,
     },
     passwordChangedAt: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.STRING,
       allowNull: true,
     },
     forcePasswordChange: {
@@ -89,24 +88,28 @@ User.init(
       defaultValue: 0,
     },
     lastLogin: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.STRING,
       allowNull: true,
     },
     creationMethod: {
-      type: DataTypes.STRING(16),
+      type: DataTypes.STRING,
       allowNull: false,
       defaultValue: "local",
     },
     salt: {
-      type: DataTypes.STRING(16),
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    providerId: {
+      type: DataTypes.STRING,
       allowNull: true,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.STRING,
       allowNull: false,
     },
   },
