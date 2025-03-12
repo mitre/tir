@@ -3,8 +3,9 @@ import { AuthService } from "~/server/auth/authService";
 
 const authService = new AuthService();
 
-// Delay helper function for debugging
+// TODO: Remove - Delay helper function for debugging
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function clearCookie(event: any, name: string) {
   setCookie(event, name, "", {
     path: "/",
@@ -19,7 +20,6 @@ export default defineEventHandler(async (event) => {
 
     const result = await authService.authenticate("oidc", event, {});
     if (result.redirect) {
-      // Persist PKCE values in cookies before redirecting
       await setCookie(event, "pkce_code_verifier", event.context.auth.code_verifier, {
         httpOnly: true,
         sameSite: "lax",
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
         sameSite: "lax",
       });
 
-      // Now redirect the browser to the OIDC provider
+      // redirect to the OIDC provider
       return sendRedirect(event, result.redirect);
     }
     return { success: true, message: "Redirecting to OIDC provider..." };
