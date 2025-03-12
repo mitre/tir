@@ -4,10 +4,7 @@ import { SyslogTransportOptions, Syslog } from "winston-syslog";
 import { TirConfig } from "~/db/models/tirConfig";
 import * as configUtil from "~/server/utils/tirConfig";
 
-const defaultConsoleLogLevel =
-  process.env.NODE_ENV !== "production" && process.env.TIR_DEBUG?.toLocaleLowerCase() === "true"
-    ? "debug"
-    : "info";
+const defaultConsoleLogLevel = process.env.TIR_DEBUG?.toLowerCase() === "true" ? "debug" : "info";
 
 const logConfigPrefix = "logger";
 

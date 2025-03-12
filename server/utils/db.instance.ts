@@ -3,12 +3,14 @@ import { Sequelize } from "sequelize";
 const config = useRuntimeConfig();
 let initSequelize;
 
+const databasePort = ((n) => (isNaN(n) ? 5432 : n))(parseInt(config.database_port, 10));
+
 if (config.usesqlite === "true") {
   initSequelize = new Sequelize({
     dialect: "sqlite",
     storage: "db/tirdb.sqlite",
     logQueryParameters: true,
-    logging: false,
+    logging: (msg) => logger.debug({ service: "database", message: msg }),
   });
 } else {
   initSequelize = new Sequelize({
@@ -17,9 +19,8 @@ if (config.usesqlite === "true") {
     username: config.database_user,
     password: config.database_password,
     host: config.database_host,
-    port: 5432, //config.database_port,
-    // logging: msg => databaseLogger.info(msg),
-    logging: false,
+    port: databasePort,
+    logging: (msg) => logger.debug({ service: "database", message: msg }),
   });
 }
 

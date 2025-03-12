@@ -1,19 +1,35 @@
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { dirname } from "path";
+import { dirname, resolve } from "path";
 import { Sequelize } from "sequelize";
 import * as dotenv from "dotenv";
 import { DateTime } from "luxon";
 import { Umzug, SequelizeStorage } from "umzug";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-dotenv.config();
+
+const envPath = resolve(".env");
+dotenv.config({ path: envPath });
+
+const processName = path.basename(process.argv[1]);
+const urlName = path.basename(fileURLToPath(import.meta.url));
+const debugEnabled = process.env.DB_DEBUG?.toLowerCase() === "true";
+
+const loggingFlag =
+  ["migrate.js", "seed.js"].includes(processName) ||
+  debugEnabled ||
+  (urlName === "umzug.js" && !debugEnabled);
+
+const logging = loggingFlag ? console.log : false;
 
 const sqliteConnectionObject = {
   dialect: "sqlite",
   storage: "db/tirdb.sqlite",
+  logging,
 };
+
+const databasePort = ((n) => (isNaN(n) ? 5432 : n))(parseInt(process.env.DATABASE_PORT, 10));
 
 const postgresConnectionObject = {
   dialect: "postgres",
@@ -21,9 +37,10 @@ const postgresConnectionObject = {
   username: process.env.DATABASE_USER || "",
   password: process.env.DATABASE_PASSWORD || "",
   host: process.env.DATABASE_HOST || "",
-  port: 5432, // config.database_port,
-  // logging: msg => databaseLogger.info(msg),
+  port: databasePort,
+  logging,
 };
+
 const useSQLite = process.env.SQLITE === "true";
 const connectionObject = useSQLite ? sqliteConnectionObject : postgresConnectionObject;
 export const sequelize = new Sequelize(connectionObject);
@@ -42,13 +59,33 @@ sequelize.addHook("beforeUpdate", (model) => {
 });
 sequelize.addHook("beforeBulkCreate", "bulkTimeStampHook", globalBeforeBulkCreateHook);
 
-const migrationsPath = ".output-db/db/migrations/*.js";
+const logger = process.env.DB_DEBUG?.toLowerCase() === "true" ? console : undefined;
 
-const loggerConfig = {
-  info: (message) => logger.info(message),
-  warn: (message) => logger.warn(message),
-  error: (message) => logger.error(message),
-};
+const tables = ["SequelizeMeta", "seeder_meta"];
+
+for (const tableName of tables) {
+  try {
+    await sequelize.query(`
+      UPDATE "${tableName}"
+      SET "name" = REPLACE("name", '.ts', '.js')
+      WHERE "name" LIKE '%.ts';
+    `);
+  } catch (error) {
+    if (error.name === "SequelizeDatabaseError") {
+      const dialect = sequelize.getDialect();
+      if (
+        (dialect === "sqlite" &&
+          error.original?.code === "SQLITE_ERROR" &&
+          error.message.includes("no such table")) ||
+        (dialect === "postgres" && error.original?.code === "42P01")
+      ) {
+        console.log(`${tableName} table does not exist. Skipping normalization.`);
+      }
+    } else {
+      throw error;
+    }
+  }
+}
 
 export const migrator = new Umzug({
   migrations: {
@@ -58,43 +95,16 @@ export const migrator = new Umzug({
   storage: new SequelizeStorage({
     sequelize,
   }),
-  logger: console,
+  logger,
   create: {
     folder: path.resolve(process.cwd(), "db/migrations"),
     template: (filepath) => {
-      const templatePath = path.resolve(process.cwd(), "templates/sample-migration.ts");
+      const templatePath = path.resolve(process.cwd(), "db/templates/sample-migration.js");
       return [[filepath, fs.readFileSync(templatePath).toString()]];
     },
   },
 });
 
-try {
-  await sequelize.query(`
-  UPDATE "SequelizeMeta"
-  SET "name" = REPLACE("name", '.ts', '.js')
-  WHERE "name" LIKE '%.ts';
-`);
-  await sequelize.query(`
-  UPDATE "seeder_meta"
-  SET "name" = REPLACE("name", '.ts', '.js')
-  WHERE "name" LIKE '%.ts';
-`);
-} catch (error) {
-  if (error.name === "SequelizeDatabaseError") {
-    const dialect = sequelize.getDialect();
-    if (
-      (dialect === "sqlite" &&
-        error.original?.code === "SQLITE_ERROR" &&
-        error.message.includes("no such table")) ||
-      (dialect === "postgres" && error.original?.code === "42P01")
-    ) {
-      // Handle "table does not exist" error (PostgreSQL error code 42P01)
-      console.log("SequelizeMeta table does not exist. Skipping normalization.");
-    }
-  } else {
-    throw error;
-  }
-}
 export const seeder = new Umzug({
   migrations: {
     glob: ["db/seeders/*.js"],
@@ -104,11 +114,11 @@ export const seeder = new Umzug({
     sequelize,
     modelName: "seeder_meta",
   }),
-  logger: console,
+  logger,
   create: {
     folder: "db/seeders",
     template: (filepath) => [
-      [filepath, fs.readFileSync(path.join(__dirname, "templates/sample-seeder.ts")).toString()],
+      [filepath, fs.readFileSync(path.join(__dirname, "db/templates/sample-seeder.ts")).toString()],
     ],
   },
 });
