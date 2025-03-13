@@ -18,6 +18,7 @@ export default defineNuxtConfig({
   ],
 
   runtimeConfig: {
+    tir_debug: process.env.TIR_DEBUG || "false",
     database_host: process.env.DATABASE_HOST,
     database_port: process.env.DATABASE_PORT,
     database_user: process.env.DATABASE_USER,
