@@ -1,7 +1,7 @@
 import { defineEventHandler, getCookie, H3Error, sendRedirect } from "h3";
 import { OIDCAuthProvider } from "~/server/auth/oidcAuthProvider";
 
-const oidcAuthProvider = new OIDCAuthProvider();
+const oidcAuthProvider = OIDCAuthProvider.getInstance();
 
 export default defineEventHandler(async (event) => {
   try {
@@ -20,7 +20,6 @@ export default defineEventHandler(async (event) => {
       throw new H3Error("Failed to handle OIDC callback or create session.");
     }
 
-    // sendRedirect(event, '/dashboard');
     // return { success: true, data: result };
 
     return sendRedirect(event, "/home");

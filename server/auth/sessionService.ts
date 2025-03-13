@@ -28,7 +28,7 @@ export class SessionService {
     setCookie(event, SESSION_COOKIE_NAME, id, {
       httpOnly: true,
       path: "/",
-      sameSite: "strict",
+      sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
     });
 

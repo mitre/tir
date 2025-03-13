@@ -6,7 +6,7 @@ import { SessionService } from "./sessionService";
 import { User } from "~/db/models/user";
 
 const config = useRuntimeConfig();
-const clientSecret = config.OIDC_SECRET;
+const clientSecret = config.oidc_secret;
 
 if (!globalThis.crypto) {
   globalThis.crypto = webcrypto as unknown as Crypto;
@@ -15,11 +15,23 @@ if (!globalThis.crypto) {
 const sessionService = new SessionService();
 
 export class OIDCAuthProvider extends AuthProvider {
+  private static instance: OIDCAuthProvider | null = null;
   private clientConfig!: client.Configuration;
 
-  constructor() {
+  private constructor() {
     super();
+    OIDCAuthProvider.instanceCount++;
+    if (OIDCAuthProvider.instanceCount > 1) {
+      console.warn("Warning: More than one instance of OIDCAuthProvider has been created.");
+    }
     this.initializeClient();
+  }
+
+  public static getInstance(): OIDCAuthProvider {
+    if (!OIDCAuthProvider.instance) {
+      OIDCAuthProvider.instance = new OIDCAuthProvider();
+    }
+    return OIDCAuthProvider.instance;
   }
 
   async initializeClient() {
@@ -27,7 +39,6 @@ export class OIDCAuthProvider extends AuthProvider {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
     // Use the modern discovery method with the URL object
-    // const serverUrl = new URL("https://localhost:8443/realms/nuxt");
     const serverUrl = new URL(config.oidc_url);
     this.clientConfig = await client.discovery(serverUrl, "my-nuxt-app", clientSecret);
     console.log("Discovered OIDC configuration", this.clientConfig);
@@ -48,9 +59,9 @@ export class OIDCAuthProvider extends AuthProvider {
     const state = client.randomState();
 
     const parameters: Record<string, string> = {
-      redirectUri,
+      redirect_uri: redirectUri,
       scope,
-      codeChallenge,
+      code_challenge: codeChallenge,
       code_challenge_method: "S256",
       state,
     };
@@ -74,18 +85,20 @@ export class OIDCAuthProvider extends AuthProvider {
     }
 
     // Manually parse the OAuth 2.0 callback parameters from the request
-    const callbackUrl = new URL(event.node.req.url!, "http://localhost:3000");
-    const params = Object.fromEntries(new URLSearchParams(callbackUrl.search));
+    const baseUrl = config.base_url;
+    const callbackUrl = new URL(event.node.req.url!, baseUrl);
+    // const params = Object.fromEntries(new URLSearchParams(callbackUrl.search));
 
-    // Exchange the authorization code for tokens
-    const tokens: client.TokenEndpointResponse = await client.authorizationCodeGrant(
-      this.clientConfig,
-      callbackUrl,
-      {
+    let tokens: client.TokenEndpointResponse;
+    try {
+      tokens = await client.authorizationCodeGrant(this.clientConfig, callbackUrl, {
         pkceCodeVerifier: codeVerifier,
         expectedState: state,
-      },
-    );
+      });
+    } catch (error) {
+      logger.error({ service: "Auth", message: `Error during token exchange: ${error}` });
+      throw new Error(`Token exchange failed: ${error instanceof Error ? error.message : error}`);
+    }
 
     console.log("Token Endpoint Response", tokens);
 

@@ -1,4 +1,5 @@
 import { defineEventHandler, setCookie, sendRedirect } from "h3";
+import { join } from "path";
 import { AuthService } from "~/server/auth/authService";
 
 const authService = new AuthService();
@@ -20,13 +21,15 @@ export default defineEventHandler(async (event) => {
 
     const result = await authService.authenticate("oidc", event, {});
     if (result.redirect) {
-      await setCookie(event, "pkce_code_verifier", event.context.auth.code_verifier, {
+      await setCookie(event, "pkce_code_verifier", event.context.auth.codeVerifier, {
         httpOnly: true,
         sameSite: "lax",
+        path: "/",
       });
       await setCookie(event, "pkce_state", event.context.auth.state, {
         httpOnly: true,
         sameSite: "lax",
+        path: "/",
       });
 
       // redirect to the OIDC provider
