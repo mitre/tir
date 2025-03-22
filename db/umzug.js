@@ -16,10 +16,15 @@ const processName = path.basename(process.argv[1]);
 const urlName = path.basename(fileURLToPath(import.meta.url));
 const debugEnabled = process.env.DB_DEBUG?.toLowerCase() === "true";
 
-const loggingFlag =
-  ["migrate.js", "seed.js"].includes(processName) ||
-  debugEnabled ||
-  (urlName === "umzug.js" && !debugEnabled);
+const runningUmzugCmdLine = ["migrate.js", "seed.js"].includes(processName);
+const runningDevMode = ["index.mjs"].includes(processName);
+const runningProduction = urlName === "/_entry.js";
+
+var loggingFlag;
+
+if (runningUmzugCmdLine) loggingFlag = true;
+if (runningDevMode) loggingFlag = debugEnabled;
+if (runningProduction) loggingFlag = debugEnabled;
 
 const logging = loggingFlag ? console.log : false;
 
