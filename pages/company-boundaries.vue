@@ -10,6 +10,12 @@ const boundaryView = ref(currentAlias.value[1]);
 onMounted(() => {
   store.changeUsername(boundaryView.value.alias);
 });
+
+const aliasStore = useAliasStore();
+
+definePageMeta({
+  headerTitle: "Default Boundary",
+});
 </script>
 <template>
   <main class="">

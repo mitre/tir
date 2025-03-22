@@ -55,13 +55,15 @@ import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/vue";
 import { EllipsisVerticalIcon } from "@heroicons/vue/20/solid";
 import { DateTime } from "luxon";
 
-const { data: currentUser } = await useFetch("/api/auth/currentUser");
+const currentUser = await $fetch("/api/auth/currentUser");
 
 const { data: currentAlert } = await useFetch("/api/config/alert", {
   method: "GET",
-  query: { userId: currentUser.value.id },
+  query: { userId: currentUser.id },
 });
+
 currentAlert.value = currentAlert.value.filter((obj) => obj.category !== "New STIG Library Available");
+
 const sortedAlerts = computed(() => {
   if (!currentAlert.value) {
     return [];

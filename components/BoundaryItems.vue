@@ -5,7 +5,9 @@
         <div class="sm:flex-auto">
           <h1 class="mt-1 text-xl font-bold text-gray-800 dark:text-white">{{ $route.params.company }}</h1>
           <h1 class="mt-1 text-lg text-gray-800 dark:text-white">
-            A list of all the {{ inflection.pluralize(boundaryView.alias.toLowerCase()) }} you are a member of.
+            A list of all the
+            {{ boundaryTerm ? inflection.pluralize(boundaryTerm.toLowerCase()) : "Error" }}
+            you are a member of.
           </h1>
         </div>
         <div v-show="currentUser.UserRole.name === 'User'" class="ml-16 mt-4">
@@ -15,7 +17,7 @@
             @click="[(open = true), (edit = false)]"
           >
             <PlusIcon class="-ml-0.5 h-5 w-5 rounded-md bg-indigo-500" aria-hidden="true" />
-            <span>{{ boundaryView.alias }}</span>
+            <span>{{ boundaryTerm }}</span>
           </button>
         </div>
       </div>
@@ -287,10 +289,10 @@
                     <div class="bg-indigo-700 px-4 py-6 sm:px-6">
                       <div class="flex items-center justify-between">
                         <DialogTitle v-if="edit === true" class="text-base font-semibold leading-6 text-white">
-                          {{ boundaryView.alias }}
+                          {{ boundaryTerm }}
                         </DialogTitle>
                         <DialogTitle v-else class="text-base font-semibold leading-6 text-white"
-                          >New {{ inflection.pluralize(boundaryView.alias) }}
+                          >New {{ inflection.pluralize(boundaryTerm) }}
                         </DialogTitle>
                         <div class="ml-3 flex h-7 items-center">
                           <button
@@ -317,7 +319,7 @@
                             <label
                               for="project-name"
                               class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"
-                              >{{ boundaryView.alias }} name</label
+                              >{{ boundaryTerm }} name</label
                             >
                             <div class="mt-2">
                               <input
@@ -1087,8 +1089,8 @@ import {
 
 // Pinia Store
 import { storeToRefs } from "pinia";
-import { useBreadcrumbStore } from "~~/stores/Breadcrumb";
 import inflection from "inflection";
+import { useBreadcrumbStore } from "~~/stores/Breadcrumb";
 
 const edit = ref(false);
 const showErrorNotification = ref(false);
@@ -1110,10 +1112,6 @@ const { data: stigLibrary } = await useFetch("/api/stigLibrary", { key: "stigLib
 const { data: classLibrary } = await useFetch("/api/boundaries/listClassification");
 // RMF Version API
 const { data: rmfLibrary } = await useFetch("/api/boundaries/listRMFVersions");
-//for the term alias
-const { data: currentAlias } = await useFetch("/api/boundaries/alias");
-//renders the current alias
-const boundaryView = ref(currentAlias.value[1]);
 // refreshNuxtData('stigLibrary')
 const sortedStigLibrary = ref({});
 if (stigLibrary.value === null) {

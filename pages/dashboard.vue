@@ -1,8 +1,7 @@
 <template>
   <main class="">
     <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
-      <!-- Your content -->
-      <LibraryItems />
+      <DashBoardItems />
     </div>
   </main>
 </template>
@@ -12,9 +11,9 @@ import { useTestStore } from "~~/stores/HeaderValues";
 const store = useTestStore();
 
 onMounted(() => {
-  store.changeUsername("Libraries");
+  store.changeUsername("Welcome to TIR");
 });
 definePageMeta({
-  headerTitle: "Libraries",
+  headerTitle: "Welcome to TIR",
 });
 </script>

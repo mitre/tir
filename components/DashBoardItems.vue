@@ -7,7 +7,8 @@
         </h2>
         <p class="mt-2 text-lg leading-8 text-gray-600 dark:text-gray-400">
           TIR is a central repository to maintain your
-          {{ inflection.pluralize(boundaryView.alias.toLowerCase()) }} security posture.
+          {{ boundaryTerm ? inflection.pluralize(boundaryTerm.toLowerCase()) : "boundaries" }}
+          security posture.
         </p>
         <h4 class="mt-12 text-xl font-bold tracking-tight text-gray-800 dark:text-white sm:text-2xl">
           See Your Updates Below
@@ -17,7 +18,7 @@
         class="mx-auto mt-5 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-16 border-t border-gray-500 pt-10 sm:pt-16 lg:mx-0 lg:max-w-none lg:grid-cols-3"
       >
         <article>
-          <h1 class="text-lg font-bold text-gray-800 dark:text-white">{{ boundaryView.alias }} Changes</h1>
+          <h1 class="text-lg font-bold text-gray-800 dark:text-white">{{ boundaryTerm }} Changes</h1>
           <div class="flex max-w-xl flex-col items-start justify-between">
             <DashBoarditemsBoundaryChanges />
           </div>
@@ -42,7 +43,6 @@
 
 <script setup>
 import inflection from "inflection";
-
-const { data: currentAlias } = await useFetch("/api/config/alias");
-const boundaryView = currentAlias.value.find((alias) => alias.term === "Boundary");
+import { useAliasStore } from "~/stores/AliasStorage";
+const boundaryTerm = useAliasStore().BoundaryAlias;
 </script>

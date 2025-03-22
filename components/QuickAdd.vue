@@ -38,7 +38,7 @@
                       class="ml-3 inline-flex items-center gap-x-1.5 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     >
                       <PlusIcon class="-ml-0.5 h-5 w-5 rounded-md bg-indigo-500" aria-hidden="true" />
-                      {{ assetView.alias }}
+                      {{ systemAlias }}
                     </button>
                   </div>
                 </div>
@@ -178,7 +178,7 @@
                           'text-md flex h-16 w-full items-center justify-between px-4 py-2 text-left font-medium text-gray-800 hover:bg-gray-400 focus:outline-none focus-visible:ring focus-visible:ring-purple-500  focus-visible:ring-opacity-75 dark:text-white dark:hover:bg-gray-950',
                         ]"
                       >
-                        {{ assetView.alias }} {{ index }}
+                        {{ systemAlias }} {{ index }}
                         <div>
                           <button
                             @click.stop="copySystem(system.Name, SystemStigData[index].TempStigList)"
@@ -201,7 +201,7 @@
                       >
                         <div class="pr-4 sm:col-span-2">
                           <span for="system" class="block text-sm font-medium leading-6 text-gray-800 dark:text-white">
-                            {{ assetView.alias }} Name</span
+                            {{ systemAlias }} Name</span
                           >
                           <div class="mt-2">
                             <input
@@ -305,7 +305,7 @@
                   class="w-sm inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   @click="[$emit('openClose', false), reloadNuxtApp({ ttl: 100 })]"
                 >
-                  Back to {{ boundaryView.alias }}
+                  Back to {{ boundaryAlias }}
                 </button>
 
                 <button
@@ -313,7 +313,7 @@
                   class="w-sm ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   @click="[quickAddSystems()]"
                 >
-                  Create {{ inflection.pluralize(assetView.alias) }}
+                  Create {{ inflection.pluralize(systemAlias) }}
                 </button>
               </div>
               <TransitionRoot as="template" :show="loading">
@@ -355,7 +355,7 @@
                             </div>
                             <div class="text-center">
                               <DialogTitle as="h3" class="text-base font-semibold leading-6 text-white"
-                                >Creating {{ assetView.alias }}
+                                >Creating {{ systemAlias }}
                               </DialogTitle>
                               <div class="mb-12 mt-2">
                                 <p class="text-sm text-white">Please Wait...</p>
@@ -365,12 +365,7 @@
                                 animation="carousel"
                                 color="indigo"
                                 :value="loadingProgress"
-                                :max="[
-                                  'Waiting to start',
-                                  `Creating ${assetView.alias}...`,
-                                  'Importing Data...',
-                                  'Done!',
-                                ]"
+                                :max="['Waiting to start', `Creating ${systemAlias}...`, 'Importing Data...', 'Done!']"
                               />
                             </div>
                           </div>
@@ -416,6 +411,7 @@ import { XMarkIcon } from "@heroicons/vue/20/solid";
 import inflection from "inflection";
 import { storeToRefs } from "pinia";
 import { useQuickAddStore } from "~~/stores/QuickAdd";
+import { useAliasStore } from "~/stores/AliasStorage";
 
 const props = defineProps({
   openMembers: {
@@ -438,8 +434,9 @@ const errorObject = ref();
 const loading = ref(false);
 const store = useQuickAddStore();
 const loadingProgress = ref(0);
-// const { TempStigList } = store;
 const { SystemStigData } = storeToRefs(store);
+const boundaryAlias = useAliasStore().BoundaryAlias;
+const systemAlias = useAliasStore().SystemAlias;
 
 function addTempStig(index, stigID, stigName) {
   // const sysId = store.SystemStigData.findIndex(o => o.id === systemId)
@@ -479,11 +476,6 @@ const { data: summary } = await useFetch("/api/boundaries/summary", {
   query: { BoundaryId: boundaryId },
 });
 
-// for the term alias
-const { data: currentAlias } = await useFetch("/api/config/alias");
-// renders the current alias
-const assetView = currentAlias.value.find((alias) => alias.term === "System");
-const boundaryView = currentAlias.value.find((alias) => alias.term === "Boundary");
 const emit = defineEmits(["openClose"]);
 /// ///// Create Systems
 async function quickAddSystems() {
