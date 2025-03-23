@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
-  const cookieName = "tirtoken"; //config.cookieName;
+  const cookieName = "tirtoken";
   deleteCookie(event, cookieName, {
     httpOnly: true,
     path: "/",

@@ -289,28 +289,6 @@ const aliasStore = useAliasStore();
 const alertsStore = useAlertsStore();
 const showPopup = ref(false);
 
-// Fetch current user with error handling
-// const { data: currentUser, error: userError } = useAsyncData("currentUser", async () => {
-//   try {
-//     return await $fetch("/api/auth/currentUser", { method: "GET" });
-//   } catch (err) {
-//     console.error("Failed to fetch currentUser:", err);
-//     return null; // Return null if fetch fails
-//   }
-// });
-
-// const { data: currentUser, error: userError } = useAsyncData("currentUser", async () => {
-//   try {
-//     return await $fetch("/api/auth/currentUser", {
-//       method: "GET",
-//       credentials: "include",
-//     });
-//   } catch (err) {
-//     console.error("Failed to fetch currentUser:", err);
-//     return null; // Return null if fetch fails
-//   }
-// });
-
 const { data: currentUser, error: userError } = useAsyncData(
   "currentUser",
   async () => {
@@ -531,8 +509,6 @@ const deleteTheAlert = async (alertId) => {
   }
 };
 
-// let alertInterval = null;
-
 watch(
   currentUser,
   (newUser) => {
@@ -566,21 +542,4 @@ async function logoutUser() {
     console.error("Logout error:", error);
   }
 }
-
-//for debugging
-watch(
-  userNavigation,
-  (newVal) => {
-    console.log("User Navigation Items:", newVal);
-  },
-  { immediate: true },
-);
-
-watch(
-  currentUser,
-  (newVal) => {
-    console.log("Current User:", newVal);
-  },
-  { immediate: true },
-);
 </script>
