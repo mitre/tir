@@ -43,8 +43,6 @@ StigLibrary.init(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
-      unique: true,
-      allowNull: false,
     },
     filename: {
       type: DataTypes.STRING,
