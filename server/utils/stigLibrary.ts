@@ -205,7 +205,7 @@ const extractLibrary = async (sourceZip: string, outputDirectory: string): Promi
   return fileList;
 };
 
-interface parseResults {
+interface ParseResults {
   filename: string;
   classification: string;
   date: string;
@@ -214,8 +214,8 @@ interface parseResults {
   errorMessage?: string;
 }
 
-export const parseLibraryName = (filename: string): parseResults => {
-  const parsedAttributes: parseResults = {
+export const parseLibraryName = (filename: string): ParseResults => {
+  const parsedAttributes: ParseResults = {
     filename,
     classification: "",
     date: "",
