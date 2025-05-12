@@ -300,6 +300,26 @@
                   </button>
                 </div>
               </div>
+              <div v-if="tab8">
+                <div class="mt-3 text-center sm:mt-5">
+                  <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-800 dark:text-white"
+                    >Software List
+                  </DialogTitle>
+                  <div class="mt-2">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Export Software List Below</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 sm:mt-6">
+                  <button
+                    type="button"
+                    class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    @click="softwareListDownload"
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
             </DialogPanel>
           </TransitionChild>
         </div>
@@ -515,12 +535,40 @@ const ppsmDownload = async () => {
     });
 };
 
+const softwareListDownload = async () => {
+  const { data: currentUser } = await useFetch("/api/auth/currentUser");
+
+  const bodyData = {
+    BoundaryId: boundaryId,
+    userEmail: currentUser.value.email,
+  };
+  await fetch("/api/export/sw", {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(bodyData),
+  })
+    .then((response) => response.blob())
+    .then((blob) => {
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${boundaryName}_SW_HW_Export.xlsx`);
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      document.body.removeChild(link);
+    });
+};
 const tab1 = ref(true);
 const tab2 = ref(false);
 const tab3 = ref(false);
 const tab4 = ref(false);
 const tab5 = ref(false);
 const tab6 = ref(false);
+
+const tab8 = ref(false);
 function tabeLogic(index) {
   if (index === 0) {
     tab2.value = false;
@@ -528,36 +576,51 @@ function tabeLogic(index) {
     tab4.value = false;
     tab5.value = false;
     tab6.value = false;
+    tab8.value = false;
   } else if (index === 1) {
     tab1.value = false;
     tab3.value = false;
     tab4.value = false;
     tab5.value = false;
     tab6.value = false;
+    tab8.value = false;
   } else if (index === 2) {
     tab1.value = false;
     tab2.value = false;
     tab4.value = false;
     tab5.value = false;
     tab6.value = false;
+    tab8.value = false;
   } else if (index === 3) {
     tab1.value = false;
     tab2.value = false;
     tab3.value = false;
     tab5.value = false;
     tab6.value = false;
+    tab8.value = false;
   } else if (index === 4) {
     tab1.value = false;
     tab2.value = false;
     tab3.value = false;
     tab4.value = false;
     tab6.value = false;
+    tab8.value = false;
   } else if (index === 5) {
     tab1.value = false;
     tab2.value = false;
     tab3.value = false;
     tab4.value = false;
     tab5.value = false;
+    tab8.value = false;
+  }
+  else if(index === 6){
+    tab1.value = false;
+    tab2.value = false;
+    tab3.value = false;
+    tab4.value = false;
+    tab5.value = false;
+    tab6.value = false;
+
   }
 }
 
@@ -568,5 +631,6 @@ const tabs = [
   { name: "STIG Security Assessment", href: "#", current: tab4 },
   { name: "Nessus", href: "#", current: tab5 },
   { name: "PPSM", href: "#", current: tab6 },
+  { name: "Software List", href: "#", current: tab8 },
 ];
 </script>
