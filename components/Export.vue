@@ -578,15 +578,12 @@ const hdfDownload = async () => {
 
 const softwareListDownload = async () => {
   const { data: currentUser } = await useFetch("/api/auth/currentUser");
-
-  const bodyData = {
-    BoundaryId: boundaryId,
-    userEmail: currentUser.value.email,
-  };
-  await fetch("/api/export/sw", {
+  const queryParams = new URLSearchParams();
+  queryParams.append("BoundaryId", boundaryId);
+  queryParams.append("userEmail", currentUser.value.email);
+  await fetch(`/api/export/sw?${queryParams}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(bodyData),
   })
     .then((response) => response.blob())
     .then((blob) => {
