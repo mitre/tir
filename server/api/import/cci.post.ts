@@ -7,23 +7,16 @@ import { verifyCciList, importCciList } from "../../utils/cci";
 
 export default defineEventHandler(async (event) => {
   const checkResult = await userCheck(event, undefined, undefined, undefined);
-  const config = useRuntimeConfig();
-
-  const body = await proccessNodeRequest(event.node.req);
+  const { temp_folder } = useRuntimeConfig();
+  const body = await proccessNodeRequest(event.node.req, temp_folder);
 
   const uploadedFiles = body.file;
   const dirList: string[] = [];
   let fileList: string[];
-  const newFileName = path.join(config.temp_folder, uploadedFiles[0].originalFilename);
+  const newFileName = uploadedFiles[0].filepath;
 
-  const newDir = path.dirname(newFileName);
-  if (!fs.existsSync(newDir)) {
-    fs.mkdirSync(newDir, { recursive: true });
-  }
-
-  fs.renameSync(uploadedFiles[0].filepath, newFileName);
   if (path.extname(newFileName) === ".zip") {
-    fileList = await processZip(newFileName, config.temp_folder);
+    fileList = await processZip(newFileName, temp_folder);
   } else {
     fileList = [newFileName];
   }
@@ -57,7 +50,7 @@ export default defineEventHandler(async (event) => {
   }
 
   for (let i = 0; i < dirList.length; i++) {
-    if (path.dirname(dirList[i]) !== path.dirname(config.temp_folder)) {
+    if (path.dirname(dirList[i]) !== path.dirname(temp_folder)) {
       fs.rmSync(dirList[i], { recursive: true });
     }
   }
@@ -68,13 +61,14 @@ export default defineEventHandler(async (event) => {
   return { success: true };
 });
 
-/**
- * @param {import('http').IncomingMessage} req
- */
-function proccessNodeRequest(req: IncomingMessage): Promise<Record<string, any>> {
+function proccessNodeRequest(
+  req: IncomingMessage,
+  temp_folder: string,
+): Promise<Record<string, any>> {
   return new Promise((resolve, reject) => {
-    /** @see https://github.com/node-formidable/formidable/ */
     const form = formidable({
+      uploadDir: temp_folder,
+      keepExtensions: true,
       multiples: true,
       maxFileSize: 350 * 1024 * 1024,
     });
@@ -84,7 +78,6 @@ function proccessNodeRequest(req: IncomingMessage): Promise<Record<string, any>>
         reject(error);
         return;
       }
-
       resolve({ ...fields, ...files });
     });
   });
