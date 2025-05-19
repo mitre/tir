@@ -4,6 +4,7 @@ import { IncomingMessage } from "http";
 import formidable from "formidable";
 import AdmZip from "adm-zip";
 import { verifyCciList, importCciList } from "../../utils/cci";
+import { userCheck } from "~/server/utils/permissionCheck";
 
 export default defineEventHandler(async (event) => {
   const checkResult = await userCheck(event, undefined, undefined, undefined);
