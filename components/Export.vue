@@ -320,6 +320,26 @@
                   </button>
                 </div>
               </div>
+              <div v-if="activeTab === 7">
+                <div class="mt-3 text-center sm:mt-5">
+                  <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-800 dark:text-white"
+                    >Software List Export
+                  </DialogTitle>
+                  <div class="mt-2">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Download SW List Below</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 sm:mt-6">
+                  <button
+                    type="button"
+                    class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    @click="softwareListDownload"
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
             </DialogPanel>
           </TransitionChild>
         </div>
@@ -556,6 +576,29 @@ const hdfDownload = async () => {
     });
 };
 
+const softwareListDownload = async () => {
+  const { data: currentUser } = await useFetch("/api/auth/currentUser");
+  const queryParams = new URLSearchParams();
+  queryParams.append("BoundaryId", boundaryId);
+  queryParams.append("userEmail", currentUser.value.email);
+  await fetch(`/api/export/sw?${queryParams}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+    .then((response) => response.blob())
+    .then((blob) => {
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${boundaryName}_SW_HW_Export.xlsx`);
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      document.body.removeChild(link);
+    });
+};
 const activeTab = ref(0);
 
 const tabs = [
@@ -566,5 +609,6 @@ const tabs = [
   { name: "Nessus", href: "#" },
   { name: "PPSM", href: "#" },
   { name: "HDF", href: "#" },
+  { name: "Software List", href: "#" },
 ];
 </script>
