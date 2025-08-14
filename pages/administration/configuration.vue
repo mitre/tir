@@ -55,8 +55,8 @@
                               <th class="px-4 py-2">Alias</th>
                             </tr>
                           </thead>
-                          <tbody>
-                            <tr v-for="(item, index) in aliases" :key="index">
+                          <tbody v-if="alias.aliases && alias.aliases.length">
+                            <tr v-for="(item, index) in alias.aliases" :key="index">
                               <td class="text-sm font-medium text-gray-900 dark:text-white">{{ item.term }}</td>
                               <td class="px-7 text-sm font-medium text-gray-900">
                                 <input
@@ -65,6 +65,11 @@
                                   class="w-full rounded border-indigo-400 px-3 py-1"
                                 />
                               </td>
+                            </tr>
+                          </tbody>
+                          <tbody v-else>
+                            <tr>
+                              <td colspan="2" class="text-sm text-gray-900 dark:text-white">Alias data not loaded.</td>
                             </tr>
                           </tbody>
                         </table>
@@ -210,6 +215,7 @@
                       ></svg>
                     </div>
                   </div>
+                  /
                 </div>
               </DialogPanel>
             </TransitionChild>
@@ -262,60 +268,52 @@ const aliasUpdateGood = ref(false);
 const aliasUpdateError = ref(false);
 const aliasUpdate = ref(false);
 
-const { data: aliases } = await useFetch<TirAlias[]>("/api/config/alias");
+try {
+  await alias.loadAliases();
+  console.log("[Config Page] After loadAliases(), alias.aliases:", alias.aliases);
+} catch (error) {
+  console.error("[Config Page] Error during loadAliases:", error);
+}
+
+onMounted(() => {
+  console.log("[Config Page] onMounted alias store state:", alias.aliases);
+});
 
 async function saveAliases() {
-  if (aliases.value) {
-    const aliasMap: Record<string, string> = aliases.value.reduce(
-      (map: Record<string, string>, aliasEntry: TirAlias) => {
-        map[aliasEntry.term] = aliasEntry.alias;
-        return map;
-      },
-      {},
-    );
-    try {
-      await $fetch("/api/config/alias", {
-        method: "PUT",
-        body: aliasMap,
-      });
-      aliasUpdateGood.value = true;
-    } catch {
-      aliasUpdateError.value = true;
-    } finally {
-      aliasUpdate.value = true;
-      location.reload();
-    }
+  const aliasMap: Record<string, string> = alias.aliases.reduce((map: Record<string, string>, aliasEntry: TirAlias) => {
+    map[aliasEntry.term] = aliasEntry.alias;
+    return map;
+  }, {});
 
-    watch(
-      aliasUpdate,
-      (newValue) => {
-        if (newValue) {
-          setTimeout(() => {
-            aliasUpdate.value = false;
-          }, 3000);
-          setTimeout(() => {
-            aliasUpdateGood.value = false;
-            aliasUpdateError.value = false;
-          }, 6000);
-        }
-      },
-      { immediate: true },
-    );
-
-    const newAliases = await useFetch<TirAlias[]>("/api/config/alias");
-
-    aliases.value = newAliases.data.value;
-    const aliasMapUpdated: Record<string, string> = aliases.value.reduce(
-      (map: Record<string, string>, aliasEntry: TirAlias) => {
-        map[aliasEntry.term] = aliasEntry.alias;
-        return map;
-      },
-      {},
-    );
-    alias.CompanyAlias = aliasMapUpdated.Company;
-    alias.BoundaryAlias = aliasMapUpdated.Boundary;
-    alias.SystemAlias = aliasMapUpdated.System;
+  try {
+    await $fetch("/api/config/alias", {
+      method: "PUT",
+      body: aliasMap,
+    });
+    aliasUpdateGood.value = true;
+  } catch {
+    aliasUpdateError.value = true;
+  } finally {
+    aliasUpdate.value = true;
   }
+
+  watch(
+    aliasUpdate,
+    (newValue) => {
+      if (newValue) {
+        setTimeout(() => {
+          aliasUpdate.value = false;
+        }, 3000);
+        setTimeout(() => {
+          aliasUpdateGood.value = false;
+          aliasUpdateError.value = false;
+        }, 6000);
+      }
+    },
+    { immediate: true },
+  );
+
+  await alias.loadAliases();
 }
 
 const secondaryNavigation = [

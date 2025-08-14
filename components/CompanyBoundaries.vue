@@ -10,11 +10,10 @@
             {{ get[0].name }}
           </h4>
           <h4 v-else class="mt-4 text-xl font-bold tracking-tight text-gray-800 dark:text-white sm:text-2xl">
-            {{ tierView.alias }}
+            {{ companyTerm }}
           </h4>
           <h4 class="mt-1 text-lg text-gray-800 dark:text-white">
-            Select your {{ tierView.alias.toLowerCase() }} to view relevant
-            {{ inflection.pluralize(boundaryView.alias.toLowerCase()) }}.
+            Select your {{ companyTerm.toLowerCase() }} to view relevant {{ inflection.pluralize(boundaryTerm) }}.
           </h4>
         </div>
       </div>
@@ -60,11 +59,11 @@
         <div class="flex items-center py-2 text-sm font-semibold text-gray-700 dark:text-white">
           <div class="flex items-center pl-0">
             <Square3Stack3DIcon class="mr-1 h-6 w-6 text-indigo-500" />
-            {{ tierView.alias }}
+            {{ companyTerm }}
           </div>
           <div class="flex items-center pl-4">
             <ServerStackIcon class="mr-1 h-6 w-6 text-green-500" />
-            {{ boundaryView.alias }}
+            {{ boundaryTerm }}
           </div>
         </div>
         <div v-show="currentUser.UserRole.name === 'User'" class="py-2">
@@ -74,7 +73,7 @@
             @click="[(addCompany = true), (edit = false), (companyName = null)]"
           >
             <PlusIcon class="-ml-0.5 h-5 w-5 rounded-md" aria-hidden="true" />
-            {{ tierView.alias }}
+            {{ companyTerm }}
           </button>
           <button
             type="button"
@@ -82,7 +81,7 @@
             @click="[(addBoundary = true), (edit = false)]"
           >
             <PlusIcon class="-ml-0.5 h-5 w-5 rounded-md" aria-hidden="true" />
-            {{ boundaryView.alias }}
+            {{ boundaryTerm }}
           </button>
         </div>
       </div>
@@ -324,8 +323,8 @@
                                       <div class="mt-2">
                                         <p class="text-sm text-gray-600 dark:text-gray-300">
                                           Are you sure you want to delete this
-                                          {{ deleteType === "Boundary" ? boundaryView.alias : tierView.alias }}? All of
-                                          your data will be removed from our servers. This action cannot be undone.
+                                          {{ deleteType === "Boundary" ? boundaryTerm : companyTerm }}? All of your data
+                                          will be removed from our servers. This action cannot be undone.
                                         </p>
                                       </div>
                                     </div>
@@ -394,10 +393,10 @@
                         <div class="bg-indigo-700 px-4 py-6 sm:px-6">
                           <div class="flex items-center justify-between">
                             <DialogTitle v-if="edit" class="text-base font-semibold leading-6 text-white">
-                              Edit {{ tierView.alias }}</DialogTitle
+                              Edit {{ companyTerm }}</DialogTitle
                             >
                             <DialogTitle v-else class="text-base font-semibold leading-6 text-white">
-                              Add {{ tierView.alias }}</DialogTitle
+                              Add {{ companyTerm }}</DialogTitle
                             >
                             <div class="ml-3 flex h-7 items-center">
                               <button
@@ -413,9 +412,9 @@
                           </div>
                           <div class="mt-1">
                             <p v-if="edit" class="text-sm text-indigo-300">
-                              Edit your {{ tierView.alias }} and save changes.
+                              Edit your {{ companyTerm }} and save changes.
                             </p>
-                            <p v-else class="text-sm text-indigo-300">Enter a name for your {{ tierView.alias }}</p>
+                            <p v-else class="text-sm text-indigo-300">Enter a name for your {{ companyTerm }}</p>
                           </div>
                         </div>
                         <div class="flex flex-1 flex-col justify-between">
@@ -426,7 +425,7 @@
                                   for="project-name"
                                   class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"
                                 >
-                                  {{ tierView.alias }} Name
+                                  {{ companyTerm }} Name
                                 </label>
                                 <div class="mt-2">
                                   <input
@@ -512,10 +511,10 @@
                         <div class="bg-indigo-700 px-4 py-6 sm:px-6">
                           <div class="flex items-center justify-between">
                             <DialogTitle v-if="edit === true" class="text-base font-semibold leading-6 text-white">
-                              Edit {{ boundaryView.alias }}
+                              Edit {{ boundaryTerm }}
                             </DialogTitle>
                             <DialogTitle v-else class="text-base font-semibold leading-6 text-white"
-                              >New {{ boundaryView.alias }}
+                              >New {{ boundaryTerm }}
                             </DialogTitle>
                             <div class="ml-3 flex h-7 items-center">
                               <button
@@ -531,11 +530,11 @@
                           </div>
                           <div class="mt-1">
                             <p v-if="edit" class="text-sm text-indigo-300">
-                              Edit and save changes to your {{ boundaryView.alias }} below.
+                              Edit and save changes to your {{ boundaryTerm }} below.
                             </p>
                             <p v-else class="text-sm text-indigo-300">
                               Get started by filling in the information below to create your new
-                              {{ boundaryView.alias.toLowerCase() }}.
+                              {{ boundaryTerm.toLowerCase() }}.
                             </p>
                           </div>
                         </div>
@@ -546,7 +545,7 @@
                                 <label
                                   for="project-name"
                                   class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"
-                                  >{{ boundaryView.alias }} name</label
+                                  >{{ boundaryTerm }} name</label
                                 >
                                 <div class="mt-2">
                                   <input
@@ -1184,6 +1183,8 @@ import {
 import { storeToRefs } from "pinia";
 import inflection from "inflection";
 import { useBreadcrumbStore } from "~~/stores/Breadcrumb";
+import { useAliasStore } from "~/stores/AliasStorage";
+const aliasStore = useAliasStore();
 
 const showErrorNotification = ref(false);
 const errorObject = ref();
@@ -1209,9 +1210,10 @@ pages.value.length = pagePosition(tierId.value) + 1;
 const companyDetails = {
   id: tierId,
 };
-const { data: currentAlias } = await useFetch("/api/config/alias");
-const tierView = currentAlias.value.find((alias) => alias.term === "Company");
-const boundaryView = currentAlias.value.find((alias) => alias.term === "Boundary");
+
+const boundaryTerm = aliasStore.BoundaryAlias;
+const companyTerm = aliasStore.CompanyAlias;
+
 const { data: currentUser } = await useFetch("/api/auth/currentUser");
 const { data: companyList } = await useFetch("/api/tiers/list", {
   method: "POST",

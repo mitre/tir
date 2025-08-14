@@ -25,7 +25,6 @@ const userInput = ref({
 
 const dialogOpen = ref(false);
 
-const isAuthenticated = useCookie("is-authenticated");
 const currentUser = useCookie("current-user");
 
 const router = useRouter();
@@ -64,7 +63,6 @@ async function loginUser() {
       if (apiError && apiError.value) {
         dialogOpen.value = true;
       } else {
-        isAuthenticated.value = "true";
         currentUser.value = userInput.value.username;
 
         const { data: aliases } = await useFetch<TirAlias[]>("/api/config/alias");

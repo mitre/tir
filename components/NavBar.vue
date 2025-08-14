@@ -1,8 +1,9 @@
 <template>
   <div class="min-h-full">
-    <Disclosure v-slot="{ open }" as="nav" class="bg-white shadow dark:bg-gray-800">
-      <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <div class="">
+    <div v-if="isDataReady">
+      <!-- Static Navigation Bar -->
+      <nav class="bg-white shadow dark:bg-gray-800">
+        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
           <div class="flex h-16 items-center justify-between px-4 sm:px-0">
             <div class="flex items-center">
               <div class="flex-shrink-0">
@@ -10,41 +11,27 @@
               </div>
               <div class="hidden md:block">
                 <div class="ml-6 flex items-baseline space-x-4">
-                  <a
-                    v-for="item in navigation"
-                    :key="item.name"
-                    :href="item.href"
-                    :class="[
-                      item.current
+                  <NuxtLink
+                    v-for="navItem in navigation"
+                    :key="navItem.name"
+                    :to="navItem.href"
+                    class="rounded-md px-3 py-2 text-sm font-medium"
+                    :class="
+                      navItem.current
                         ? 'bg-gray-200 dark:bg-gray-900 dark:text-white'
-                        : 'text-gray-600 hover:bg-gray-200 hover:text-black dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white',
-                      'rounded-md px-3 py-2 text-sm font-medium',
-                    ]"
-                    :aria-current="item.current ? 'page' : undefined"
-                    @click="[checkTab(item.name), router.push(item.href)]"
-                    >{{ item.name }}
-                  </a>
-                  <a
-                    v-for="item in adminNavigation"
-                    v-if="currentUser.UserRole.id === 1 || currentUser.UserRole.id === 99"
-                    :key="item.name"
-                    :href="item.href"
-                    :class="[
-                      item.current
-                        ? 'bg-gray-200 dark:bg-gray-900 dark:text-white'
-                        : 'text-gray-600 hover:bg-gray-200 hover:text-black dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white',
-                      'rounded-md px-3 py-2 text-sm font-medium',
-                    ]"
-                    :aria-current="item.current ? 'page' : undefined"
-                    @click="checkTab(item.name)"
-                    >{{ item.name }}
-                  </a>
+                        : 'text-gray-600 hover:bg-gray-200 hover:text-black dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white'
+                    "
+                    :aria-current="navItem.current ? 'page' : undefined"
+                    @click="checkTab(navItem.name)"
+                  >
+                    {{ navItem.name }}
+                  </NuxtLink>
                 </div>
               </div>
             </div>
-            <!-- This is for the about -->
             <div class="hidden md:block">
               <div class="ml-4 flex items-center md:ml-6">
+                <!-- About Section with Popover -->
                 <Popover v-slot="{ open }" class="relative">
                   <PopoverButton
                     :id="id"
@@ -69,15 +56,14 @@
                       <div class="overflow-hidden rounded-lg shadow-lg ring-1 ring-black/5">
                         <div class="relative bg-white p-4 text-sm">
                           <p class="w-max border-b-2 border-indigo-400 pb-2">Date: {{ dateCleaner }}</p>
-
-                          <p class="pt-2">Version: {{ currentAbout.version }}</p>
+                          <p class="pt-2">Version: {{ currentAbout?.version || "N/A" }}</p>
                         </div>
                       </div>
                     </PopoverPanel>
                   </transition>
                 </Popover>
 
-                <!-- Profile dropdown -->
+                <!-- Profile Section with Menu -->
                 <Menu as="div" class="relative ml-7">
                   <div>
                     <MenuButton
@@ -99,26 +85,30 @@
                     <MenuItems
                       class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                     >
-                      <MenuItem v-for="(item, index) in userNavigation" :key="item.name" v-slot="{ active }">
-                        <a
-                          v-if="index === 0"
-                          :href="item.href"
-                          :class="[active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700']"
-                          >{{ item.name }}</a
-                        >
-                        <a
-                          v-else
-                          :href="item.href"
-                          :class="[active ? 'bg-gray-100' : '', 'block px-4 py-2 text-sm text-gray-700']"
-                          @click="clearStorage()"
-                          >{{ item.name }}</a
-                        >
+                      <MenuItem v-for="(userItem, index) in userNavigation" :key="userItem.name" v-slot="{ active }">
+                        <template v-if="userItem">
+                          <NuxtLink
+                            v-if="userItem.href"
+                            :to="userItem.href"
+                            class="block px-4 py-2 text-sm text-gray-700"
+                            :class="active ? 'bg-gray-100' : ''"
+                          >
+                            {{ userItem.name }}
+                          </NuxtLink>
+                          <button
+                            v-else-if="userItem.onClick"
+                            @click="userItem.onClick"
+                            class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            {{ userItem.name }}
+                          </button>
+                        </template>
                       </MenuItem>
                     </MenuItems>
                   </transition>
                 </Menu>
 
-                <!-- Alert dropdown -->
+                <!-- Alerts Section with Menu -->
                 <Menu as="div" class="relative ml-7">
                   <div>
                     <MenuButton
@@ -131,8 +121,8 @@
                         v-if="unreadAlertCount > 0"
                         class="absolute bottom-0 right-0 inline-flex -translate-y-1/2 translate-x-1/2 transform items-center justify-center rounded-full bg-red-500 px-2 py-1 text-xs font-bold leading-none text-white"
                       >
-                        {{ unreadAlertCount > 10 ? "10+" : unreadAlertCount }}</span
-                      >
+                        {{ unreadAlertCount > 10 ? "10+" : unreadAlertCount }}
+                      </span>
                     </MenuButton>
                     <transition
                       enter-active-class="transition ease-out duration-100"
@@ -155,16 +145,16 @@
                               <div />
                               <div class="min-w-0 flex-auto">
                                 <p class="text-sm font-semibold leading-6 text-gray-900">
-                                  {{ alert.NotificationCategory.category }}
+                                  {{ alert.NotificationCategory?.category || "Unknown" }}
                                 </p>
-                                <p class="mt-1 truncate text-xs leading-5 text-gray-500">{{ alert.message }}</p>
+                                <p class="mt-1 truncate text-xs leading-5 text-gray-500">{{ alert.message || "" }}</p>
                               </div>
                               <button @click="() => resetInput(alert)">
                                 <XMarkIcon class="mr-3 h-5 w-5 text-gray-900 hover:text-red-500"></XMarkIcon>
                               </button>
                             </div>
                           </MenuItem>
-                          <MenuItem v-if="userBell.length < 0" class="flex items-center justify-between gap-x-6 py-5">
+                          <MenuItem v-if="userBell.length === 0" class="flex items-center justify-between gap-x-6 py-5">
                             <div class="mx-2 flex min-w-0 gap-x-4">
                               <div />
                               <div class="min-w-0 flex-auto">
@@ -187,7 +177,7 @@
                   </div>
                 </Menu>
 
-                <!-- Alert Pop up window -->
+                <!-- Alert Popup -->
                 <div
                   v-if="showPopup"
                   class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20 dark:bg-white/20"
@@ -197,7 +187,6 @@
                       <h1 class="text-base font-semibold leading-6 text-gray-800 dark:text-white">Alert Center</h1>
                       <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">A list of all the current alerts</p>
                     </div>
-
                     <div class="max-h-96 overflow-y-auto px-8 align-middle">
                       <table class="w-full divide-y divide-gray-700">
                         <thead class="sticky top-0 w-full bg-gray-100 dark:bg-gray-900">
@@ -236,10 +225,10 @@
                               {{ formartAlertDate(alert.creationDate) }}
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-800 dark:text-gray-300">
-                              {{ alert.NotificationCategory.category }}
+                              {{ alert.NotificationCategory?.category || "Unknown" }}
                             </td>
                             <td class="whitespace-pre-line px-3 py-4 text-sm text-gray-800 dark:text-gray-300">
-                              {{ alert.message }}
+                              {{ alert.message || "" }}
                             </td>
                             <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                               <button class="text-red-600 hover:text-red-900" @click="deleteTheAlert(alert.id)">
@@ -260,146 +249,198 @@
                 </div>
               </div>
             </div>
-            <div class="-mr-2 flex md:hidden"></div>
           </div>
         </div>
-      </div>
-    </Disclosure>
-    <header class="py-10">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-bold tracking-tight text-gray-800 dark:text-white">{{ store.username }}</h1>
-      </div>
-    </header>
-    <!-- </div> -->
+      </nav>
+      <header class="py-10">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h1 class="text-3xl font-bold tracking-tight text-gray-800 dark:text-white">
+            {{ headerTitle }}
+          </h1>
+        </div>
+      </header>
+    </div>
+    <div v-else class="flex min-h-full items-center justify-center">
+      <p>Loading...</p>
+    </div>
   </div>
 </template>
 
 <script setup>
-import {
-  Disclosure,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-  Popover,
-  PopoverButton,
-  PopoverPanel,
-} from "@headlessui/vue";
+import { Menu, MenuButton, MenuItem, MenuItems, Popover, PopoverButton, PopoverPanel } from "@headlessui/vue";
 import { XMarkIcon, UserIcon, BellIcon, TrashIcon, QuestionMarkCircleIcon } from "@heroicons/vue/24/outline";
-import { storeToRefs } from "pinia";
-import { ref, computed } from "vue";
-import { ChevronDownIcon } from "@heroicons/vue/20/solid";
+import { ref, computed, watch } from "vue";
 import { DateTime } from "luxon";
 import inflection from "inflection";
+import { useRoute, useRouter } from "vue-router";
+import { useColorMode, useId, useAsyncData } from "#imports";
 import { useBreadcrumbStore } from "~~/stores/Breadcrumb";
 import { useTestStore } from "~~/stores/HeaderValues";
+import { useAliasStore } from "~/stores/AliasStorage";
+import { useAlertsStore } from "~~/stores/AlertsStore";
 
 const id = useId();
-const store = useTestStore();
 const route = useRoute();
 const router = useRouter();
-const isMenuOpen = ref(false);
-const showPopup = ref(false);
-
 const colorMode = useColorMode();
 const breadStore = useBreadcrumbStore();
+const store = useTestStore();
+const aliasStore = useAliasStore();
+const alertsStore = useAlertsStore();
+const showPopup = ref(false);
 
-// is for the Alert Bell Below
-const markAsRead = async (alertId) => {
-  try {
-    const response = await fetch("/api/config/alertRead", {
-      method: "PUT",
-      body: JSON.stringify({ id: alertId }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const responseData = await response.json();
-    console.log("API response:", responseData);
-    if (responseData.success) {
-      console.log("alert marked as read");
-    } else {
-      console.error("Failed to makr alert as read");
+const { data: currentUser, error: userError } = useAsyncData(
+  "currentUser",
+  async () => {
+    try {
+      return await $fetch("/api/auth/currentUser", {
+        method: "GET",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Failed to fetch currentUser:", err);
+      return null;
     }
-  } catch (error) {
-    console.error("Error:", error);
-  }
-};
+  },
+  { server: false },
+);
 
-const resetInput = async (alert) => {
-  event.stopPropagation();
-  const alertId = alert.id;
-  console.log("marking as read, alert ID:", alertId);
-  // calling the API to mark as read
-  await markAsRead(alertId);
-
-  // find the alert in curentAlert.value n marking it as read
-  const alertIndex = currentAlert.value.findIndex((a) => a.id === alertId);
-  if (alertIndex !== -1) {
-    currentAlert.value[alertIndex].TirNotifications_Users[0].read = true;
-
-    // trigger reactivity
-    currentAlert.value = [...currentAlert.value];
-  } else {
-    console.error("Alert not found in currentAlert.value");
-  }
-};
-
-// Logic for the delete method in the Alerts
-const deleteTheAlert = async (alertId) => {
-  const prevAlert = [...currentAlert.value];
-  currentAlert.value = currentAlert.value.filter((alert) => alert.id !== alertId);
-  try {
-    const response = await fetch("/api/config/alert", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ id: alertId }),
+// Fetch alerts only after currentUser is available
+const { data: currentAlert, refresh: refreshAlerts } = useAsyncData(
+  "currentAlert",
+  async () => {
+    if (!currentUser.value?.id) return null;
+    console.log("Fetching alerts for user:", currentUser.value.id);
+    return await $fetch("/api/config/alert", {
+      method: "GET",
+      query: { userId: currentUser.value.id },
+      credentials: "include",
     });
-    const responseData = await response.json();
-    if (!responseData.success) {
-      console.error("Alert was NOT deleted..");
-      currentAlert.value = prevAlert;
-    }
+  },
+  { watch: [currentUser] }, // Re-fetch whenever `currentUser` changes
+);
+// Fetch about data
+const { data: currentAbout } = useAsyncData("currentAbout", async () => {
+  try {
+    return await $fetch("/api/config/about", { method: "GET" });
   } catch (error) {
-    console.error("Error: ", error);
-    currentAlert.value = prevAlert;
+    console.error("Failed to fetch about data:", error);
+    return null; // Return null on error
   }
-};
-
-/// ////Check User Role
-const { data: currentUser } = await useFetch("/api/auth/currentUser");
-if (currentUser.value?.Theme) {
-  colorMode.preference = currentUser.value.Theme.name.toLowerCase();
-} else {
-  colorMode.preference = "system";
-}
-
-const { data: currentAlert } = await useFetch("/api/config/alert", {
-  method: "GET",
-  query: { userId: currentUser.value.id },
 });
 
-// Makes the newst alert come on top in the pop up window view all
-const sortedAlerts = computed(() => {
-  if (!currentAlert.value) {
+// Check if data is ready
+const isDataReady = computed(() => !!currentUser.value && !userError.value && navigation.value.length > 0);
+
+// Theme handling
+watch(
+  currentUser,
+  (newUser) => {
+    if (newUser?.Theme) {
+      colorMode.preference = newUser.Theme.name.toLowerCase();
+    } else {
+      colorMode.preference = "system";
+    }
+  },
+  { immediate: true },
+);
+
+const isAdmin = computed(() => currentUser.value?.UserRole?.name === "Admin" || false);
+
+const navigation = computed(() => {
+  try {
+    if (!currentUser.value) return [];
+    const items = [
+      {
+        name: "Dashboard",
+        href: "/dashboard",
+        header: "Welcome to TIR",
+        current: route.fullPath === "/dashboard",
+        adminReq: false,
+      },
+      {
+        name: inflection.pluralize(aliasStore.BoundaryAlias || "Boundary"),
+        href: "/company-boundary",
+        header: inflection.pluralize(aliasStore.BoundaryAlias || "Boundary"),
+        current: route.fullPath === "/company-boundary",
+        adminReq: false,
+      },
+      {
+        name: "Libraries",
+        href: "/libraries",
+        header: "Libraries",
+        current: route.fullPath === "/libraries",
+        adminReq: false,
+      },
+      {
+        name: "Administration",
+        href: "/administration/general",
+        header: "Administration",
+        current: route.fullPath === "/administration/team-members" || route.fullPath === "/administration/general",
+        adminReq: true,
+      },
+    ];
+    // Filter items based on the admin requirement
+    return items.filter((item) => item && (!item.adminReq || (item.adminReq && isAdmin.value)));
+  } catch (error) {
+    console.error("Navigation error:", error);
     return [];
   }
+});
+
+const userNavigation = computed(() => {
+  if (!currentUser.value) return [];
+  return [
+    { name: "Your Profile", href: "/profile/" + (currentUser.value.email || "unknown") },
+    { name: "Sign out", onClick: logoutUser },
+  ];
+});
+
+const headerTitle = computed(() => {
+  const currentItem = navigation.value.find((item) => item.current);
+  return currentItem ? currentItem.header : "Welcome to TIR";
+});
+
+function checkTab(name) {
+  if (name === "Boundaries") {
+    breadStore.pages.length = 0;
+    breadStore.tierId = null;
+  }
+}
+
+function clearStorage() {
+  localStorage.removeItem("nuxt-color-mode");
+}
+
+const userBell = computed(() => {
+  if (!currentAlert.value) return [];
+  return currentAlert.value
+    .filter((alert) => alert?.TirNotifications_Users?.[0]?.read === false)
+    .map((alert) => ({
+      ...alert,
+      userId: alert.TirNotifications_Users?.[0]?.UserId || null,
+      category: `Alert: ${alert.NotificationCategory?.category || "Unknown"}`,
+      message: alert.message || "",
+      read: alert.TirNotifications_Users?.[0]?.read || false,
+      href: "#",
+      date: formartAlertDate(alert.creationDate),
+    }))
+    .sort((a, b) => DateTime.fromISO(b.creationDate).toMillis() - DateTime.fromISO(a.creationDate).toMillis());
+});
+
+const sortedAlerts = computed(() => {
+  if (!currentAlert.value) return [];
   return currentAlert.value
     .slice()
     .sort((a, b) => DateTime.fromISO(b.creationDate).toMillis() - DateTime.fromISO(a.creationDate).toMillis());
 });
 
-// The number of alerts for the notification bell
 const unreadAlertCount = computed(() => {
-  return currentAlert.value.filter((alert) => !alert.TirNotifications_Users[0].read).length;
+  return currentAlert.value?.filter((alert) => alert?.TirNotifications_Users?.[0]?.read === false).length || 0;
 });
 
-const { data: currentAbout } = await useFetch("/api/config/about");
-
 const dateCleaner = computed(() => {
-  if (currentAbout.value && currentAbout.value.date) {
+  if (currentAbout.value?.date) {
     const dateObj = new Date(currentAbout.value.date);
     return dateObj.toLocaleDateString();
   }
@@ -416,54 +457,89 @@ function formartAlertDate(isoDate) {
     hour12: true,
   });
 }
-const { data: aliases } = await useFetch("/api/config/alias");
-const boundaryAlias = aliases.value.find((item) => item.term === "Boundary").alias;
 
-const navigation = [
-  { name: "Dashboard", href: "/home", current: decodeURIComponent(route.fullPath) === "/home" },
-  {
-    name: inflection.pluralize(boundaryAlias),
-    href: "/company-boundary",
-    current: decodeURIComponent(route.fullPath) === "/company-boundary",
-  },
-  { name: "Libraries", href: "/libraries", current: decodeURIComponent(route.fullPath) === "/libraries" },
-];
-const adminNavigation = [
-  {
-    name: "Administration",
-    href: "/administration/general",
-    current:
-      decodeURIComponent(route.fullPath) === "/administration/team-members" ||
-      decodeURIComponent(route.fullPath) === "/administration/general",
-  },
-];
-const userNavigation = [
-  { name: "Your Profile", href: "/profile/" + currentUser.value.email },
-  { name: "Sign out", href: "/logout" },
-];
-const userBell = computed(() => {
-  return currentAlert.value
-    .filter((alert) => !alert.TirNotifications_Users[0].read)
-    .map((alert) => ({
-      ...alert,
-      userId: alert.TirNotifications_Users[0].UserId,
-      category: `Alert: ${alert.NotificationCategory.category}`,
-      message: alert.message,
-      read: alert.TirNotifications_Users[0].read,
-      href: "#",
-      date: formartAlertDate(alert.creationDate.date),
-    }))
-    .sort((a, b) => DateTime.fromISO(b.creationDate).toMillis() - DateTime.fromISO(a.creationDate).toMillis());
-});
-
-function checkTab(name) {
-  if (name === "Boundaries") {
-    breadStore.pages.length = 0;
-    breadStore.tierId = null;
+const markAsRead = async (alertId) => {
+  try {
+    const response = await fetch("/api/config/alertRead", {
+      method: "PUT",
+      body: JSON.stringify({ id: alertId }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const responseData = await response.json();
+    if (responseData.success) {
+      console.log("Alert marked as read");
+    } else {
+      console.error("Failed to mark alert as read");
+    }
+  } catch (error) {
+    console.error("Error:", error);
   }
-}
+};
 
-function clearStorage() {
-  localStorage.removeItem("nuxt-color-mode");
+const resetInput = async (alert) => {
+  event.stopPropagation();
+  const alertId = alert.id;
+  await markAsRead(alertId);
+  const alertIndex = currentAlert.value.findIndex((a) => a.id === alertId);
+  if (alertIndex !== -1) {
+    currentAlert.value[alertIndex].TirNotifications_Users[0].read = true;
+    currentAlert.value = [...currentAlert.value];
+  } else {
+    console.error("Alert not found in currentAlert.value");
+  }
+};
+
+const deleteTheAlert = async (alertId) => {
+  const prevAlert = [...currentAlert.value];
+  currentAlert.value = currentAlert.value.filter((alert) => alert.id !== alertId);
+  try {
+    const response = await fetch("/api/config/alert", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: alertId }),
+    });
+    const responseData = await response.json();
+    if (!responseData.success) {
+      console.error("Alert was NOT deleted..");
+      currentAlert.value = prevAlert;
+    }
+  } catch (error) {
+    console.error("Error: ", error);
+    currentAlert.value = prevAlert;
+  }
+};
+
+watch(
+  currentUser,
+  (newUser) => {
+    if (newUser?.id) {
+      alertsStore.startPolling(newUser.id);
+    } else {
+      alertsStore.stopPolling();
+    }
+  },
+  { immediate: true },
+);
+
+async function logoutUser() {
+  try {
+    console.log("Logging out...");
+    await $fetch("/api/auth/logout", { method: "POST" });
+
+    // Clear frontend state
+    currentUser.value = null;
+    console.log("Cleared currentUser:", currentUser.value);
+
+    // Stop polling alerts
+    alertsStore.stopPolling();
+    console.log("Stopped alert polling.");
+
+    // Redirect to login page
+    router.push("/");
+
+    console.log("Logout successful, redirected.");
+  } catch (error) {
+    console.error("Logout error:", error);
+  }
 }
 </script>

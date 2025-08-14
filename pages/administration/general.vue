@@ -112,6 +112,10 @@ onMounted(() => {
   store.changeUsername("Administration");
 });
 
+definePageMeta({
+  headerTitle: "Administration",
+});
+
 const secondaryNavigation = [
   { name: "General", href: "/administration/general", icon: UserCircleIcon, current: true },
   { name: "Configuration", href: "/administration/configuration", icon: WrenchIcon, current: false },
