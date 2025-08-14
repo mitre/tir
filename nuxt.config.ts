@@ -40,6 +40,7 @@ export default defineNuxtConfig({
     ldap_ssl_ca: process.env.LDAP_SSL_CA,
     public: {
       ldap_enabled: process.env.LDAP_ENABLED || "false",
+      tir_debug: process.env.TIR_DEBUG || "false",
     },
   },
 
@@ -69,4 +70,5 @@ export default defineNuxtConfig({
     },
   },
   compatibilityDate: "2024-08-18",
+  plugins: [`~/plugins/clientLogger.client.ts`],
 });
