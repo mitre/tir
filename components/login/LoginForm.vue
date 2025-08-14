@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
 import LoginFailed from "./LoginFailed.vue";
-import type { TirAlias } from "~/db/models/tirAlias";
-import { useAliasStore } from "~~/stores/AliasStorage";
-const alias = useAliasStore();
 
 const props = defineProps({
   authMethod: {
@@ -24,9 +21,6 @@ const userInput = ref({
 });
 
 const dialogOpen = ref(false);
-
-const isAuthenticated = useCookie("is-authenticated");
-const currentUser = useCookie("current-user");
 
 const router = useRouter();
 
@@ -64,26 +58,6 @@ async function loginUser() {
       if (apiError && apiError.value) {
         dialogOpen.value = true;
       } else {
-        isAuthenticated.value = "true";
-        currentUser.value = userInput.value.username;
-
-        const { data: aliases } = await useFetch<TirAlias[]>("/api/config/alias");
-
-        if (aliases.value) {
-          const aliasMap: Record<string, string> = aliases.value.reduce(
-            (map: Record<string, string>, aliasEntry: TirAlias) => {
-              map[aliasEntry.term] = aliasEntry.alias;
-              return map;
-            },
-            {},
-          );
-          alias.CompanyAlias = aliasMap.Company;
-          alias.BoundaryAlias = aliasMap.Boundary;
-          alias.SystemAlias = aliasMap.System;
-        }
-        await $fetch("/api/users/checkAlert", {
-          method: "GET",
-        });
         router.push("/home");
       }
     } catch (error) {
@@ -91,10 +65,14 @@ async function loginUser() {
     }
   }
 }
+
+function ssoLogin() {
+  window.location.href = window.location.origin + "/api/auth/login/oidc";
+}
 </script>
 
 <template>
-  <form class="space-y-6" @submit.prevent>
+  <form class="space-y-2" @submit.prevent>
     <div>
       <label for="username" class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"> Username </label>
       <div class="mt-2">
@@ -222,4 +200,27 @@ async function loginUser() {
     </div>
     <LoginFailed :show="dialogOpen" :dialog-open="dialogOpen" @change="dialogOpen = false" />
   </form>
+
+  <!-- Horizontal Divider with Text -->
+  <div class="my-4">
+    <div class="relative">
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full border-t border-gray-300"></div>
+      </div>
+      <div class="relative flex justify-center text-sm">
+        <span class="bg-gray-100 px-2 px-4 text-gray-500 dark:bg-gray-900">or sign in with</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Single Sign On Button -->
+  <div>
+    <button
+      type="button"
+      class="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+      @click="ssoLogin"
+    >
+      Single Sign On
+    </button>
+  </div>
 </template>

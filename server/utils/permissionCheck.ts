@@ -11,6 +11,7 @@ import {
   Tier,
   Tier_User,
 } from "../../db/models";
+import { SessionService } from "../auth/sessionService";
 
 export async function userCheck(
   event: any,
@@ -22,14 +23,23 @@ export async function userCheck(
   let BoundaryRoleId = null;
   let TierRoleId = null;
   let boundary = null;
-  const rawToken = getCookie(event, "tirtoken");
-  if (rawToken) {
-    userId = decodeToken(rawToken);
+  const rawSessionId = getCookie(event, "tirsession");
+  const sessionService = new SessionService();
+  if (rawSessionId) {
+    const session = await sessionService.validateSession(event);
+
+    if (session && session.UserId) {
+      userId = session.UserId;
+    } else {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Unauthorized Access - Invalid or Expired Session",
+      });
+    }
   } else {
-    console.log("error 1");
     throw createError({
       statusCode: 401,
-      statusMessage: "Unknown User.",
+      statusMessage: "Unauthorized Access - No Session Found",
     });
   }
 

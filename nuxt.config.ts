@@ -18,6 +18,7 @@ export default defineNuxtConfig({
   ],
 
   runtimeConfig: {
+    base_url: process.env.BASE_URL,
     database_host: process.env.DATABASE_HOST,
     database_port: process.env.DATABASE_PORT,
     database_user: process.env.DATABASE_USER,
@@ -26,6 +27,9 @@ export default defineNuxtConfig({
     temp_folder: process.env.TEMP_FOLDER || "./tmp",
     jwt_key: process.env.JWT_KEY,
     secret_key: process.env.SECRET_KEY,
+    oidc_secret: process.env.OIDC_SECRET,
+    oidc_callback: process.env.OIDC_CALLBACK,
+    oidc_url: process.env.OIDC_URL,
     usesqlite: process.env.SQLITE,
     ldap_host: process.env.LDAP_HOST,
     ldap_port: process.env.LDAP_PORT || "389",
