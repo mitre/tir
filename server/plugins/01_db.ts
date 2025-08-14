@@ -24,10 +24,41 @@ export default defineNitroPlugin(async () => {
     await sequelize.addHook("beforeUpdate", (model) => {
       model.dataValues.lastUpdate = DateTime.now().toISO();
     });
-    
-    const migrateResults = await migrator.up();
-    const seederResults = await seeder.up();
-    
+
+    const pendingMigrations = await migrator.pending();
+    if (pendingMigrations.length > 0) {
+      logger.info({
+        service: "database",
+        message: `${pendingMigrations.length} Migrations Pending`,
+      });
+      logger.info({ service: "database", message: "Starting Migrations" });
+      const migrateResults = await migrator.up();
+      for (const migrationResult of migrateResults) {
+        logger.info({
+          service: "database",
+          message: `Migrated: ${migrationResult.name}`,
+        });
+      }
+      logger.info({ service: "database", message: `${migrateResults.length} Migrations Applied` });
+    }
+
+    const pendingSeeders = await seeder.pending();
+    if (pendingSeeders.length > 0) {
+      logger.info({
+        service: "database",
+        message: `${pendingSeeders.length} Seeds Pending`,
+      });
+      logger.info({ service: "database", message: "Starting Seeders" });
+      const seederResults = await seeder.up();
+      for (const seederResult of seederResults) {
+        logger.info({
+          service: "database",
+          message: `Seeded: ${seederResult.name}`,
+        });
+      }
+      logger.info({ service: "database", message: `${seederResults.length} Seeders Applied` });
+    }
+
     logger.info({ service: "database", message: "Datatbase Started." });
   } catch (error) {
     console.log(error);
