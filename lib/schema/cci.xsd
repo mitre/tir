@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type='text/xsl' href='element_dictionary.xsl' ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:cci="http://iase.disa.mil/cci" xmlns:ns1="cci.xsd" targetNamespace="http://iase.disa.mil/cci" elementFormDefault="qualified" version="1.0.1">
+	<xs:element name="cci_list" type="cci:CCIListType">
+		<xs:annotation>
+			<xs:documentation>
+				The cci_list element is the root element of a CCI List document.  It contains CCIs and associated metadata.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:unique name="unique-cci-id">
+			<xs:selector xpath="cci:cci_item"/>
+			<xs:field xpath="@id"/>
+		</xs:unique>
+	</xs:element>
+	<!-- Types -->
+	<xs:complexType name="CCIListType">
+		<xs:annotation>
+			<xs:documentation>
+				CCIListType is the root element type for a CCI List document.  The element contains document metadata and CCI items.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="metadata" type="cci:MetadataType">
+				<xs:annotation>
+					<xs:documentation>The metadata element contains information about the CCI list.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="cci_items" type="cci:ItemsType">
+				<xs:annotation>
+					<xs:documentation>The cci_items element contains the cci_items for this CCI list.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="MetadataType">
+		<xs:annotation>
+			<xs:documentation>
+				The MetadataType contains document metadata for a CCI List document.
+            </xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="version" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>
+						The version element contains the version identifier of the CCI List.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="publishdate" type="xs:date">
+				<xs:annotation>
+					<xs:documentation>
+						The publishdate element contains the publication date of this version of the CCI List.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ItemsType">
+		<xs:annotation>
+			<xs:documentation>The ItemTypes contains the collection of CCIs.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="cci_item" type="cci:ItemType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The cci_item elements contain information about a specific CCI.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ItemType">
+		<xs:annotation>
+			<xs:documentation>The ItemType contains the data associated with a single CCI.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="status" type="cci:StatusType">
+				<xs:annotation>
+					<xs:documentation>The status is the current state of a CCI.  See StatusType for details.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="publishdate" type="xs:date">
+				<xs:annotation>
+					<xs:documentation>The publishdate is the date a CCI is added to the CCI List.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="contributor" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>The contributor is the organization that proposed the CCI for inclusion.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="definition" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>The definition is the narrative IA control statement for this CCI.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="type" type="cci:CCIType" minOccurs="0" maxOccurs="2">
+				<xs:annotation>
+					<xs:documentation>The type is used to distinguish between technical and policy requirements.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="parameter" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>The parameter is used to identify what a CCI is intended to measure.  Two examples of are "Number of unsuccessful login attempts" or "Number of characters".</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="note" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The note is used to capture additional information about the CCI.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="references" type="cci:ReferencesType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>References are links to source documents for this CCI.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="id" type="cci:CCIIdType" use="required">
+			<xs:annotation>
+				<xs:documentation>This is the CCI ID number for the CCI item.  CCI IDs are assigned by DISA FSO upon creation of CCIs.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:simpleType name="CCIIdType">
+		<xs:annotation>
+			<xs:documentation>CCIIdType is the type used to represent CCI ID numbers.  CCI ID numbers are assigned by DISA FSO upon creation of CCIs.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:pattern value="CCI-[0-9]{6}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="StatusType">
+		<xs:annotation>
+			<xs:documentation>The StatusType is used to indicate the current status of a CCI.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="draft">
+				<xs:annotation>
+					<xs:documentation>The draft state indicates the CCI is in development.  Generally, this state will not appear in published CCI lists.  It may be used for submission of proposed CCIs between organizations.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="published">
+				<xs:annotation>
+					<xs:documentation>The published state indicates the CCI has been included in a published CCI list.  It is no longer in development.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="deprecated">
+				<xs:annotation>
+					<xs:documentation>The deprecated state indicates the CCI was previously published and subsequently deemed to be unnecessary.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CCIType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="policy">
+				<xs:annotation>
+					<xs:documentation>The CCI represents a requirement that is implemented by means of an organizational policy.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="technical">
+				<xs:annotation>
+					<xs:documentation>The CCI represents a requirement that is implemented by technical means within the information system.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="ReferencesType">
+		<xs:annotation>
+			<xs:documentation>The ReferencesType is a container for one or more references associated with a CCI.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="reference" type="cci:ReferenceType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The reference elements represent an individual source document referenced for this CCI.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ReferenceType">
+		<xs:annotation>
+			<xs:documentation>
+					The referencetype contains the metadata associated with a CCI reference.
+				</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="validated" type="cci:ValidatedType" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>The validated elements provide information concerning CCI validation status with respect to the referenced document.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="creator" type="xs:string" default="unknown author">
+			<xs:annotation>
+				<xs:documentation>The creator is the name of the person or organization that created the source document.  If it is unknown, the default should be "unknown author"</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="title" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The title is the official title of the source document.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="version" type="xs:string" default="1">
+			<xs:annotation>
+				<xs:documentation>The version is the version number of the source document.  If there is no version, or it is unknown, the default version should be 1.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="location" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>The location is used to identify where the source document can be located.  This may be, but is not limited to an URL, a phone number, or an organization's name.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="index" type="xs:string">
+			<xs:annotation>
+				<xs:documentation>The index identifies the location of the control source within the document.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="ValidatedType">
+		<xs:annotation>
+			<xs:documentation>The ValidatedType contains information associated with a validation of a CCI with respect to a referenced source document.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="note" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation>Notes may provide details of the validation.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="org" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>The org attributes indicates the organization that provided the validation.  Ideally, this will be the creator of the referenced source document.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="date" type="xs:date" use="required">
+			<xs:annotation>
+				<xs:documentation>The date attribute indicates the date the validation occurred, or the date a document confirming validation was issued.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+</xs:schema>

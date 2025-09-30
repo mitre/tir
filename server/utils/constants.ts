@@ -1,0 +1,6 @@
+export const DATETIME_LENGTH = 29;
+export const MAX_IPV6_STRING_LENGTH = 39;
+export const MAX_MAC_ADDRESS_STRING_LENGTH = 17;
+export const MAX_FQDN_STRING_LENGTH = 253;
+export const MAX_GUID_STRING_LENGTH = 36;
+export const MAX_HOSTNAME_STRING_LENGTH = 255;
