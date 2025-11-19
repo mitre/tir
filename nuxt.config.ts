@@ -17,7 +17,7 @@ export default defineNuxtConfig({
     "@nuxtjs/tailwindcss",
     "nuxt-headlessui",
     "@pinia/nuxt",
-    "pinia-plugin-persistedstate",
+    "pinia-plugin-persistedstate/nuxt",
     "@nuxtjs/color-mode",
   ],
 
