@@ -1,4 +1,4 @@
-import { loadAuthConfig } from "~/server/utils/authConfig";
+import { loadAuthConfig } from "~/server/utils/config/authConfig";
 
 function countMatches(regex: RegExp, input: string): number {
   return (input.match(regex) || []).length;
@@ -8,7 +8,7 @@ export async function getPasswordViolations(password: string): Promise<string[]>
   const reasons: string[] = [];
 
   const authConfig = await loadAuthConfig();
-  const policy = authConfig.config.local;
+  const policy = authConfig.local;
 
   if (password.length < policy.passwordLength) {
     reasons.push(`Password must be at least ${policy.passwordLength} characters long.`);

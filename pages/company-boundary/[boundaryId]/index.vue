@@ -250,16 +250,6 @@
                       >Export Data</a
                     >
                   </div>
-
-                  <div class="relative inline-flex px-3">
-                    <a href="#" class="relative inline-flex pr-6 pt-2 hover:text-gray-800 dark:hover:text-white"
-                      >SCTM
-                      <span
-                        class="absolute -top-2 inline-flex items-center rounded-md bg-gray-400/10 px-1 text-xs font-medium text-gray-400 ring-1 ring-inset ring-gray-400/20"
-                        >PHASE 3</span
-                      >
-                    </a>
-                  </div>
                 </li>
                 <div class="w-36 text-right">
                   <Menu v-slot="{ open }" as="div" class="relative inline-block text-left">
@@ -417,10 +407,14 @@
                 </div>
               </div>
 
-              <div class="border-t border-black/5 px-4 py-6 dark:border-white/5 sm:border-l sm:px-6 lg:px-8">
-                <div class="text-sm font-medium leading-6 text-gray-600 dark:text-gray-400">Control Status</div>
-                <div class="mt-2 items-baseline gap-x-2">
-                  <span class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white"> 0/0 Met</span>
+              <div class="border-t border-black/5 px-4 py-6 dark:border-white/5 sm:px-6 lg:border-l lg:px-8">
+                <div class="text-sm font-medium leading-6 text-gray-600 dark:text-gray-400">
+                  <ControlCounts
+                    title="Control Status"
+                    :items="sctmHoverItems"
+                    :stats1="summary.assessorCounts"
+                    :stats2="summary.auditCounts"
+                  />
                 </div>
               </div>
             </div>
@@ -469,11 +463,25 @@
                     Vulnerability View
                   </button>
                 </Tab>
+                <Tab v-slot="{ selected }" as="template">
+                  <button
+                    :class="[
+                      'w-1/6 rounded-t-lg py-2.5 text-sm font-medium leading-5 text-black dark:text-white',
+                      'ring-white/60 focus:outline-none focus:ring-1',
+                      selected
+                        ? 'border-x-2 border-t-2 border-gray-400 bg-gray-400/20 dark:bg-gray-200/20 '
+                        : 'hover:bg-black/[0.12] dark:hover:bg-white/[0.12] ',
+                    ]"
+                  >
+                    SCTM View
+                  </button>
+                </Tab>
               </TabList>
               <TabPanels>
                 <TabPanel><BoundaryView :summary="summary" /></TabPanel>
                 <TabPanel><SystemView :summary="summary" :asset-view="assetView" /></TabPanel>
                 <TabPanel><VulnView :summary="summary" /></TabPanel>
+                <TabPanel><SctmView :summary="summary" @refresh-summary="() => refreshNuxtData('SummaryAPI')" /></TabPanel>
               </TabPanels>
             </TabGroup>
           </div>
@@ -1385,6 +1393,12 @@ const vulnHoverItems = [
   { name: "None", text: "None", color: "grey" },
 ];
 
+const sctmHoverItems = [
+  { name: "Compliant", text: "Compliant", color: "green" },
+  { name: "Non_Compliant", text: "Non-Compliant", color: "red" },
+  { name: "Not_Applicable", text: "Not Applicable", color: "sky" },
+  { name: "Not_Reviewed", text: "Not Reviewed", color: "amber" },
+];
 // Boundary Summary
 const boundaryId = route.params.boundaryId;
 const { data: summary } = await useFetch("/api/boundaries/summary", {

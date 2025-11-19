@@ -321,12 +321,6 @@
           <ErrorNotification
             v-if="showErrorNotification"
             :show="showErrorNotification"
-            :msg="errorMsg"
-            @show="showErrorNotification = false"
-          />
-          <ErrorNotification
-            v-if="showErrorNotification"
-            :show="showErrorNotification"
             :error="errorObject"
             @show="showErrorNotification = false"
           />

@@ -1,7 +1,14 @@
-import { Sequelize } from "sequelize";
+import { Sequelize, DataTypes, Model, ModelStatic } from "sequelize";
+import { DateTime } from "luxon";
 
 const config = useRuntimeConfig();
 let initSequelize;
+
+declare module "sequelize" {
+  interface ModelOptions<M extends Model = Model> {
+    noIsoTimestamps?: boolean;
+  }
+}
 
 const databasePort = ((n) => (isNaN(n) ? 5432 : n))(parseInt(config.database_port, 10));
 
@@ -25,4 +32,15 @@ if (config.usesqlite === "true") {
   });
 }
 
+export function enableIsoTextTimestamps(sequelize: Sequelize) {
+  sequelize.addHook("beforeDefine", (attrs: any, options: any) => {
+    if (options?.noIsoTimestamps === true) return;
+
+    const nowISO = () => DateTime.now().toISO();
+    attrs.creationDate ??= { type: DataTypes.TEXT, allowNull: false, defaultvalue: () => nowISO() };
+    attrs.lastUpdate ??= { type: DataTypes.TEXT, allowNull: false, defaultValue: () => nowISO() };
+  });
+}
+
+enableIsoTextTimestamps(initSequelize);
 export const sequelize = initSequelize;

@@ -11,17 +11,31 @@ import {
   System,
   Boundary_User,
   Evaluation,
+  ControlRecord,
+  ControlRecordItem,
+  ControlFamily,
+  Control,
+  ControlNumber,
+  ControlRevision,
 } from "../../../db/models";
 import { initializeCounts } from "../../utils/findings";
 import { PerfTimer } from "../../utils/perfTimer";
+import { createControlRecords } from "../../utils/controls";
 import { decodeToken } from "../../utils/currentUser";
 import { NessusPlugin } from "~/db/models/nessusPlugin";
 import { NessusReportItem } from "~/db/models/nessusReportItem";
 import { Cve } from "~/db/models/cve";
 import { NessusReport } from "~/db/models/nessusReport";
-import { BoundarySumary, CveEntry, NessusReportEntry, VulnEntry } from "~/types/boundarySummary";
+import {
+  BoundarySumary,
+  CveEntry,
+  NessusReportEntry,
+  VulnEntry,
+  SctmEntry,
+} from "~/types/boundarySummary";
 import { VulnCounts } from "~/types/nessus";
 import { FindingCounts } from "~/types/findings";
+import { ControlFindingCounts } from "~/types/controlFindings";
 import { Tier } from "~/db/models/tier";
 import { PolicyDocument } from "~/db/models/policyDocument";
 import { StigOverride } from "~/db/models/stigOverride";
@@ -79,6 +93,26 @@ export default defineEventHandler(async (event) => {
       {
         model: PolicyDocument,
       },
+      {
+        model: ControlRecord,
+        include: [
+          {
+            model: ControlRecordItem,
+            attributes: ["ComplianceStatusId", "AuditControlStatusId", "AssessorControlStatusId"],
+          },
+          {
+            model: ControlFamily,
+            attributes: ["id", "name"],
+            include: [
+              {
+                model: Control,
+                include: [ControlNumber],
+                limit: 1, // only need one to extract abbreviation
+              },
+            ],
+          },
+        ],
+      },
     ],
     where: {
       id: BoundaryId,
@@ -90,7 +124,6 @@ export default defineEventHandler(async (event) => {
       statusMessage: `Boundary not Found. BoundaryId: ${query.BoundaryId}`,
     });
   }
-
   if (!boundary.StigLibrary) {
     throw createError({
       statusCode: 400,
@@ -453,16 +486,152 @@ export default defineEventHandler(async (event) => {
 
   vulnView.push(...notOpenVulns);
 
+  const sctmView: SctmEntry[] = [];
+  const auditCounts: ControlFindingCounts = {
+    Compliant: 0,
+    Non_Compliant: 0,
+    Not_Applicable: 0,
+    Not_Reviewed: 0,
+  };
+
+  const assessorCounts: ControlFindingCounts = {
+    Compliant: 0,
+    Non_Compliant: 0,
+    Not_Applicable: 0,
+    Not_Reviewed: 0,
+  };
+  const revName = `rev${boundary.PolicyDocument.version}`;
+  const revision = await ControlRevision.findOne({ where: { name: revName } });
+
+  let controlRecords: any[] = [];
+  if (revision) {
+    controlRecords = (boundary?.ControlRecords || []).filter(
+      (cr: any) => cr.ControlRevisionId === revision.id,
+    );
+  } else {
+    logger.info({
+      service: "SCTM",
+      message: `Revision ${revName} not found. Skipping ControlRecord filtering/creation...`,
+    });
+  }
+
+  if (revision && !controlRecords?.length && boundary?.PolicyDocument?.version) {
+    // Create new ControlRecords
+    await createControlRecords(boundary.id, boundary.PolicyDocument.version);
+
+    // Reload the boundary's ControlRecords after creation
+    const refreshedBoundary = await Boundary.findByPk(boundary.id, {
+      include: [
+        {
+          model: ControlRecord,
+          include: [
+            {
+              model: ControlRecordItem,
+              attributes: ["ComplianceStatusId", "AuditControlStatusId", "AssessorControlStatusId"],
+            },
+            {
+              model: ControlFamily,
+              attributes: ["id", "name"],
+              include: [
+                {
+                  model: Control,
+                  include: [ControlNumber],
+                  limit: 1, // only need one to extract abbreviation
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    controlRecords = (refreshedBoundary?.ControlRecords || []).filter(
+      (cr: any) => cr.ControlRevisionId === revision.id,
+    );
+  }
+
+  // Populate sctmView
+  for (const record of controlRecords) {
+    const family = record.ControlFamily;
+    const counts: ControlFindingCounts = {
+      Compliant: 0,
+      Non_Compliant: 0,
+      Not_Applicable: 0,
+      Not_Reviewed: 0,
+    };
+
+    if (record.ControlRecordItems && record.ControlRecordItems.length) {
+      for (const item of record.ControlRecordItems) {
+        switch (item.ComplianceStatusId) {
+          case 1:
+            counts.Compliant += 1;
+            break;
+          case 2:
+            counts.Non_Compliant += 1;
+            break;
+          case 3:
+            counts.Not_Applicable += 1;
+            break;
+          case 4:
+            counts.Not_Reviewed += 1;
+            break;
+        }
+        switch (item.AuditControlStatusId) {
+          case 1:
+            auditCounts.Compliant += 1;
+            break;
+          case 2:
+            auditCounts.Non_Compliant += 1;
+            break;
+          case 3:
+            auditCounts.Not_Applicable += 1;
+            break;
+          case 4:
+            auditCounts.Not_Reviewed += 1;
+            break;
+        }
+        switch (item.AssessorControlStatusId) {
+          case 1:
+            assessorCounts.Compliant += 1;
+            break;
+          case 2:
+            assessorCounts.Non_Compliant += 1;
+            break;
+          case 3:
+            assessorCounts.Not_Applicable += 1;
+            break;
+          case 4:
+            assessorCounts.Not_Reviewed += 1;
+            break;
+        }
+      }
+    }
+
+    const abbreviation = family?.Controls?.[0]?.ControlNumber?.number?.split("-")[0] ?? "N/A";
+
+    const sctmEntry: SctmEntry = {
+      id: record.id,
+      controlFamilyId: record.ControlFamilyId,
+      controlFamilyName: family?.name ?? "Unknown",
+      abbreviation,
+      date: record.lastUpdate,
+      findings: counts,
+    };
+    sctmView.push(sctmEntry);
+  }
+
   perfTimer.globalSummaryPrint();
   const boundarySummary: BoundarySumary = {
     boundaryInfo,
     boundaryView,
     systemView,
     vulnView,
+    sctmView,
     uniqueCounts,
     totalCounts,
     vulnTotalCounts,
     vulnUniqueCounts,
+    auditCounts,
+    assessorCounts,
   };
 
   return boundarySummary;

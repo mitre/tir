@@ -212,7 +212,7 @@ onBeforeMount(async () => {
   await alias.loadAliases();
 
   try {
-    const data = await $fetch<{ timeout: number }>("/api/config/notificationTimeout");
+    const data = await $fetch<{ timeout: number }>("/api/config/notification");
     if (data?.timeout) {
       notificationTimeout.value = data.timeout;
     }

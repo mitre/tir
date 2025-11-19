@@ -4,9 +4,10 @@ export type ProgressStreamer = ReturnType<typeof createProgressStreamer>;
 
 export function createProgressStreamer(res: any) {
   const config = useRuntimeConfig();
+  let ended = false;
 
   const write = (msg: ProgressMessage) => {
-    if (res.writableEnded) {
+    if (ended || res.writableEnded) {
       logger.error({
         service: "ProgressStreamer",
         message: "Attempted to write after response ended.",
@@ -23,6 +24,15 @@ export function createProgressStreamer(res: any) {
     res.write(json);
   };
 
+  const finish = () => {
+    if (!ended && !res.writeableEnded) {
+      ended = true;
+      try {
+        res.end();
+      } catch {}
+    }
+  };
+
   return {
     status: (value: string) => write({ type: "status", value }),
     progress: (value: number) => write({ type: "progress", value }),
@@ -30,5 +40,6 @@ export function createProgressStreamer(res: any) {
     error: (value: string) => write({ type: "error", value }),
     complete: () => write({ type: "complete" }),
     raw: write,
+    finish,
   };
 }

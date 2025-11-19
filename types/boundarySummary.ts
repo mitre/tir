@@ -1,5 +1,6 @@
 import type { VulnCounts } from "~/types/nessus";
 import type { FindingCounts } from "~/types/findings";
+import type { ControlFindingCounts } from "~/types/controlFindings";
 
 type SystemEntry = {
   id: number;
@@ -48,6 +49,15 @@ export type VulnEntry = {
   NessusReportItems: NessusReportEntry[];
 };
 
+export type SctmEntry = {
+  id: number;
+  controlFamilyId: number;
+  controlFamilyName: string | null;
+  abbreviation: string,
+  date: string;
+  findings: ControlFindingCounts;
+};
+
 export type BoundarySumary = {
   boundaryInfo: {
     id: number;
@@ -60,8 +70,11 @@ export type BoundarySumary = {
   boundaryView: StigEntry[];
   systemView: SystemEntry[];
   vulnView: VulnEntry[];
+  sctmView: SctmEntry[];
   uniqueCounts: FindingCounts;
   totalCounts: FindingCounts;
   vulnUniqueCounts: VulnCounts;
   vulnTotalCounts: VulnCounts;
+  auditCounts: ControlFindingCounts;
+  assessorCounts: ControlFindingCounts;
 };

@@ -48,6 +48,31 @@ import { TirNotification } from "./tirNotifications";
 import { NotificationCategory } from "./notificationCategory";
 import { StigOverride } from "./stigOverride";
 import { Session } from "./session";
+import { Control } from "./controls";
+import { ControlNumber } from "./controlNumber";
+import { ControlFamily } from "./controlFamily";
+import { ControlClass } from "./controlClass";
+import { ControlPriority } from "./controlPriority";
+import { ControlRevision } from "./controlRevision";
+import { ControlReference } from "./controlReference";
+import { ControlRelatedControl } from "./controlRelatedControl";
+import { ControlWithdrawn } from "./controlWithdrawn";
+import { ControlEnhancement } from "./controlEnhancement";
+import { EnhancementRelatedControl } from "./enhancementRelatedControl";
+import { EnhancementWithdrawn } from "./enhancementWithdrawn";
+import { Baseline } from "./baseline";
+import { ComplianceStatus } from "./complianceStatus";
+import { CommonControlProvider } from "./commonControlProvider";
+import { ConMonMethod } from "./conMonMethod";
+import { FrequencyType } from "./frequencyType";
+import { ImplementationStatus } from "./implementationStatus";
+import { RiskLevel } from "./riskLevel";
+import { SecurityControlDesignation } from "./securityControlDesignation";
+import { TestMethod } from "./testMethod";
+import { ControlRecordItem } from "./controlRecordItem";
+import { ControlRecord } from "./controlRecord";
+import { ControlStatement } from "./controlStatement";
+import { ControlEnhancementStatement } from "./controlEnhancementStatement";
 
 User.belongsTo(UserRole);
 UserRole.hasOne(User);
@@ -69,7 +94,11 @@ Boundary.belongsTo(Tier, {
 
 Tier.hasMany(Boundary);
 
-export const Boundary_User = sequelize.define("Boundary_User", {}, { timestamps: false });
+export const Boundary_User = sequelize.define(
+  "Boundary_User",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
 User.belongsToMany(Boundary, { through: Boundary_User });
 Boundary.belongsToMany(User, { through: Boundary_User });
 Boundary.hasMany(Boundary_User);
@@ -88,7 +117,11 @@ export interface TierInterface extends Tier {
   removeUser: BelongsToManyRemoveAssociationMixin<User, number>;
 }
 
-export const Tier_User = sequelize.define("Tier_User", {}, { timestamps: false });
+export const Tier_User = sequelize.define(
+  "Tier_User",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
 User.belongsToMany(Tier, { through: Tier_User });
 Tier.belongsToMany(User, { through: Tier_User });
 Tier.hasMany(Tier_User);
@@ -96,19 +129,27 @@ TierRole.hasOne(Tier_User);
 Tier_User.belongsTo(TierRole);
 Tier_User.belongsTo(User);
 
-export const EvalDates_User = sequelize.define("EvalDates_User", {}, { timestamps: false });
+export const EvalDates_User = sequelize.define(
+  "EvalDates_User",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
 EvaluationItem.belongsToMany(User, { through: EvalDates_User });
 User.belongsToMany(EvaluationItem, { through: EvalDates_User });
 
 export const MilestoneDates_User = sequelize.define(
   "MilestoneDates_User",
   {},
-  { timestamps: false },
+  { timestamps: false, noIsoTimestamps: true },
 );
 Milestone.belongsToMany(User, { through: MilestoneDates_User });
 User.belongsToMany(Milestone, { through: MilestoneDates_User });
 
-export const Stig_StigData = sequelize.define("Stig_StigData", {}, { timestamps: false });
+export const Stig_StigData = sequelize.define(
+  "Stig_StigData",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
 StigData.belongsToMany(Stig, { through: Stig_StigData });
 Stig.belongsToMany(StigData, { through: Stig_StigData });
 
@@ -117,7 +158,11 @@ Boundary.belongsTo(StigLibrary, { onDelete: "RESTRICT", onUpdate: "CASCADE" });
 System.belongsTo(Boundary, { onDelete: "CASCADE", onUpdate: "CASCADE" });
 Boundary.hasMany(System, { onDelete: "CASCADE", onUpdate: "CASCADE" });
 
-const Stig_System = sequelize.define("Stig_System", {}, { timestamps: false });
+const Stig_System = sequelize.define(
+  "Stig_System",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
 Stig.belongsToMany(System, { through: Stig_System });
 System.belongsToMany(Stig, { through: Stig_System });
 
@@ -134,12 +179,16 @@ export interface SystemWithStigs extends System {
 const StigData_StigResponsibility = sequelize.define(
   "StigData_StigResponsibility",
   {},
-  { timestamps: false },
+  { timestamps: false, noIsoTimestamps: true },
 );
 StigResponsibility.belongsToMany(StigData, { through: StigData_StigResponsibility });
 StigData.belongsToMany(StigResponsibility, { through: StigData_StigResponsibility });
 
-const StigLibrary_Stig = sequelize.define("StigLibrary_Stig", {}, { timestamps: false });
+const StigLibrary_Stig = sequelize.define(
+  "StigLibrary_Stig",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
 Stig.belongsToMany(StigLibrary, { through: StigLibrary_Stig });
 StigLibrary.belongsToMany(Stig, { through: StigLibrary_Stig });
 
@@ -150,7 +199,7 @@ export interface StigLibraryWithStigs extends StigLibrary {
 const StigData_StigReference = sequelize.define(
   "StigData_StigReference",
   {},
-  { timestamps: false },
+  { timestamps: false, noIsoTimestamps: true },
 );
 StigReference.belongsToMany(StigData, { through: StigData_StigReference });
 StigData.belongsToMany(StigReference, { through: StigData_StigReference });
@@ -229,7 +278,7 @@ CciList.hasMany(CciItem, {
 export const CciItem_CciReference = sequelize.define(
   "CciItem_CciReference",
   {},
-  { timestamps: false },
+  { timestamps: false, noIsoTimestamps: true },
 );
 
 CciItem.belongsToMany(CciReference, { through: CciItem_CciReference });
@@ -257,7 +306,11 @@ Boundary.belongsTo(PolicyDocument, {
   onUpdate: "CASCADE",
 });
 
-export const StigData_StigIdent = sequelize.define("StigData_StigIdent", {}, { timestamps: false });
+export const StigData_StigIdent = sequelize.define(
+  "StigData_StigIdent",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
 StigData.belongsToMany(StigIdent, { through: StigData_StigIdent });
 StigIdent.belongsToMany(StigData, { through: StigData_StigIdent });
 
@@ -286,11 +339,19 @@ NessusReportItem.belongsTo(NessusPlugin, { onDelete: "CASCADE", onUpdate: "CASCA
 NessusPluginFamily.hasOne(NessusPlugin, { onDelete: "CASCADE", onUpdate: "CASCADE" });
 NessusPlugin.belongsTo(NessusPluginFamily, { onDelete: "CASCADE", onUpdate: "CASCADE" });
 
-export const Cve_NessusPlugin = sequelize.define("Cve_NessusPlugin", {}, { timestamps: false });
+export const Cve_NessusPlugin = sequelize.define(
+  "Cve_NessusPlugin",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
 NessusPlugin.belongsToMany(Cve, { through: Cve_NessusPlugin });
 Cve.belongsToMany(NessusPlugin, { through: Cve_NessusPlugin });
 
-export const Cve_System = sequelize.define("Cve_System", {}, { timestamps: false });
+export const Cve_System = sequelize.define(
+  "Cve_System",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
 System.belongsToMany(Cve, { through: Cve_System });
 Cve.belongsToMany(System, { through: Cve_System });
 
@@ -310,7 +371,7 @@ NessusPlugin.hasMany(NessusOverride, { onDelete: "NO ACTION", onUpdate: "CASCADE
 export const NessusPlugin_Boundary = sequelize.define(
   "NessusPlugin_Boundary",
   {},
-  { timestamps: false },
+  { timestamps: false, noIsoTimestamps: true },
 );
 Boundary.belongsToMany(NessusPlugin, { through: NessusPlugin_Boundary });
 NessusPlugin.belongsToMany(Boundary, { through: NessusPlugin_Boundary });
@@ -327,7 +388,7 @@ export const TirNotifications_User = sequelize.define(
       type: DataTypes.BOOLEAN,
     },
   },
-  { timestamps: false },
+  { timestamps: false, noIsoTimestamps: true },
 );
 TirNotification.belongsToMany(User, {
   through: TirNotifications_User,
@@ -348,6 +409,212 @@ StigData.hasMany(StigOverride, { onDelete: "NO ACTION", onUpdate: "CASCADE" });
 
 Session.belongsTo(User, { onUpdate: "CASCADE", onDelete: "CASCADE" });
 User.hasMany(Session, { onUpdate: "CASCADE", onDelete: "CASCADE" });
+
+Control.belongsTo(ControlNumber, { onUpdate: "CASCADE", onDelete: "CASCADE" });
+Control.belongsTo(ControlFamily, { onUpdate: "CASCADE", onDelete: "CASCADE" });
+Control.belongsTo(ControlClass, { onUpdate: "CASCADE", onDelete: "CASCADE" });
+Control.belongsTo(ControlPriority, { onUpdate: "CASCADE", onDelete: "CASCADE" });
+Control.belongsTo(ControlRevision, { onUpdate: "CASCADE", onDelete: "CASCADE" });
+
+export const Control_ControlReference = sequelize.define(
+  "Control_ControlReference",
+  {},
+  {
+    timestamps: false,
+    noIsoTimestamps: true,
+  },
+);
+Control.belongsToMany(ControlReference, {
+  through: Control_ControlReference,
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlReference.belongsToMany(Control, {
+  through: Control_ControlReference,
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+export const Control_Baseline = sequelize.define(
+  "Control_Baseline",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
+Control.belongsToMany(Baseline, {
+  through: Control_Baseline,
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Baseline.belongsToMany(Control, {
+  through: Control_Baseline,
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+ControlStatement.belongsTo(Control);
+Control.hasMany(ControlStatement);
+ControlStatement.belongsTo(ControlStatement, { as: "Parent", foreignKey: "parentId" });
+
+ControlRelatedControl.belongsTo(Control);
+
+ControlWithdrawn.belongsTo(Control);
+
+Control.hasMany(ControlEnhancement);
+ControlEnhancement.belongsTo(Control);
+
+export const ControlEnhancement_Baseline = sequelize.define(
+  "ControlEnhancement_Baselines",
+  {},
+  {
+    timestamps: false,
+    noIsoTimestamps: true,
+  },
+);
+ControlEnhancement.belongsToMany(Baseline, {
+  through: "ControlEnhancement_Baselines",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+Baseline.belongsToMany(ControlEnhancement, {
+  through: "ControlEnhancement_Baselines",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+ControlEnhancement.hasMany(EnhancementRelatedControl, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+EnhancementRelatedControl.belongsTo(ControlEnhancement, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+ControlEnhancement.hasMany(EnhancementWithdrawn);
+ControlEnhancement.hasMany(ControlEnhancementStatement, {});
+
+ControlEnhancementStatement.belongsTo(ControlEnhancement, {});
+ControlEnhancementStatement.belongsTo(ControlEnhancementStatement, {
+  foreignKey: "parentId",
+  as: "Parent",
+});
+
+EnhancementWithdrawn.belongsTo(ControlEnhancement);
+
+ComplianceStatus.hasMany(ControlRecordItem, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(ComplianceStatus);
+
+ImplementationStatus.hasMany(ControlRecordItem, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(ImplementationStatus);
+
+CommonControlProvider.hasMany(ControlRecordItem, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(CommonControlProvider, {});
+
+SecurityControlDesignation.hasMany(ControlRecordItem, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(SecurityControlDesignation, {});
+
+TestMethod.hasMany(ControlRecordItem, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(TestMethod, {});
+
+FrequencyType.hasMany(ControlRecordItem, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(FrequencyType, {});
+
+ConMonMethod.hasMany(ControlRecordItem, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(ConMonMethod, {});
+
+RiskLevel.hasMany(ControlRecordItem, {
+  foreignKey: "SeverityId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(RiskLevel, {
+  foreignKey: "SeverityId",
+});
+
+RiskLevel.hasMany(ControlRecordItem, {
+  foreignKey: "RelevanceOfThreatId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(RiskLevel, { foreignKey: "RelevanceOfThreatId" });
+
+RiskLevel.hasMany(ControlRecordItem, {
+  foreignKey: "LikelihoodId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(RiskLevel, { foreignKey: "LikelihoodId" });
+
+RiskLevel.hasMany(ControlRecordItem, {
+  foreignKey: "ImpactId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(RiskLevel, { foreignKey: "ImpactId" });
+
+RiskLevel.hasMany(ControlRecordItem, {
+  foreignKey: "ResidualRiskLevelId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(RiskLevel, { foreignKey: "ResidualRiskLevelId" });
+
+ComplianceStatus.hasMany(ControlRecordItem, {
+  foreignKey: "AuditControlStatusId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(ComplianceStatus, { foreignKey: "AuditControlStatusId" });
+
+ComplianceStatus.hasMany(ControlRecordItem, {
+  foreignKey: "AssessorControlStatusId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(ComplianceStatus, { foreignKey: "AssessorControlStatusId" });
+
+ControlRecordItem.belongsTo(Control);
+Control.hasMany(ControlRecordItem);
+
+ControlRecordItem.belongsTo(ControlRecord, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecord.hasMany(ControlRecordItem, {
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+ControlRecordItem.belongsTo(ControlEnhancement);
+ControlRecord.belongsTo(Boundary, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+Boundary.hasMany(ControlRecord, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+ControlRecord.belongsTo(ControlFamily, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+ControlFamily.hasMany(ControlRecord, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+ControlRecord.belongsTo(ControlRevision, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+ControlRevision.hasMany(ControlRecord, { onDelete: "CASCADE", onUpdate: "CASCADE" });
+
+ControlFamily.hasMany(Control);
 
 export {
   User,
@@ -382,4 +649,29 @@ export {
   Protocol,
   TirNotification,
   NotificationCategory,
+  ComplianceStatus,
+  ImplementationStatus,
+  CommonControlProvider,
+  SecurityControlDesignation,
+  TestMethod,
+  FrequencyType,
+  ConMonMethod,
+  RiskLevel,
+  ControlRecord,
+  ControlRecordItem,
+  Control,
+  ControlNumber,
+  ControlFamily,
+  ControlClass,
+  ControlPriority,
+  ControlRevision,
+  ControlReference,
+  Baseline,
+  ControlRelatedControl,
+  ControlWithdrawn,
+  ControlEnhancement,
+  EnhancementRelatedControl,
+  EnhancementWithdrawn,
+  ControlStatement,
+  ControlEnhancementStatement,
 };

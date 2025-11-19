@@ -1,12 +1,12 @@
-import { getConfigValue, setConfigValue } from "~/server/utils/tirConfig";
+import { getConfigValue, setConfigValue } from "~/server/utils/config/tirConfig";
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
 
   if (method === "GET") {
-    const mode = (await getConfigValue("loginBanner_mode")) || "none";
-    const html = (await getConfigValue("loginBanner_html")) || "";
-    const title = (await getConfigValue("loginBanner_title")) || "";
+    const mode = (await getConfigValue("banner", "loginMode")) || "none";
+    const html = (await getConfigValue("banner", "loginHtml")) || "";
+    const title = (await getConfigValue("banner", "loginTitle")) || "";
 
     return { mode, html, title };
   }
@@ -24,9 +24,9 @@ export default defineEventHandler(async (event) => {
     }
 
     await Promise.all([
-      setConfigValue("loginBanner_mode", body.mode),
-      setConfigValue("loginBanner_html", body.html),
-      setConfigValue("loginBanner_title", body.title),
+      setConfigValue("banner", "loginMode", body.mode),
+      setConfigValue("banner", "loginHtml", body.html),
+      setConfigValue("banner", "loginTitle", body.title),
     ]);
 
     return { success: true };

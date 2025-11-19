@@ -16,7 +16,7 @@
             >
               Console
             </div>
-            <div class="mt-1 flex flex-col justify-end gap-x-6 gap-y-2 pr-10 sm:mt-0 sm:flex-auto">
+            <div v-if="logConfig" class="mt-1 flex flex-col justify-end gap-x-6 gap-y-2 pr-10 sm:mt-0 sm:flex-auto">
               <div class="flex items-center justify-between">
                 <span class="mr-4 whitespace-nowrap text-gray-800 dark:text-white">Log Level</span>
                 <select
@@ -24,7 +24,7 @@
                   class="block w-full max-w-xs rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
                   style="max-width: 8rem"
                 >
-                  <option v-for="level in Object.keys(loglvl || {})" :key="level">{{ level }}</option>
+                  <option v-for="level in logConfig.levels" :key="level">{{ level }}</option>
                 </select>
               </div>
             </div>
@@ -37,7 +37,7 @@
             >
               File
             </div>
-            <div class="mt-1 flex flex-col justify-end gap-x-6 gap-y-2 pr-10 sm:mt-0 sm:flex-auto">
+            <div v-if="logConfig" class="mt-1 flex flex-col justify-end gap-x-6 gap-y-2 pr-10 sm:mt-0 sm:flex-auto">
               <!-- Enable Switch -->
               <UISlideSwitch v-model="logConfig.fileLogEnabled" label="Enabled" class="justify-end" />
 
@@ -49,7 +49,7 @@
                   class="block w-full max-w-xs rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
                   style="max-width: 8rem"
                 >
-                  <option v-for="level in Object.keys(loglvl || {})" :key="level">{{ level }}</option>
+                  <option v-for="level in logConfig.levels" :key="level">{{ level }}</option>
                 </select>
               </div>
 
@@ -101,7 +101,7 @@
             >
               Syslog
             </div>
-            <div class="mt-1 flex flex-col justify-end gap-x-6 gap-y-2 pr-10 sm:mt-0 sm:flex-auto">
+            <div v-if="logConfig" class="mt-1 flex flex-col justify-end gap-x-6 gap-y-2 pr-10 sm:mt-0 sm:flex-auto">
               <!-- Enable -->
               <UISlideSwitch v-model="logConfig.syslogLogEnabled" label="Enabled" class="justify-end" />
               <!-- Log Level -->
@@ -112,7 +112,7 @@
                   class="block w-full max-w-xs rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm"
                   style="max-width: 8rem"
                 >
-                  <option v-for="level in Object.keys(loglvl || {})" :key="level">{{ level }}</option>
+                  <option v-for="level in logConfig.levels" :key="level">{{ level }}</option>
                 </select>
               </div>
 
@@ -156,23 +156,29 @@
 </template>
 
 <script setup lang="ts">
-const { data: logConfig } = await useFetch("/api/config/logConfig", { method: "GET", key: "logConfigApi" });
-const { data: loglvl } = await useFetch("/api/config/logLevels", { method: "GET" });
-
-const changeSuccessful = ref(false);
-const showErrorNotification = ref(false);
-const errorObject = ref();
+import type { LogConfig } from "~/types/log";
 
 definePageMeta({
   layout: "admin",
 });
 
+const changeSuccessful = ref(false);
+const showErrorNotification = ref(false);
+const errorObject = ref();
+
+const { data: logConfig } = await useFetch<LogConfig>("/api/config/logConfig", {
+  method: "GET",
+  key: "logConfigApi",
+});
+
 async function submitLogConfig() {
   try {
-    await $fetch("/api/config/logConfig", {
+    if (!logConfig.value) return;
+    const updated = await $fetch<LogConfig>("/api/config/logConfig", {
       method: "PUT",
       body: logConfig.value,
     });
+    logConfig.value = updated;
     changeSuccessful.value = true;
     setTimeout(hideNotification, 3000);
   } catch (err) {

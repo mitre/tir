@@ -1,12 +1,12 @@
-import { getConfigValue, setConfigValue } from "~/server/utils/tirConfig";
+import { getConfigValue, setConfigValue } from "~/server/utils/config/tirConfig";
 
 export default defineEventHandler(async (event) => {
   const method = event.method;
 
   if (method === "GET") {
-    const visible = (await getConfigValue("siteBanner_visible")) === "true";
-    const html = (await getConfigValue("siteBanner_html")) || "";
-    const color = (await getConfigValue("siteBanner_color")) || "#1F5BA6";
+    const visible = (await getConfigValue("banner", "siteVisible")) === "true";
+    const html = (await getConfigValue("banner", "siteHtml")) || "";
+    const color = (await getConfigValue("banner", "siteColor")) || "#1F5BA6";
 
     return { visible, html, color };
   }
@@ -23,9 +23,9 @@ export default defineEventHandler(async (event) => {
     }
 
     await Promise.all([
-      setConfigValue("siteBanner_visible", body.visible),
-      setConfigValue("siteBanner_html", body.html),
-      setConfigValue("siteBanner_color", body.color),
+      setConfigValue("banner", "siteVisible", body.visible),
+      setConfigValue("banner", "siteHtml", body.html),
+      setConfigValue("banner", "siteColor", body.color),
     ]);
 
     return { success: true };

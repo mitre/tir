@@ -16,7 +16,7 @@ import { SessionService } from "../auth/sessionService";
 export async function userCheck(
   event: any,
   systemId?: string,
-  boundaryId?: string,
+  boundaryId?: string | number,
   tierId?: string,
 ) {
   let userId: number;

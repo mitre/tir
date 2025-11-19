@@ -9,6 +9,7 @@ import {
   InvalidConnectionError,
   ConnectionError,
 } from "sequelize";
+import { signalReady } from "../utils/startupSync";
 
 export default defineNitroPlugin(async () => {
   try {
@@ -17,10 +18,13 @@ export default defineNitroPlugin(async () => {
     const RETRY_BACKOFF_FACTOR = 2;
 
     let currentRetryDelayMs = RETRY_DELAY_MS;
+    let connected = false;
 
     for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt++) {
       try {
         await sequelize.authenticate();
+        connected = true;
+        break;
       } catch (err) {
         if (!(err instanceof Error)) {
           logger.emerg(`Unknown Error connecting to database.  Unknown error type.`);
@@ -78,8 +82,13 @@ export default defineNitroPlugin(async () => {
         }
       }
     }
+    if (!connected) {
+      throw new Error("Database connection failed after all retry attempts.");
+    }
 
-    await sequelize.addHook("beforeValidate", (model) => {
+    const nowISO = () => DateTime.now().toISO();
+
+    sequelize.addHook("beforeValidate", (model) => {
       if (!model.dataValues.creationDate) {
         model.dataValues.creationDate = "";
       }
@@ -88,14 +97,56 @@ export default defineNitroPlugin(async () => {
       }
     });
 
-    await sequelize.addHook("beforeCreate", (model) => {
-      model.dataValues.creationDate = DateTime.now().toISO();
-      model.dataValues.lastUpdate = DateTime.now().toISO();
+    sequelize.addHook("beforeCreate", (model) => {
+      const options = (model.constructor as any).options ?? {};
+      if (options.noIsoTimestamps === true) return;
+      const now = nowISO();
+      model.dataValues.creationDate = now;
+      model.dataValues.lastUpdate = now;
     });
 
-    await sequelize.addHook("beforeUpdate", (model) => {
-      model.dataValues.lastUpdate = DateTime.now().toISO();
+    sequelize.addHook("beforeUpdate", (model) => {
+      const options = (model.constructor as any).options ?? {};
+      if (options.noIsoTimestamps === true) return;
+      const hasLastUpdate = !!(model.constructor as any).rawAttributes?.lastUpdate;
+      if (!hasLastUpdate) {
+        const modelName = (model.constructor as any).name || "UnknownModel";
+        logger.error({
+          service: "database",
+          message: `Global timestamp hook: 'lastUpdate' column missing on model '${modelName}'.`,
+          details: {
+            model: modelName,
+            table: (model.constructor as any).getTableName?.(),
+          },
+        });
+        return;
+      }
+      model.setDataValue("lastUpdate", nowISO());
     });
+
+    sequelize.addHook("beforeBulkUpdate", (opts: any) => {
+      const model = opts?.model as any;
+
+      if (model?.options?.noIsoTimestamps) return;
+
+      const hasLastUpdate = !!model?.rawAttributes?.lastUpdate;
+      if (!hasLastUpdate) {
+        logger.error({
+          service: "sequelize",
+          message: `Global timestamp hook: 'lastUpdate' column missing on bulk update model '${
+            model?.name ?? "UnknownModel"
+          }'.`,
+          details: { table: model?.getTableName?.(), operation: "beforeBulkUpdate" },
+        });
+        return;
+      }
+
+      opts.attributes = {
+        ...(opts.attributes || {}),
+        lastUpdate: nowISO(),
+      };
+    });
+
     const { migrator, seeder } = await import("~/db/umzug.js");
     const pendingMigrations = await migrator.pending();
     if (pendingMigrations.length > 0) {
@@ -131,7 +182,8 @@ export default defineNitroPlugin(async () => {
       logger.info({ service: "database", message: `${seederResults.length} Seeders Applied` });
     }
 
-    logger.info({ service: "database", message: "Datatbase Started." });
+    logger.info({ service: "database", message: "Database Started." });
+    signalReady("db");
   } catch (error) {
     console.log(error);
     logger.error({ service: "database", message: error });

@@ -1,4 +1,7 @@
-import { getNotificationTimeout, setNotificationTimeout } from "~/server/utils/notifications";
+import {
+  getNotificationTimeout,
+  setNotificationTimeout,
+} from "~/server/utils/config/notificationConfig";
 
 export default defineEventHandler(async (event) => {
   const method = getMethod(event);

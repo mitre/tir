@@ -119,7 +119,7 @@
                 as="div"
               />
               <!--Close/Save Buttons-->
-              <div class="sm:mt-20 sm:flex sm:flex-row-reverse">
+              <div class="pt-20 sm:flex sm:flex-row-reverse">
                 <button
                   type="button"
                   class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto"

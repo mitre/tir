@@ -7,33 +7,33 @@
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Enable built-in username/password authentication.</p>
       </div>
 
-      <div class="flex-1 space-y-4 text-gray-800 dark:text-white">
+      <div v-if="authConfig" class="flex-1 space-y-4 text-gray-800 dark:text-white">
         <!-- Enabled -->
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">Enabled</label>
-          <UISlideSwitch v-model="authLocal" class="ml-auto" />
+          <UISlideSwitch v-model="authConfig.local.enable" class="ml-auto" />
         </div>
 
         <!-- Password rules -->
         <div class="flex items-center gap-4">
           <label class="w-48 text-left text-sm font-medium">Min Length</label>
-          <input v-model.number="passwordLength" type="number" min="1" class="input-field" />
+          <input v-model.number="authConfig.local.passwordLength" type="number" min="1" class="input-field" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-48 text-left text-sm font-medium">Uppercase Letters</label>
-          <input v-model.number="upperCount" type="number" min="0" class="input-field" />
+          <input v-model.number="authConfig.local.upperCount" type="number" min="0" class="input-field" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-48 text-left text-sm font-medium">Lowercase Letters</label>
-          <input v-model.number="lowerCount" type="number" min="0" class="input-field" />
+          <input v-model.number="authConfig.local.lowerCount" type="number" min="0" class="input-field" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-48 text-left text-sm font-medium">Numbers</label>
-          <input v-model.number="numberCount" type="number" min="0" class="input-field" />
+          <input v-model.number="authConfig.local.numberCount" type="number" min="0" class="input-field" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-48 text-left text-sm font-medium">Special Characters</label>
-          <input v-model.number="specialCount" type="number" min="0" class="input-field" />
+          <input v-model.number="authConfig.local.specialCount" type="number" min="0" class="input-field" />
         </div>
       </div>
     </dd>
@@ -46,31 +46,31 @@
           Enable LDAP authentication for enterprise directory login.
         </p>
       </div>
-      <div class="flex-1 space-y-4 text-gray-800 dark:text-white">
+      <div v-if="authConfig" class="flex-1 space-y-4 text-gray-800 dark:text-white">
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">Enabled</label>
-          <UISlideSwitch v-model="authLdap" class="ml-auto" />
+          <UISlideSwitch v-model="authConfig.ldap.enable" class="ml-auto" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">LDAP URL</label>
-          <input v-model="ldapUrl" type="text" class="input-field" />
+          <input v-model="authConfig.ldap.url" type="text" class="input-field" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">Bind DN</label>
-          <input v-model="ldapBindDn" type="text" class="input-field" />
+          <input v-model="authConfig.ldap.bindDn" type="text" class="input-field" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">Password</label>
           <input
             v-model="ldapPassword"
             type="password"
-            :placeholder="ldapPasswordSet ? '•••••• (set)' : ''"
+            :placeholder="authConfig.ldap.passwordSet ? '•••••• (set)' : ''"
             class="input-field"
           />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">Base DN</label>
-          <input v-model="ldapBaseDn" type="text" class="input-field" />
+          <input v-model="authConfig.ldap.baseDn" type="text" class="input-field" />
         </div>
       </div>
     </dd>
@@ -81,35 +81,40 @@
         <div class="text-lg font-medium">OIDC Auth</div>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Enable single sign-on using OpenID Connect (OIDC).</p>
       </div>
-      <div class="flex-1 space-y-4 text-gray-800 dark:text-white">
+      <div v-if="authConfig" class="flex-1 space-y-4 text-gray-800 dark:text-white">
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">Enabled</label>
-          <UISlideSwitch v-model="authOidc" class="ml-auto" />
+          <UISlideSwitch v-model="authConfig.oidc.enable" class="ml-auto" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">OIDC URL</label>
-          <input v-model="oidcUrl" type="text" class="input-field" />
+          <input v-model="authConfig.oidc.url" type="text" class="input-field" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">Client ID</label>
-          <input v-model="oidcClientId" type="text" class="input-field" />
+          <input v-model="authConfig.oidc.clientId" type="text" class="input-field" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">Secret</label>
           <input
             v-model="oidcSecret"
             type="password"
-            :placeholder="oidcSecretSet ? '•••••• (set)' : ''"
+            :placeholder="authConfig.oidc.secretSet ? '•••••• (set)' : ''"
             class="input-field"
           />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">Callback URL</label>
-          <input v-model="oidcCallback" type="text" class="input-field" />
+          <input v-model="authConfig.oidc.callback" type="text" class="input-field" />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-24 text-left text-sm font-medium">Group Mappings</label>
-          <input v-model="oidcGroupMappings" type="text" class="input-field" placeholder="admin:1,users:2" />
+          <input
+            v-model="authConfig.oidc.groupMappings"
+            type="text"
+            class="input-field"
+            placeholder="admin:1,users:2"
+          />
         </div>
       </div>
     </dd>
@@ -128,81 +133,42 @@ import type { AuthConfig } from "~/types/auth";
 
 definePageMeta({ layout: "admin" });
 
-const authLocal = ref(false);
-const authLdap = ref(false);
-const authOidc = ref(false);
-
-const ldapUrl = ref("");
-const ldapBindDn = ref("");
-const ldapPassword = ref("");
-const ldapBaseDn = ref("");
-const ldapPasswordSet = ref(false);
-
-const oidcUrl = ref("");
-const oidcClientId = ref("");
-const oidcSecret = ref("");
-const oidcCallback = ref("");
-const oidcGroupMappings = ref("");
-const oidcSecretSet = ref(false);
-
-const passwordLength = ref();
-const upperCount = ref();
-const lowerCount = ref();
-const numberCount = ref();
-const specialCount = ref();
+const authConfig = ref<AuthConfig>();
+const oidcSecret = ref<string>("");
+const ldapPassword = ref<string>("");
 
 onMounted(async () => {
   const config: AuthConfig = await $fetch("/api/config/authLoad");
 
-  authLocal.value = config.authLocal;
-  authLdap.value = config.authLdap;
-  authOidc.value = config.authOidc;
-
-  ldapUrl.value = config.ldapUrl;
-  ldapBindDn.value = config.ldapBindDn;
-  ldapBaseDn.value = config.ldapBaseDn;
-  ldapPasswordSet.value = config.ldapPasswordSet;
-
-  oidcUrl.value = config.oidcUrl;
-  oidcClientId.value = config.oidcClientId;
-  oidcCallback.value = config.oidcCallback;
-  oidcGroupMappings.value = config.oidcGroupMappings;
-  oidcSecretSet.value = config.oidcSecretSet;
-
-  passwordLength.value = config.passwordLength;
-  upperCount.value = config.upperCount;
-  lowerCount.value = config.lowerCount;
-  numberCount.value = config.numberCount;
-  specialCount.value = config.specialCount;
+  authConfig.value = config;
 });
 
-const saveAuthConfig = async () => {
+async function saveAuthConfig() {
+  if (!authConfig.value) return;
+
+  const body: any = {
+    local: authConfig.value.local,
+    ldap: {
+      ...authConfig.value.ldap,
+      ...(ldapPassword.value ? { password: ldapPassword.value } : {}),
+    },
+    oidc: {
+      ...authConfig.value.oidc,
+      ...(oidcSecret.value ? { secret: oidcSecret.value } : {}),
+    },
+  };
+
   await $fetch("/api/config/authSave", {
     method: "POST",
-    body: {
-      authLocal: authLocal.value,
-      authLdap: authLdap.value,
-      authOidc: authOidc.value,
-
-      passwordLength: passwordLength.value,
-      upperCount: upperCount.value,
-      lowerCount: lowerCount.value,
-      numberCount: numberCount.value,
-      specialCount: specialCount.value,
-
-      ldapUrl: ldapUrl.value,
-      ldapBindDn: ldapBindDn.value,
-      ldapBaseDn: ldapBaseDn.value,
-      ...(ldapPassword.value && { ldapPassword: ldapPassword.value }),
-
-      oidcUrl: oidcUrl.value,
-      oidcClientId: oidcClientId.value,
-      oidcCallback: oidcCallback.value,
-      oidcGroupMappings: oidcGroupMappings.value,
-      ...(oidcSecret.value && { oidcSecret: oidcSecret.value }),
-    },
+    body,
   });
-};
+
+  oidcSecret.value = "";
+  ldapPassword.value = "";
+
+  const updatedConfig = await $fetch("/api/config/authLoad");
+  authConfig.value = updatedConfig;
+}
 </script>
 
 <style scoped lang="postcss">

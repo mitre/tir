@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   if (checkResult.BoundaryRoleId) {
     const boundary = (await Boundary.findByPk(body.BoundaryId)) as BoundaryInterface;
 
-    const ssaWorkBook = await generateSSA(body.BoundaryId, body.boundaryView);
+    const ssaWorkBook = await generateSSA(body.BoundaryId);
 
     const buffer = await ssaWorkBook.xlsx.writeBuffer();
     const stream = new Readable();

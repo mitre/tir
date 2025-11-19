@@ -17,6 +17,7 @@ import { Classification } from "./classification";
 import { Tier } from "./tier";
 import type { NessusPlugin } from "./nessusPlugin";
 import type { EvaluationItem } from "./evaluationItem";
+import { ControlRecord } from "./controlRecord";
 
 export class Boundary extends Model<InferAttributes<Boundary>, InferCreationAttributes<Boundary>> {
   declare id: CreationOptional<number>;
@@ -36,6 +37,7 @@ export class Boundary extends Model<InferAttributes<Boundary>, InferCreationAttr
   declare Classification?: NonAttribute<Classification>;
   declare Tier?: NonAttribute<Tier>;
   declare PolicyDocument?: NonAttribute<PolicyDocument>;
+  declare ControlRecords?: NonAttribute<ControlRecord[]>;
 
   declare static associations: {
     Systems: Association<Boundary, System>;
@@ -44,6 +46,7 @@ export class Boundary extends Model<InferAttributes<Boundary>, InferCreationAttr
     Classification: Association<Boundary, Classification>;
     TierId: Association<Boundary, Tier>;
     NessusPlugin: Association<Boundary, NessusPlugin>;
+    ControlRecords: Association<Boundary, ControlRecord>;
   };
 }
 

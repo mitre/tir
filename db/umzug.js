@@ -123,7 +123,7 @@ export const seeder = new Umzug({
   create: {
     folder: "db/seeders",
     template: (filepath) => [
-      [filepath, fs.readFileSync(path.join(__dirname, "db/templates/sample-seeder.ts")).toString()],
+      [filepath, fs.readFileSync(path.join(process.cwd(), "db/templates/sample-seeder.js")).toString()],
     ],
   },
 });

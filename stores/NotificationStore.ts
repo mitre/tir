@@ -9,22 +9,24 @@ export interface Notification {
   title?: string;
 }
 
+const DEFAULT_TIMEOUT = 3000;
+
 export const useNotificationStore = defineStore("NotificationStore", {
   state: () => ({
-    timeout: 3000,
+    timeout: DEFAULT_TIMEOUT,
     queue: [] as Notification[],
     timeoutHandle: null as ReturnType<typeof setTimeout> | null,
   }),
   actions: {
     async loadTimeout() {
-      const { data } = await useFetch<{ timeout: number }>("/api/config/notificationTimeout");
+      const { data } = await useFetch<{ timeout: number }>("/api/config/notification");
 
       if (data.value && typeof data.value.timeout === "number") {
         this.timeout = data.value.timeout;
       }
     },
     async setTimeout(newTimeout: number) {
-      await $fetch("/api/config/notificationTimeout", {
+      await $fetch("/api/config/notification", {
         method: "PUT",
         body: { timeout: newTimeout },
       });

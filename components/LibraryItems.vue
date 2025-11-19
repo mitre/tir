@@ -170,6 +170,7 @@ async function handleStigChange() {
       uploadingStig.value = false;
       notificationStore.addNotification({ type: "error", message: "Unkown Error" });
     },
+    { uploadLengthHint: selectedFile.size },
   );
 }
 
@@ -217,6 +218,7 @@ async function handleMatrixChange() {
       uploadingCci.value = false;
       notificationStore.addNotification({ type: "error", message: "Unknown Error" });
     },
+    { uploadLengthHint: selectedFile.size },
   );
 }
 </script>

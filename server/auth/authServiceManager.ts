@@ -1,86 +1,76 @@
+import type { H3Event } from "h3";
 import { AuthProvider } from "./authProvider";
 import { authProviderRegistry } from "./authProviderRegistry";
-
-export type AuthProviderType = "local" | "ldap" | "oidc";
-
-export type AuthSettings = {
-  enabledProviders: AuthProviderType[];
-  config: {
-    local: {
-      passwordLength: number;
-      upperCount: number;
-      lowerCount: number;
-      numberCount: number;
-      specialCount: number;
-    };
-    ldap: {
-      ldapUrl?: string;
-      ldapBindDn?: string;
-      ldapPassword?: string;
-      ldapBaseDn?: string;
-    };
-    oidc: {
-      oidcUrl?: string;
-      oidcClientId?: string;
-      oidcSecret?: string;
-      oidcCallback?: string;
-      oidcGroupMappings?: string;
-    };
-  };
-};
+import { type AuthConfig, type Provider, PROVIDERS } from "~/types/auth";
+import { getConfigValue } from "~/server/utils/config/tirConfig";
 
 export class AuthService {
-  private providers: { [key: string]: AuthProvider } = {};
-  private settings: AuthSettings = { enabledProviders: [], config: {} };
+  private providers: Partial<Record<Provider, AuthProvider>> = {};
+  private config: AuthConfig;
 
-  private constructor() {}
-
-  static async initWith(settings: AuthSettings): Promise<AuthService> {
-    const service = new AuthService();
-
-    if (!settings.enabledProviders || settings.enabledProviders.length === 0) {
-      logger.alert({
-        service: "auth",
-        message: "No authentication providers configured. Falling back to 'local' provider.",
-      });
-
-      settings.enabledProviders = ["local"];
-      settings.config.local = {
-        passwordLength: 8,
-        upperCount: 0,
-        lowerCount: 0,
-        numberCount: 0,
-        specialCount: 0,
-      };
-    }
-
-    await service.reload(settings);
-    return service;
+  private constructor(cfg: AuthConfig) {
+    this.config = cfg;
   }
 
-  async reload(settings: AuthSettings) {
-    this.providers = {};
-    this.settings = settings;
+  static async initWith(cfg: AuthConfig): Promise<AuthService> {
+    const svc = new AuthService(cfg);
+    await svc.reload(cfg);
+    return svc;
+  }
 
-    for (const type of settings.enabledProviders) {
-      const factory = authProviderRegistry[type];
+  private computeProvidersToLoad(cfg: AuthConfig): Provider[] {
+    const enabled = PROVIDERS.filter((p) => cfg[p]?.enable);
+    if (enabled.length === 0) {
+      logger.alert({
+        service: "auth",
+        message: "No authentication providers enabled. Falling back to Local auth.",
+      });
+      return ["local"];
+    }
+    return enabled;
+  }
+
+  async reload(cfg: AuthConfig) {
+    this.providers = {};
+    this.config = cfg;
+
+    const toLoad = this.computeProvidersToLoad(this.config);
+
+    for (const p of toLoad) {
+      const factory = authProviderRegistry[p];
       if (!factory) continue;
-      this.providers[type] = await factory(settings.config[type] || {});
+
+      const providerCfg = Object.fromEntries(
+        Object.entries(this.config[p] ?? {}).filter(([k]) => k !== "enable"),
+      );
+      if (p === "oidc") {
+        const secret = await getConfigValue("auth", "oidcSecret");
+        if (secret) providerCfg.secret = secret;
+      }
+
+      if (p === "ldap") {
+        const password = await getConfigValue("aauth", "ldapPassword");
+        if (password) providerCfg.password = password;
+      }
+
+      this.providers[p] = await factory(providerCfg);
     }
 
     logger.info({
       service: "auth",
-      message: `Reloaded auth providers: ${settings.enabledProviders.join(", ")}`,
+      message: `Reloaded auth providers: ${toLoad.join(", ")}`,
     });
   }
 
-  getProvider(provider: string): AuthProvider {
+  getProvider(provider: Provider): AuthProvider {
     const authProvider = this.providers[provider];
-    if (!authProvider) throw new Error(`Auth provider '${provider}' not found`);
+    if (!authProvider) {
+      throw new Error(`Auth provider '${provider}' not found or not active`);
+    }
     return authProvider;
   }
 
-  async authenticate(provider: string, event: H3Event, credentials: any) {
+  async authenticate(provider: Provider, event: H3Event, credentials: any) {
     logger.debug({ service: "auth", message: `Authenticating using provider: ${provider}` });
     const authProvider = this.getProvider(provider);
     return await authProvider.authenticate(event, credentials);
@@ -89,11 +79,18 @@ export class AuthService {
 
 let authServiceManager: AuthService;
 
-export async function initializeAuthService(config: AuthSettings) {
-  authServiceManager = await AuthService.initWith(config);
+export async function initializeAuthService(cfg: AuthConfig) {
+  authServiceManager = await AuthService.initWith(cfg);
 }
 
 export function getAuthServiceManager(): AuthService {
-  if (!authServiceManager) throw new Error("authServiceManager has not been initialized yet.");
+  if (!authServiceManager) {
+    throw new Error("authServiceManager has not been initialized yet.");
+  }
   return authServiceManager;
+}
+
+export function getActiveProvidersView(cfg: AuthConfig): Provider[] {
+  const enabled = PROVIDERS.filter((p) => cfg[p]?.enable);
+  return enabled.length ? enabled : (["local"] as Provider[]);
 }

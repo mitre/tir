@@ -640,7 +640,9 @@ import {
   DocumentDuplicateIcon,
 } from "@heroicons/vue/24/outline";
 import AdminSidebar from "~/components/AdminSidebar.vue";
+import { useNotificationStore } from "~/stores/NotificationStore";
 
+const notificationStore = useNotificationStore();
 const timeZones = Intl.supportedValuesOf("timeZone");
 const open = ref(false);
 const openAlert = ref(false);
@@ -668,7 +670,7 @@ const router = useRouter();
 const showErrorNotification = ref(false);
 const errorObject = ref();
 
-const { data } = await useFetch("/api/users");
+const { data } = await useFetch("/api/users", { key: "userTableAPI" });
 const { data: roles } = await useFetch("/api/users/roles");
 const selected = ref(roles.value[0]);
 
@@ -686,21 +688,19 @@ async function addUser() {
         confirm: Confirm.value,
         UserRoleId: RoleId.value,
         TimezoneName: TimezoneName.value,
-      },
-    });
-    await $fetch("/api/auth/setPW", {
-      method: "POST",
-      body: {
-        email: Email.value,
         password: newPassword.value,
       },
     });
     open.value = false;
-    location.reload();
+    FirstName.value = "";
+    LastName.value = "";
+    Email.value = "";
+    newPassword.value = "";
+    refreshNuxtData("userTableAPI");
+    notificationStore.addNotification({ type: "success", message: "User sucessfully created." });
   } catch (err) {
-    errorObject.value = err;
-    showErrorNotification.value = true;
-    setTimeout(() => (showErrorNotification.value = false), 6000);
+    open.value = false;
+    notificationStore.addNotification({ type: "error", message: err.statusMessage });
   }
 }
 

@@ -30,7 +30,7 @@
           <ListboxOption v-for="option in options" :key="option" v-slot="{ active, selected }" :value="option">
             <li
               :class="[
-                active ? 'bg-indigo-600 text-white' : getStatusColor(option),
+                active ? 'bg-indigo-600 text-white' : `${getStatusColor(option)} `,
 
                 'relative cursor-default select-none py-2 pl-3 pr-9',
               ]"
@@ -82,5 +82,5 @@ const statusColorMap = {
   Not_Applicable: "text-status-not_applicable",
 };
 
-const getStatusColor = (status) => statusColorMap[status] || "text-status-default";
+const getStatusColor = (status) => statusColorMap[status] || "text-gray-900 dark:text-gray-100";
 </script>

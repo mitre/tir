@@ -1318,7 +1318,7 @@ async function updateEditDetails() {
 
 async function removeCompany(companyId) {
   try {
-    loadingMsg.value = `Deleting ${tierView.alias}`;
+    loadingMsg.value = `Deleting ${companyTerm}`;
     loading.value = true;
     await $fetch("/api/tiers/remove", {
       method: "POST",
@@ -1562,7 +1562,7 @@ async function editBoundary(editData) {
 }
 async function removeBoundary(boundaryId) {
   try {
-    loadingMsg.value = `Deleting ${boundaryView.alias}`;
+    loadingMsg.value = `Deleting ${boundaryTerm}`;
     loading.value = true;
     await $fetch("/api/boundaries/delete", {
       method: "POST",

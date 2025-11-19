@@ -3,7 +3,6 @@ import { Boundary, CciItem, CciReference, Classification } from "~/db/models";
 
 export async function generateSSA(
   boundaryId: number,
-  boundaryView: any[],
 ): Promise<ExcelJS.Workbook> {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("CCI Compliance");
@@ -108,14 +107,17 @@ export async function generateSSA(
     "Pass/Fail",
     "CCIs",
   ];
-  sheet.autoFilter = "A1:G1";
-  sheet2.autoFilter = "A1:F1";
 
-  sheet.insertRow(1, headers);
-  sheet2.insertRow(1, headers2);
+  sheet.mergeCells("A1:G1");
+  sheet2.mergeCells("A1:F1");
+  sheet.autoFilter = "A2:G2";
+  sheet2.autoFilter = "A2:F2";
 
-  sheet.getColumn("A").alignment = { horizontal: "left", vertical: "top", wrapText: true };
-  sheet.getRow(1).alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+  sheet.insertRow(2, headers);
+  sheet2.insertRow(2, headers2);
+
+  sheet.getColumn("A").alignment = { horizontal: "center", vertical: "top", wrapText: true };
+  sheet.getRow(2).alignment = { horizontal: "center", vertical: "middle", wrapText: true };
   sheet.getColumn("A").font = { name: "Calibri", size: 12, bold: true };
   sheet.getColumn("A").width = 20;
   sheet.getColumn("B").width = 35;
@@ -126,7 +128,7 @@ export async function generateSSA(
   sheet.getColumn("G").width = 25;
 
   sheet2.getColumn("A").alignment = { horizontal: "center", vertical: "top" };
-  sheet2.getRow(1).alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+  sheet2.getRow(2).alignment = { horizontal: "center", vertical: "middle", wrapText: true };
   sheet2.getColumn("A").font = { name: "Calibri", size: 12, bold: true };
   sheet2.getColumn("A").width = 20;
   sheet2.getColumn("B").width = 25;
@@ -135,9 +137,9 @@ export async function generateSSA(
   sheet2.getColumn("E").width = 40;
   sheet2.getColumn("F").width = 20;
 
-  sheet.getRow(1).font = { name: "Arial", size: 12, bold: true };
-  sheet.getRow(1).height = 50;
-  sheet.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "D9D9D9" } };
+  sheet.getRow(2).font = { name: "Arial", size: 12, bold: true };
+  sheet.getRow(2).height = 50;
+  sheet.getRow(2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "D9D9D9" } };
   sheet.eachRow(function (i) {
     i.border = {
       top: { style: "thin" },
@@ -147,9 +149,9 @@ export async function generateSSA(
     };
   });
 
-  sheet2.getRow(1).font = { name: "Arial", size: 12, bold: true };
-  sheet2.getRow(1).height = 50;
-  sheet2.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "D9D9D9" } };
+  sheet2.getRow(2).font = { name: "Arial", size: 12, bold: true };
+  sheet2.getRow(2).height = 50;
+  sheet2.getRow(2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "D9D9D9" } };
   sheet2.eachRow(function (i) {
     i.border = {
       top: { style: "thin" },
@@ -205,8 +207,25 @@ export async function generateSSA(
     ],
   });
 
-  // Tab 1
-  for (const stig of results) {
+  let classificationString = `${boundary?.Classification?.dataValues.name}`;
+
+  if (boundary?.caveats) {
+    classificationString += `// ${boundary?.caveats}`;
+  }
+  sheet.headerFooter.oddHeader = classificationString;
+  sheet.headerFooter.oddFooter = classificationString;
+  sheet.getCell("A1").value = classificationString;
+  const bannerColor = boundary?.Classification?.dataValues.color;
+  sheet.getCell("A1").font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+  sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: bannerColor } };
+
+  sheet2.getCell("A1").value = classificationString;
+  sheet2.getCell("A1").font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+  sheet2.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: bannerColor } };
+
+  const evalSummaries = Array.isArray(results) ? results : [results];  
+
+  for (const stig of evalSummaries) {
     const checkTitle = stig.title;
     for (const stigData of stig.StigData) {
       const checkRule = stigData.rule_id;
@@ -265,10 +284,10 @@ export async function generateSSA(
       row[Columns.cciStatus] = "";
     }
   }
-  sheet.insertRows(2, tabOne, "o");
+  sheet.insertRows(3, tabOne, "o");
 
   // Tab 2
-  for (const stig of results) {
+  for (const stig of evalSummaries) {
     for (const stigData of stig.StigData) {
       for (const cci of stigData.StigIdents) {
         const newRow: string[] = new Array(6).fill("");
@@ -323,7 +342,7 @@ export async function generateSSA(
       row[Columns2.passFail] = "Pass";
     }
   }
-  sheet2.insertRows(2, tabTwo, "o");
+  sheet2.insertRows(3, tabTwo, "o");
 
   // Stig Tabs
   enum ColumnsX {
@@ -335,8 +354,9 @@ export async function generateSSA(
     cciStatus,
     findingStatus,
   }
-  boundaryView.forEach((element) => {
+  for (const element of evalSummaries) { 
     const tabX: string[][] = [];
+    if (!element.title) continue;
     const sheetX = workbook.addWorksheet(element.title);
     sheetX.views = [{ zoomScale: 80 }];
     sheetX.columns = [
@@ -392,12 +412,15 @@ export async function generateSSA(
       "CCI Compliance Status",
       "Finding Status",
     ];
-    sheetX.autoFilter = "A1:F1";
-
-    sheetX.insertRow(1, headersX);
+    sheetX.autoFilter = "A2:F2";
+    sheetX.mergeCells("A1:G1");
+    sheetX.getCell("A1").value = classificationString;
+    
+    sheetX.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: bannerColor } };
+    sheetX.insertRow(2, headersX);
 
     sheetX.getColumn("A").alignment = { horizontal: "center", vertical: "top" };
-    sheetX.getRow(1).alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    sheetX.getRow(2).alignment = { horizontal: "center", vertical: "middle", wrapText: true };
     sheetX.getColumn("A").font = { name: "Calibri", size: 10, bold: true };
     sheetX.getColumn("A").width = 20;
     sheetX.getColumn("B").width = 35;
@@ -407,9 +430,9 @@ export async function generateSSA(
     sheetX.getColumn("F").width = 20;
     sheetX.getColumn("G").width = 25;
 
-    sheetX.getRow(1).font = { name: "Arial", size: 12, bold: true };
-    sheetX.getRow(1).height = 50;
-    sheetX.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "D9D9D9" } };
+    sheetX.getRow(2).font = { name: "Arial", size: 12, bold: true };
+    sheetX.getRow(2).height = 50;
+    sheetX.getRow(2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "D9D9D9" } };
     sheetX.eachRow(function (i) {
       i.border = {
         top: { style: "thin" },
@@ -418,15 +441,15 @@ export async function generateSSA(
         right: { style: "thin" },
       };
     });
+    sheetX.getCell("A1").font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
     // Tab X
-    for (const stig of results) {
-      const checkTitle = stig.title;
-      if (checkTitle === element.title) {
-        for (const stigData of stig.StigData) {
+
+
+        for (const stigData of element.StigData) {
           const checkRule = stigData.rule_id;
 
           for (const cci of stigData.StigIdents) {
-            const newRow: string[] = new Array(6).fill("");
+            const newRow: string[] = new Array(7).fill("");
             const cciItem = cciItems.find((cciItem) => cciItem.cciId === cci.text);
             const cciRef = cciItem?.CciReferences?.[0]?.index ?? "";
             const index = tabX.findIndex((row) => row[ColumnsX.cci] === cci.text);
@@ -463,17 +486,17 @@ export async function generateSSA(
               newRow[ColumnsX.cciDesc] = cciItem.definition;
               newRow[ColumnsX.control] = cciRef;
               newRow[ColumnsX.check] =
-                `${stig.title}\n${stigData.rule_id} / ${stigData.vuln_num}\n${stigData.check_check_content}`;
+                `${element.title}\n${stigData.rule_id} / ${stigData.vuln_num}\n${stigData.check_check_content}`;
               newRow[ColumnsX.fixAction] =
-                `${stig.title}\n${stigData.rule_id} / ${stigData.vuln_num}\n${stigData.fixtext}`;
+                `${element.title}\n${stigData.rule_id} / ${stigData.vuln_num}\n${stigData.fixtext}`;
               newRow[ColumnsX.findingStatus] = `${stigData.status}\n${stigData.vuln_num}`;
 
               tabX.push(newRow);
             }
           }
         }
-      }
-    }
+      
+    
     for (const row of tabX) {
       if (row[ColumnsX.findingStatus].includes("Open")) {
         row[ColumnsX.cciStatus] = "Fail";
@@ -485,8 +508,8 @@ export async function generateSSA(
         row[ColumnsX.cciStatus] = "";
       }
     }
-    sheetX.insertRows(2, tabX, "o");
-  });
+    sheetX.insertRows(3, tabX, "o");
+  };
 
   return workbook;
 }

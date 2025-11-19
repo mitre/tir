@@ -27,7 +27,7 @@
             <DialogPanel
               class="relative transform overflow-hidden rounded-lg bg-gray-100 px-4 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-800 sm:my-8 sm:w-full sm:max-w-4xl sm:p-6"
             >
-              <div>
+              <div class="overflow-y-hidden">
                 <div class="border-b border-gray-400 pb-5 dark:border-gray-200 sm:pb-0">
                   <div class="mt-3 sm:mt-4">
                     <div class="hidden sm:block">
@@ -309,12 +309,55 @@
                     <p class="text-sm text-gray-600 dark:text-gray-300">Download HDF Below</p>
                   </div>
                 </div>
-
                 <div class="mt-5 sm:mt-6">
                   <button
                     type="button"
                     class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     @click="hdfDownload"
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
+              <div v-if="activeTab === 7">
+                <div class="mt-3 text-center sm:mt-5">
+                  <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-800 dark:text-white"
+                    >SCTM
+                  </DialogTitle>
+                  <div class="mt-2">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Download SCTM Below</p>
+                  </div>
+                </div>
+                <fieldset>
+                  <div class="space-y-5">
+                    <div v-for="option in sctmOptions" :key="option.value" class="relative flex items-start">
+                      <div class="flex h-6 items-center">
+                        <input
+                          :id="option.value"
+                          v-model="checkedSctmStatus"
+                          :value="option.value"
+                          name="status"
+                          type="radio"
+                          class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                        />
+                      </div>
+                      <div class="ml-3 text-sm leading-6">
+                        <label :for="option.value" class="font-medium text-gray-800 dark:text-white">
+                          {{ option.label }}
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </fieldset>
+                <div class="mt-5 sm:mt-6">
+                  <button
+                    type="button"
+                    :disabled="!checkedSctmStatus"
+                    :class="[
+                      !checkedSctmStatus ? 'bg-gray-600' : 'bg-indigo-600 hover:bg-indigo-500',
+                      'inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600',
+                    ]"
+                    @click="sctmDownload"
                   >
                     Download
                   </button>
@@ -328,7 +371,7 @@
   </TransitionRoot>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
 
 const props = defineProps({
@@ -346,14 +389,17 @@ const props = defineProps({
   },
 });
 const checkedStatus = ref([]);
+const sctmOptions = [
+  { value: "eMASS", label: "eMASS Implementation Plan", fileSuffix: "-eMASS-ImplementationPlan.xlsx" },
+  { value: "sctm", label: "SCTM", fileSuffix: "-SCTM.xlsx" },
+  { value: "sca", label: "Security Control Assessment", fileSuffix: "-Security-Control-Assessment.xlsx" },
+] as const;
+
+type SctmStatus = (typeof sctmOptions)[number]["value"];
+
+const checkedSctmStatus = ref<SctmStatus>("eMASS");
+
 const { boundaryId, open, boundaryName } = props;
-const { data: summary } = await useFetch("/api/boundaries/summary", {
-  method: "GET",
-  query: { BoundaryId: boundaryId },
-});
-// const open = ref(true)
-// console.log(boundaryId)
-// const emits = defineEmits(['showExport']);
 
 const poamDownload = async () => {
   const bodyData = {
@@ -378,9 +424,6 @@ const poamDownload = async () => {
 
       document.body.removeChild(link);
     });
-
-  // emits('showExport', false);
-  // open.value = false;
 };
 
 const findingsDownload = async () => {
@@ -409,9 +452,6 @@ const findingsDownload = async () => {
 
       document.body.removeChild(link);
     });
-
-  // emits('showExport', false);
-  // open.value = false;
 };
 
 const cklOptions = ref([]);
@@ -463,7 +503,6 @@ const cklDownload = async () => {
 const ssaDownload = async () => {
   const bodyData = {
     BoundaryId: boundaryId,
-    boundaryView: summary.value.boundaryView,
   };
   await fetch("/api/boundaries/ssaDownload", {
     method: "POST",
@@ -556,6 +595,29 @@ const hdfDownload = async () => {
     });
 };
 
+const sctmDownload = async () => {
+  const blob = await $fetch("/api/boundaries/sctmDownload", {
+    method: "GET",
+    params: {
+      BoundaryId: boundaryId,
+      filterValue: checkedSctmStatus.value,
+    },
+    responseType: "blob",
+  });
+
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+
+  const opt = sctmOptions.find((o) => o.value === checkedSctmStatus.value);
+  const fileName = `${boundaryName}${opt?.fileSuffix ?? ""}`;
+
+  link.setAttribute("download", fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 const activeTab = ref(0);
 
 const tabs = [
@@ -566,5 +628,6 @@ const tabs = [
   { name: "Nessus", href: "#" },
   { name: "PPSM", href: "#" },
   { name: "HDF", href: "#" },
+  { name: "SCTM", href: "#" },
 ];
 </script>

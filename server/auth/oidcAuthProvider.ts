@@ -24,7 +24,7 @@ export class OIDCAuthProvider extends AuthProvider {
 
   async init(): Promise<void> {
     const config = this.config;
-    const groupRoleMappings: GroupRoleMapping[] = (config.oidcGroupMappings || "")
+    const groupRoleMappings: GroupRoleMapping[] = (config.groupMappings || "")
       .split(",")
       .filter(Boolean)
       .map((mapping: string) => {
@@ -44,14 +44,14 @@ export class OIDCAuthProvider extends AuthProvider {
     const client = await import("openid-client");
     const config = this.config;
 
-    const metadata = await client.discovery(new URL(config.oidcUrl), config.oidcClientId, {
-      client_secret: config.oidcSecret,
+    const metadata = await client.discovery(new URL(config.url), config.clientId, {
+      client_secret: config.secret,
       token_endpoint_auth_method: "client_secret_post",
     });
 
     const state = client.randomState();
 
-    const configuredGroupScopes: string[] = (config.oidcGroupMappings || "")
+    const configuredGroupScopes: string[] = (config.groupMappings || "")
       .split(",")
       .filter(Boolean)
       .map((entry: string) => {
@@ -63,8 +63,8 @@ export class OIDCAuthProvider extends AuthProvider {
     logger.debug({ service: "auth", message: `OIDC scope used ${scope}` });
 
     const authorizationUrl = client.buildAuthorizationUrl(metadata, {
-      client_id: config.oidcClientId,
-      redirect_uri: config.oidcCallback,
+      client_id: config.clientId,
+      redirect_uri: config.callback,
       scope,
       state,
     });
@@ -77,8 +77,8 @@ export class OIDCAuthProvider extends AuthProvider {
     const client = await import("openid-client");
     const config = this.config;
 
-    const metadata = await client.discovery(new URL(config.oidcUrl), config.oidcClientId, {
-      client_secret: config.oidcSecret,
+    const metadata = await client.discovery(new URL(config.url), config.clientId, {
+      client_secret: config.secret,
       token_endpoint_auth_method: "client_secret_post",
     });
 
@@ -126,7 +126,7 @@ export class OIDCAuthProvider extends AuthProvider {
       }
     }
 
-    if ((this.config.oidcGroupMappings || "").length > 0 && !userRoleId) {
+    if ((this.config.groupMappings || "").length > 0 && !userRoleId) {
       throw new H3Error("Unauthorized: You do not belong to any permitted groups.");
     }
 
