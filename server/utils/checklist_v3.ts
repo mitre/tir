@@ -21,7 +21,7 @@ import {
 import { findOrCreateAssessment } from "./assessments";
 import { findStigByStigId } from "./stigLibrary";
 
-type ChecklistV3 = {
+export type ChecklistV3 = {
   stigs: CklStigV3[];
   target_data: CklTargetDataV3;
   title: string; // this is the title of the saved CKL(B)
@@ -129,19 +129,19 @@ function convertToV3Status(oldStatus: string): string {
 export function convertToV2Status(oldStatus: string): string {
   switch (oldStatus) {
     case "not_reviewed": {
-      return "Not_Reviewed"
+      return "Not_Reviewed";
     }
     case "not_a_finding": {
-      return "NotAFinding"
+      return "NotAFinding";
     }
     case "open": {
-      return "Open"
+      return "Open";
     }
     case "not_applicable": {
-      return "Not_Applicable"
+      return "Not_Applicable";
     }
     default: {
-      return "Not_Reviewed"
+      return "Not_Reviewed";
     }
   }
 }

@@ -1,5 +1,5 @@
 import { parseStringPromise } from "xml2js";
-import { ChecklistV3 } from "../server/utils/checklist_v3";
+import type { ChecklistV3 } from "../server/utils/checklist_v3";
 
 export async function processChecklistV3(xmlContent: any, systemView: any[]) {
   // const jsonObj = await parseStringPromise(xmlContent, { explicitArray: false });

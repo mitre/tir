@@ -647,6 +647,7 @@ export {
   StigAlias,
   TirAlias,
   Protocol,
+  NessusPlugin,
   TirNotification,
   NotificationCategory,
   ComplianceStatus,
