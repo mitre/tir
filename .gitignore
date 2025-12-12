@@ -26,9 +26,8 @@ logs
 # temp
 tmp
 
-# database
-db/*.sqlite
-db/tirdb.sqlite-journal
+# data
+/data/
 
 # internal test
 test

@@ -1,13 +1,12 @@
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { dirname, resolve } from "path";
+import { resolve } from "path";
 import { Sequelize } from "sequelize";
 import * as dotenv from "dotenv";
 import { DateTime } from "luxon";
 import { Umzug, SequelizeStorage } from "umzug";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { buildDbConfigFromEnv } from "./dbConfig.js";
 
 const envPath = resolve(".env");
 dotenv.config({ path: envPath });
@@ -28,33 +27,34 @@ if (runningProduction) loggingFlag = debugEnabled;
 
 const logging = loggingFlag ? console.log : false;
 
-const sqliteConnectionObject = {
-  dialect: "sqlite",
-  storage: "db/tirdb.sqlite",
-  logging,
-};
+const dbConfig = buildDbConfigFromEnv(process.env);
 
-const databasePort = ((n) => (isNaN(n) ? 5432 : n))(parseInt(process.env.DATABASE_PORT, 10));
 
-const postgresConnectionObject = {
-  dialect: "postgres",
-  database: process.env.DATABASE_NAME || "",
-  username: process.env.DATABASE_USER || "",
-  password: process.env.DATABASE_PASSWORD || "",
-  host: process.env.DATABASE_HOST || "",
-  port: databasePort,
-  logging,
-};
+let sequelize;
+if (dbConfig.dialect === "sqlite") {
+  sequelize = new Sequelize({
+    dialect: "sqlite",
+    storage: dbConfig.storage,
+    logging,
+  });
+} else {
+  sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
+    dialect: "postgres",
+    host: dbConfig.host,
+    port: dbConfig.port,
+    logging,
+  });
+}
 
-const useSQLite = process.env.SQLITE === "true";
-const connectionObject = useSQLite ? sqliteConnectionObject : postgresConnectionObject;
-export const sequelize = new Sequelize(connectionObject);
+export { sequelize};
+
 function globalBeforeBulkCreateHook(instances) {
   instances.forEach((instance) => {
     instance.dataValues.creationDate = DateTime.now().toISO();
     instance.dataValues.lastUpdate = DateTime.now().toISO();
   });
 }
+
 sequelize.addHook("beforeCreate", (model) => {
   model.dataValues.creationDate = DateTime.now().toISO();
   model.dataValues.lastUpdate = DateTime.now().toISO();
