@@ -23,6 +23,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     base_url: process.env.BASE_URL,
+    database_url: process.env.DATABASE_URL, 
     database_host: process.env.DATABASE_HOST,
     database_port: process.env.DATABASE_PORT,
     database_user: process.env.DATABASE_USER,
@@ -67,6 +68,7 @@ export default defineNuxtConfig({
         target: "esnext",
       },
     },
+    bodySize: 550 * 1024 * 1024, // 550MB limit for request body
   },
 
   colorMode: {
