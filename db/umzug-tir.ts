@@ -1,5 +1,5 @@
-import path from "path";
-import fs from "fs";
+import path from "node:path";
+import fs from "node:fs";
 import { Umzug, SequelizeStorage } from "umzug";
 import { sequelize } from "./sequelizeInstance";
 
@@ -34,7 +34,10 @@ export const seeder = new Umzug({
   create: {
     folder: "db/seeders",
     template: (filepath) => [
-      [filepath, fs.readFileSync(path.join(process.cwd(), "db/templates/sample-seeder.js")).toString()],
+      [
+        filepath,
+        fs.readFileSync(path.join(process.cwd(), "db/templates/sample-seeder.js")).toString(),
+      ],
     ],
   },
 });
