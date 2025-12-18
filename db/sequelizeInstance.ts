@@ -1,4 +1,4 @@
-import { Sequelize, DataTypes, Model, ModelStatic } from "sequelize";
+import { Sequelize, DataTypes, Model } from "sequelize";
 import { DateTime } from "luxon";
 import { buildDbConfigFromEnv } from "~/db/dbConfig";
 
@@ -34,29 +34,23 @@ if (dbConfig.dialect === "sqlite") {
       min: 0,
       acquire: 30000,
       idle: 0,
-    }
+    },
   });
 } else {
-  sequelize = new Sequelize(
-    dbConfig.database,
-    dbConfig.username,
-    dbConfig.password,
-    {
-      dialect: "postgres",
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false
-        }
+  sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
+    dialect: "postgres",
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
       },
-      host: dbConfig.host,
-      port: dbConfig.port,
-      logging: (msg) => console.debug("[database]", msg),
-      pool: { max: 10, min: 0 },
     },
-  );
+    host: dbConfig.host,
+    port: dbConfig.port,
+    logging: (msg) => console.debug("[database]", msg),
+    pool: { max: 10, min: 0 },
+  });
 }
-
 
 enableIsoTextTimestamps(sequelize);
 export { sequelize };
@@ -70,4 +64,3 @@ export function enableIsoTextTimestamps(sequelize: Sequelize) {
     attrs.lastUpdate ??= { type: DataTypes.TEXT, allowNull: false, defaultValue: () => nowISO() };
   });
 }
-
