@@ -50,7 +50,7 @@ export function parseDbUrl(urlStr, fallbackPort) {
       return {
         dialect: "postgres",
         host: url.hostname,
-        port: url.port ? parseInt(url.port, 10) : fallbackPort,
+        port: url.port ? Number.parseInt(url.port, 10) : fallbackPort,
         username: decodeURIComponent(url.username),
         password: decodeURIComponent(url.password),
         database: url.pathname.replace(/^\//, ""),
@@ -79,7 +79,7 @@ export function parseDbUrl(urlStr, fallbackPort) {
  * @returns {DbConfig}
  */
 export function buildDbConfigFromEnv(env) {
-  const parsedPort = parseInt(env.DATABASE_PORT || "", 10);
+  const parsedPort = Number.parseInt(env.DATABASE_PORT || "", 10);
   const defaultPort = Number.isNaN(parsedPort) ? 5432 : parsedPort;
 
   const useSqlite = (env.SQLITE || env.USE_SQLITE || "").toLowerCase() === "true";
