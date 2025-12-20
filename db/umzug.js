@@ -18,7 +18,7 @@ const runningUmzugCmdLine = ["migrate.js", "seed.js"].includes(processName);
 const runningDevMode = ["index.mjs"].includes(processName);
 const runningProduction = urlName === "/_entry.js";
 
-var loggingFlag;
+let loggingFlag;
 
 if (runningUmzugCmdLine) loggingFlag = true;
 if (runningDevMode) loggingFlag = debugEnabled;
