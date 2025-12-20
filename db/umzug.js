@@ -1,14 +1,13 @@
-import * as fs from "fs";
-import * as path from "path";
-import { fileURLToPath } from "url";
-import { resolve } from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { Sequelize } from "sequelize";
 import * as dotenv from "dotenv";
 import { DateTime } from "luxon";
 import { Umzug, SequelizeStorage } from "umzug";
 import { buildDbConfigFromEnv } from "./dbConfig.js";
 
-const envPath = resolve(".env");
+const envPath = path.resolve(".env");
 dotenv.config({ path: envPath });
 
 const processName = path.basename(process.argv[1]);
@@ -19,7 +18,7 @@ const runningUmzugCmdLine = ["migrate.js", "seed.js"].includes(processName);
 const runningDevMode = ["index.mjs"].includes(processName);
 const runningProduction = urlName === "/_entry.js";
 
-var loggingFlag;
+let loggingFlag;
 
 if (runningUmzugCmdLine) loggingFlag = true;
 if (runningDevMode) loggingFlag = debugEnabled;
@@ -29,24 +28,24 @@ const logging = loggingFlag ? console.log : false;
 
 const dbConfig = buildDbConfigFromEnv(process.env);
 
+const sequelize = (() => {
+  if (dbConfig.dialect === "sqlite") {
+    return new Sequelize({
+      dialect: "sqlite",
+      storage: dbConfig.storage,
+      logging,
+    });
+  } else {
+    return new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
+      dialect: "postgres",
+      host: dbConfig.host,
+      port: dbConfig.port,
+      logging,
+    });
+  }
+})();
 
-let sequelize;
-if (dbConfig.dialect === "sqlite") {
-  sequelize = new Sequelize({
-    dialect: "sqlite",
-    storage: dbConfig.storage,
-    logging,
-  });
-} else {
-  sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
-    dialect: "postgres",
-    host: dbConfig.host,
-    port: dbConfig.port,
-    logging,
-  });
-}
-
-export { sequelize};
+export { sequelize };
 
 function globalBeforeBulkCreateHook(instances) {
   instances.forEach((instance) => {
@@ -123,7 +122,10 @@ export const seeder = new Umzug({
   create: {
     folder: "db/seeders",
     template: (filepath) => [
-      [filepath, fs.readFileSync(path.join(process.cwd(), "db/templates/sample-seeder.js")).toString()],
+      [
+        filepath,
+        fs.readFileSync(path.join(process.cwd(), "db/templates/sample-seeder.js")).toString(),
+      ],
     ],
   },
 });
