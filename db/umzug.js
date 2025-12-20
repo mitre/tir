@@ -28,21 +28,22 @@ const logging = loggingFlag ? console.log : false;
 
 const dbConfig = buildDbConfigFromEnv(process.env);
 
-let sequelize;
-if (dbConfig.dialect === "sqlite") {
-  sequelize = new Sequelize({
-    dialect: "sqlite",
-    storage: dbConfig.storage,
-    logging,
-  });
-} else {
-  sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
-    dialect: "postgres",
-    host: dbConfig.host,
-    port: dbConfig.port,
-    logging,
-  });
-}
+const sequelize = (() => {
+  if (dbConfig.dialect === "sqlite") {
+    return new Sequelize({
+      dialect: "sqlite",
+      storage: dbConfig.storage,
+      logging,
+    });
+  } else {
+    return new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
+      dialect: "postgres",
+      host: dbConfig.host,
+      port: dbConfig.port,
+      logging,
+    });
+  }
+})();
 
 export { sequelize };
 
