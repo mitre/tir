@@ -21,30 +21,30 @@ const dbEnvConfig = {
 };
 const dbConfig = buildDbConfigFromEnv(dbEnvConfig);
 
-let sequelize: Sequelize;
-
-if (dbConfig.dialect === "sqlite") {
-  sequelize = new Sequelize({
-    dialect: "sqlite",
-    storage: dbConfig.storage,
-    logQueryParameters: true,
-    logging: (msg) => console.debug("[database]", msg),
-    pool: {
-      max: 1,
-      min: 0,
-      acquire: 30000,
-      idle: 0,
-    },
-  });
-} else {
-  sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
-    dialect: "postgres",
-    host: dbConfig.host,
-    port: dbConfig.port,
-    logging: (msg) => console.debug("[database]", msg),
-    pool: { max: 10, min: 0 },
-  });
-}
+const sequelize = (() => {
+  if (dbConfig.dialect === "sqlite") {
+    return new Sequelize({
+      dialect: "sqlite",
+      storage: dbConfig.storage,
+      logQueryParameters: true,
+      logging: (msg) => console.debug("[database]", msg),
+      pool: {
+        max: 1,
+        min: 0,
+        acquire: 30000,
+        idle: 0,
+      },
+    });
+  } else {
+    return new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
+      dialect: "postgres",
+      host: dbConfig.host,
+      port: dbConfig.port,
+      logging: (msg) => console.debug("[database]", msg),
+      pool: { max: 10, min: 0 },
+    });
+  }
+})();
 
 enableIsoTextTimestamps(sequelize);
 export { sequelize };
