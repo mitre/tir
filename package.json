@@ -83,5 +83,8 @@
   "overrides": {
     "@parcel/watcher": "2.1.0",
     "vue": "latest"
+  },
+  "engines": {
+    "node": "^22"
   }
 }
