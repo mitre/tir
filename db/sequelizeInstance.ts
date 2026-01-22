@@ -43,6 +43,12 @@ if (dbConfig.dialect === "sqlite") {
     dbConfig.password,
     {
       dialect: "postgres",
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      },
       host: dbConfig.host,
       port: dbConfig.port,
       logging: (msg) => console.debug("[database]", msg),
