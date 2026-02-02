@@ -40,6 +40,12 @@ if (dbConfig.dialect === "sqlite") {
 } else {
   sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.password, {
     dialect: "postgres",
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    },
     host: dbConfig.host,
     port: dbConfig.port,
     logging,

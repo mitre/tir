@@ -10,7 +10,8 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "dbinit": "node db/migrate.js up && node db/seed.js up"
+    "dbinit": "node db/migrate.js up && node db/seed.js up",
+    "start": "node .output/server/index.mjs"
   },
   "devDependencies": {
     "@nuxt/devtools": "latest",
@@ -83,5 +84,8 @@
   "overrides": {
     "@parcel/watcher": "2.1.0",
     "vue": "latest"
+  },
+  "engines": {
+    "node": "^22"
   }
 }
