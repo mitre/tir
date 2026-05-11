@@ -2,7 +2,7 @@ import { sequelize } from "../umzug.js";
 
 async function insertIfAbsent(key, value, now, tx) {
   await sequelize.query(
-    `INSERT INTO "TirConfigs" (key, value, lastUpdate, creationDate)
+    `INSERT INTO "TirConfigs" (key, value, "lastUpdate", "creationDate")
      SELECT :key, :value, :now, :now
      WHERE NOT EXISTS (SELECT 1 FROM "TirConfigs" WHERE key = :key)`,
     { replacements: { key, value, now }, transaction: tx },
@@ -11,7 +11,7 @@ async function insertIfAbsent(key, value, now, tx) {
 
 async function renameKey(oldKey, newKey, now, tx) {
   await sequelize.query(
-    `UPDATE "TirConfigs" SET key = :newKey, lastUpdate = :now WHERE key = :oldKey`,
+    `UPDATE "TirConfigs" SET key = :newKey, "lastUpdate" = :now WHERE key = :oldKey`,
     { replacements: { oldKey, newKey, now }, transaction: tx },
   );
 }
