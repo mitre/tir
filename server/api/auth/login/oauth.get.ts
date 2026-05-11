@@ -8,21 +8,20 @@ function clearCookie(event: any, name: string) {
 export default defineEventHandler(async (event) => {
   try {
     clearCookie(event, "pkce_state");
-    clearCookie(event, "oidc_nonce");
-    clearCookie(event, "oidc_code_verifier");
 
     const authService = getAuthServiceManager();
     const query = getQuery(event);
 
     let providerId = query.provider as string | undefined;
     if (!providerId) {
-      const enabled = authService.getEnabledOIDCProviders();
-      if (enabled.length === 0) throw new Error("No OIDC providers are enabled.");
-      if (enabled.length > 1) throw new Error("Multiple OIDC providers are enabled — specify ?provider=<id>.");
+      const enabled = authService.getEnabledOAuthProviders();
+      if (enabled.length === 0) throw new Error("No OAuth providers are enabled.");
+      if (enabled.length > 1)
+        throw new Error("Multiple OAuth providers are enabled — specify ?provider=<id>.");
       providerId = enabled[0].id;
     }
 
-    const result = await authService.authenticate(`oidc:${providerId}`, event, {});
+    const result = await authService.authenticate(`oauth:${providerId}`, event, {});
 
     if (result.redirect) {
       setCookie(event, "pkce_state", event.context.auth.state, {
@@ -30,20 +29,10 @@ export default defineEventHandler(async (event) => {
         sameSite: "lax",
         path: "/",
       });
-      setCookie(event, "oidc_nonce", event.context.auth.nonce, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-      });
-      setCookie(event, "oidc_code_verifier", event.context.auth.codeVerifier, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-      });
       return sendRedirect(event, result.redirect);
     }
 
-    return { success: true, message: "Redirecting to OIDC provider..." };
+    return { success: true, message: "Redirecting to OAuth provider..." };
   } catch (error: any) {
     return { success: false, message: error.message };
   }

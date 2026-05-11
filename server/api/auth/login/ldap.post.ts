@@ -15,14 +15,16 @@ export default defineEventHandler(async (event) => {
 
   try {
     const authService = getAuthServiceManager();
+    const query = getQuery(event);
 
-    let ldapProvider;
-    try {
-      ldapProvider = authService.getProvider("ldap");
-    } catch {
-      throw new H3Error("LDAP authentication is not enabled.");
+    let providerId = query.provider as string | undefined;
+    if (!providerId) {
+      const enabledIds = authService.getEnabledLDAPIds();
+      if (enabledIds.length === 0) throw new H3Error("LDAP authentication is not enabled.");
+      providerId = enabledIds[0];
     }
 
+    const ldapProvider = authService.getProvider(`ldap:${providerId}`);
     const user = await ldapProvider.authenticate(event, credentials);
 
     if (!user) {
@@ -32,15 +34,12 @@ export default defineEventHandler(async (event) => {
     return { success: true, message: "Authenticated via LDAP", sessionId: user.sessionId, user };
   } catch (error) {
     let errorMessage = "An unknown error occurred";
-
     if (error instanceof H3Error) {
       errorMessage = error.message;
     } else if (error instanceof Error) {
       errorMessage = error.message;
     }
-
-    logger.error({ service: "Auth", message: `LDAP Authentication error: ${errorMessage}` });
-
+    logger.error({ service: "auth", message: `LDAP Authentication error: ${errorMessage}` });
     return { success: false, message: errorMessage };
   }
 });

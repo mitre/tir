@@ -5,7 +5,9 @@ export default defineEventHandler(async () => {
 
   return {
     local: settings.local.enable,
-    ldap: settings.ldap.enable,
-    oidc: settings.oidc.enable,
+    ldapProviders: settings.ldap.filter((p) => p.enable).map((p) => ({ id: p.id, label: p.label })),
+    oidcProviders: settings.oidc.filter((p) => p.enable).map((p) => ({ id: p.id, label: p.label })),
+    oauthProviders: settings.oauth.filter((p) => p.enable).map((p) => ({ id: p.id, label: p.label })),
+    defaultLoginProvider: settings.defaultLoginProvider,
   };
 });

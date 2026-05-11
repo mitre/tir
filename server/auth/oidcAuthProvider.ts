@@ -2,10 +2,9 @@ import { webcrypto } from "crypto";
 import { H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
 import { SessionService } from "./sessionService";
-import { GroupScopeProcessor, GroupRoleMapping } from "./groupScopeProcessor";
+import { GroupClaimExtractor, type GroupRoleMapping } from "./groupClaimExtractor";
 import { User } from "~/db/models/user";
-import { UserRole } from "~/db/models";
-import { AuthEvent } from "~/types/auth";
+import type { AuthEvent, OIDCProviderConfig } from "~/types/auth";
 
 const sessionService = new SessionService();
 
@@ -14,29 +13,32 @@ if (!globalThis.crypto) {
 }
 
 export class OIDCAuthProvider extends AuthProvider {
-  private config: any;
-  private groupScopeProcessor!: GroupScopeProcessor;
+  private config: OIDCProviderConfig & { secret?: string };
+  private extractor!: GroupClaimExtractor;
 
-  constructor(config: any) {
+  constructor(config: OIDCProviderConfig & { secret?: string }) {
     super();
     this.config = config;
   }
 
   async init(): Promise<void> {
-    const config = this.config;
-    const groupRoleMappings: GroupRoleMapping[] = (config.groupMappings || "")
+    const groupRoleMappings: GroupRoleMapping[] = (this.config.groupMappings || "")
       .split(",")
       .filter(Boolean)
       .map((mapping: string) => {
         const [groupName, roleId] = mapping.split(":");
-        return { groupName, userRoleId: parseInt(roleId, 10) };
+        return { groupName: groupName.trim(), userRoleId: parseInt(roleId, 10) };
       });
 
-    logger.debug({ service: "auth", message: `OIDC group-to-role mappings: ${groupRoleMappings}` });
-
-    this.groupScopeProcessor = new GroupScopeProcessor({
-      useStandardGroupsClaim: true,
+    this.extractor = new GroupClaimExtractor({
+      mode: this.config.groupClaimType,
+      claimPath: this.config.groupClaimPath,
       groupRoleMappings,
+    });
+
+    logger.debug({
+      service: "auth",
+      message: `OIDC provider '${this.config.id}' initialized — mode=${this.config.groupClaimType}, mappings=${groupRoleMappings.length}`,
     });
   }
 
@@ -49,27 +51,28 @@ export class OIDCAuthProvider extends AuthProvider {
       token_endpoint_auth_method: "client_secret_post",
     });
 
-    const state = client.randomState();
+    const randomState = client.randomState();
+    const nonce = client.randomNonce();
+    const codeVerifier = client.randomPKCECodeVerifier();
+    const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier);
+    // Full provider key encoded in state so the callback can dispatch without family-specific logic
+    const state = `oidc:${config.id}~${randomState}`;
 
-    const configuredGroupScopes: string[] = (config.groupMappings || "")
-      .split(",")
-      .filter(Boolean)
-      .map((entry: string) => {
-        const [groupName] = entry.split(":");
-        return `group:${groupName.toLowerCase()}`;
-      });
-
-    const scope = ["openid", "profile", "email", ...configuredGroupScopes].join(" ");
-    logger.debug({ service: "auth", message: `OIDC scope used ${scope}` });
+    const scopeAdditions = this.extractor.buildScopeAdditions();
+    const scope = ["openid", "profile", "email", ...scopeAdditions].join(" ");
+    logger.debug({ service: "auth", message: `OIDC provider '${config.id}' requesting scope: ${scope}` });
 
     const authorizationUrl = client.buildAuthorizationUrl(metadata, {
       client_id: config.clientId,
       redirect_uri: config.callback,
       scope,
       state,
+      nonce,
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
     });
 
-    event.context.auth = { state };
+    event.context.auth = { state, nonce, codeVerifier };
     return { redirect: authorizationUrl };
   }
 
@@ -82,8 +85,10 @@ export class OIDCAuthProvider extends AuthProvider {
       token_endpoint_auth_method: "client_secret_post",
     });
 
-    const { state } = event.context.auth || {};
+    const { state, nonce, codeVerifier } = event.context.auth || {};
     if (!state) throw new Error("Missing state");
+    if (!nonce) throw new Error("Missing nonce");
+    if (!codeVerifier) throw new Error("Missing PKCE code verifier");
 
     const fullUrl = `${event.node.req.headers["x-forwarded-proto"] || "http"}://${
       event.node.req.headers.host
@@ -94,77 +99,80 @@ export class OIDCAuthProvider extends AuthProvider {
     try {
       tokens = await client.authorizationCodeGrant(metadata, callbackUrl, {
         expectedState: state,
+        expectedNonce: nonce,
+        pkceCodeVerifier: codeVerifier,
       });
     } catch (error: any) {
-      logger.error({ service: "auth", message: `Token exchange failed: ${error.message}` });
-      if (error.response?.headers)
+      logger.error({
+        service: "auth",
+        message: `OIDC '${config.id}' token exchange failed: ${error.message}`,
+      });
+      if (error.response?.headers) {
         logger.error({
           service: "auth",
-          message: `Token exchange Headers: ${error.response.headers}`,
+          message: `Token exchange headers: ${JSON.stringify(error.response.headers)}`,
         });
+      }
       throw new Error("Token exchange failed.");
     }
 
-    const tokenSet = tokens as unknown as { claims: () => any; scope?: string };
-    const idTokenClaims = tokenSet.claims();
-    const rawScope = idTokenClaims.scope;
-    const expectedSubject = idTokenClaims?.sub;
+    const idTokenClaims = tokens.claims();
+    const sub = idTokenClaims?.sub;
 
-    if (!expectedSubject || typeof expectedSubject !== "string") {
+    if (!sub || typeof sub !== "string") {
       throw new Error("ID token is missing a valid subject (sub) claim.");
     }
 
-    const groupScopes = this.groupScopeProcessor.extractGroups(rawScope);
-    const userRoleIds = this.groupScopeProcessor.getAllMatchingRoles(groupScopes);
+    const groups = this.extractor.extractGroups(idTokenClaims);
+    const userRoleIds = this.extractor.getAllMatchingRoles(groups);
 
-    let userRoleId = null;
-    if (userRoleIds) {
-      if (userRoleIds.includes(2)) {
-        userRoleId = 2;
-      } else if (userRoleIds.includes(1)) {
-        userRoleId = 1;
-      }
+    let userRoleId: number | null = null;
+    if (userRoleIds.length > 0) {
+      // User role (2) takes precedence over Admin (1) when both match — least-privilege
+      userRoleId = userRoleIds.includes(2) ? 2 : userRoleIds.includes(1) ? 1 : null;
     }
 
-    if ((this.config.groupMappings || "").length > 0 && !userRoleId) {
+    if ((config.groupMappings || "").length > 0 && !userRoleId) {
       throw new H3Error("Unauthorized: You do not belong to any permitted groups.");
     }
 
-    let user = await User.findOne({ where: { email: tokenSet.claims().email } });
+    const email = String(idTokenClaims.email ?? "");
+    const firstName = String(idTokenClaims.given_name || "Unknown");
+    const lastName = String(idTokenClaims.family_name || "Unknown");
+
+    if (!email) throw new Error("ID token is missing an email claim.");
+
+    let user = await User.findOne({ where: { email } });
+
     if (!user) {
       user = await User.create({
-        firstName: tokenSet.claims().given_name || "Unknown",
-        lastName: tokenSet.claims().family_name || "Unknown",
-        email: tokenSet.claims().email,
-        UserRoleId: userRoleId!,
+        firstName,
+        lastName,
+        email,
+        UserRoleId: userRoleId ?? 2,
         TimezoneId: 1,
         creationMethod: "oidc",
       });
       logger.info({
-        service: "Auth",
-        message: `Created new local user for OIDC user: ${tokenSet.claims().email}`,
+        service: "auth",
+        message: `Created new local user for OIDC user: ${email}`,
       });
     }
 
-    if (user.UserRoleId !== userRoleId) {
+    if (userRoleId && user.UserRoleId !== userRoleId) {
       user.UserRoleId = userRoleId;
       await user.save();
       logger.info({
         service: "auth",
-        message: `User role modified for user: ${
-          tokenSet.claims().email
-        }.  New UserRoleId: ${userRoleId}`,
+        message: `User role updated for ${email} → RoleId ${userRoleId}`,
       });
     }
 
-    logger.info({
-      service: "auth",
-      message: `Successful login for user: ${tokenSet.claims().email}`,
-    });
+    logger.info({ service: "auth", message: `Successful OIDC login for: ${email}` });
 
     const sessionId = await sessionService.createSession(user.id, event, {
       authMethod: "oidc",
-      ipAddress: event.node.req.headers["x-forwarded-for"] || event.req.socket.remoteAddress,
+      ipAddress: event.node.req.headers["x-forwarded-for"] || event.node.req.socket?.remoteAddress,
       userAgent: event.node.req.headers["user-agent"],
     });
 

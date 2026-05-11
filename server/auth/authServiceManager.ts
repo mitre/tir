@@ -1,11 +1,11 @@
 import type { H3Event } from "h3";
 import { AuthProvider } from "./authProvider";
 import { authProviderRegistry } from "./authProviderRegistry";
-import { type AuthConfig, type Provider, PROVIDERS } from "~/types/auth";
-import { getConfigValue } from "~/server/utils/config/tirConfig";
+import { type AuthConfig } from "~/types/auth";
+import { getRawConfigValue } from "~/server/utils/config/tirConfig";
 
 export class AuthService {
-  private providers: Partial<Record<Provider, AuthProvider>> = {};
+  private providers: Map<string, AuthProvider> = new Map();
   private config: AuthConfig;
 
   private constructor(cfg: AuthConfig) {
@@ -18,62 +18,73 @@ export class AuthService {
     return svc;
   }
 
-  private computeProvidersToLoad(cfg: AuthConfig): Provider[] {
-    const enabled = PROVIDERS.filter((p) => cfg[p]?.enable);
-    if (enabled.length === 0) {
-      logger.alert({
-        service: "auth",
-        message: "No authentication providers enabled. Falling back to Local auth.",
-      });
-      return ["local"];
-    }
-    return enabled;
-  }
-
   async reload(cfg: AuthConfig) {
-    this.providers = {};
+    this.providers.clear();
     this.config = cfg;
 
-    const toLoad = this.computeProvidersToLoad(this.config);
+    const anyOtherEnabled =
+      cfg.ldap.some((p) => p.enable) || cfg.oidc.some((p) => p.enable);
 
-    for (const p of toLoad) {
-      const factory = authProviderRegistry[p];
-      if (!factory) continue;
-
-      const providerCfg = Object.fromEntries(
-        Object.entries(this.config[p] ?? {}).filter(([k]) => k !== "enable"),
-      );
-      if (p === "oidc") {
-        const secret = await getConfigValue("auth", "oidcSecret");
-        if (secret) providerCfg.secret = secret;
+    if (cfg.local.enable || !anyOtherEnabled) {
+      if (!cfg.local.enable && !anyOtherEnabled) {
+        logger.alert({
+          service: "auth",
+          message: "No auth providers enabled. Falling back to local auth.",
+        });
       }
+      this.providers.set("local", await authProviderRegistry.local(cfg.local));
+    }
 
-      if (p === "ldap") {
-        const password = await getConfigValue("aauth", "ldapPassword");
-        if (password) providerCfg.password = password;
-      }
+    for (const ldapCfg of cfg.ldap) {
+      if (!ldapCfg.enable) continue;
+      const password = await getRawConfigValue(`auth:ldap:${ldapCfg.id}:password`);
+      const fullCfg = { ...ldapCfg, ...(password ? { password } : {}) };
+      this.providers.set(`ldap:${ldapCfg.id}`, await authProviderRegistry.ldap(fullCfg));
+    }
 
-      this.providers[p] = await factory(providerCfg);
+    for (const oidcCfg of cfg.oidc) {
+      if (!oidcCfg.enable) continue;
+      const secret = await getRawConfigValue(`auth:oidc:${oidcCfg.id}:secret`);
+      const fullCfg = { ...oidcCfg, ...(secret ? { secret } : {}) };
+      this.providers.set(`oidc:${oidcCfg.id}`, await authProviderRegistry.oidc(fullCfg));
+    }
+
+    for (const oauthCfg of cfg.oauth) {
+      if (!oauthCfg.enable) continue;
+      const secret = await getRawConfigValue(`auth:oauth:${oauthCfg.id}:secret`);
+      const fullCfg = { ...oauthCfg, ...(secret ? { secret } : {}) };
+      this.providers.set(`oauth:${oauthCfg.id}`, await authProviderRegistry.oauth(fullCfg));
     }
 
     logger.info({
       service: "auth",
-      message: `Reloaded auth providers: ${toLoad.join(", ")}`,
+      message: `Auth providers loaded: ${[...this.providers.keys()].join(", ")}`,
     });
   }
 
-  getProvider(provider: Provider): AuthProvider {
-    const authProvider = this.providers[provider];
-    if (!authProvider) {
-      throw new Error(`Auth provider '${provider}' not found or not active`);
+  getProvider(key: string): AuthProvider {
+    const provider = this.providers.get(key);
+    if (!provider) {
+      throw new Error(`Auth provider '${key}' not found or not active`);
     }
-    return authProvider;
+    return provider;
   }
 
-  async authenticate(provider: Provider, event: H3Event, credentials: any) {
-    logger.debug({ service: "auth", message: `Authenticating using provider: ${provider}` });
-    const authProvider = this.getProvider(provider);
-    return await authProvider.authenticate(event, credentials);
+  async authenticate(key: string, event: H3Event, credentials: any) {
+    logger.debug({ service: "auth", message: `Authenticating with provider: ${key}` });
+    return await this.getProvider(key).authenticate(event, credentials);
+  }
+
+  getEnabledLDAPIds(): string[] {
+    return this.config.ldap.filter((p) => p.enable).map((p) => p.id);
+  }
+
+  getEnabledOIDCProviders(): { id: string; label: string }[] {
+    return this.config.oidc.filter((p) => p.enable).map((p) => ({ id: p.id, label: p.label }));
+  }
+
+  getEnabledOAuthProviders(): { id: string; label: string }[] {
+    return this.config.oauth.filter((p) => p.enable).map((p) => ({ id: p.id, label: p.label }));
   }
 }
 
@@ -88,9 +99,4 @@ export function getAuthServiceManager(): AuthService {
     throw new Error("authServiceManager has not been initialized yet.");
   }
   return authServiceManager;
-}
-
-export function getActiveProvidersView(cfg: AuthConfig): Provider[] {
-  const enabled = PROVIDERS.filter((p) => cfg[p]?.enable);
-  return enabled.length ? enabled : (["local"] as Provider[]);
 }

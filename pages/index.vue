@@ -39,7 +39,7 @@
                     method.current
                       ? 'border-indigo-500 text-indigo-600'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-                    'whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium',
+                    'cursor-pointer whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium',
                   ]"
                   @click="selectedAuthMethod = method.name"
                 >
@@ -51,11 +51,11 @@
 
           <div :class="{ 'pointer-events-none select-none opacity-50': loginDisabled }">
             <LoginForm
-              :auth-method="selectedAuthMethod"
+              :auth-method="selectedMethod"
               :consent-mode="consentMode"
               :consent-text="consentText"
               :title="loginBannerTitle"
-              :enabled-auth="enabledAuth"
+              :sso-providers="ssoProviders"
             />
           </div>
         </div>
@@ -80,7 +80,27 @@ const { data: authStatus, error: authError } = await useFetch("/api/auth/authSta
   server: true,
 });
 
-const enabledAuth = computed(() => authStatus.value || { local: true, ldap: false, oidc: false });
+const enabledAuth = computed(
+  () =>
+    authStatus.value || {
+      local: true,
+      ldapProviders: [],
+      oidcProviders: [],
+      oauthProviders: [],
+      defaultLoginProvider: "local",
+    },
+);
+
+const ssoProviders = computed(() => [
+  ...(enabledAuth.value.oidcProviders || []).map((p: { id: string; label: string }) => ({
+    ...p,
+    href: `/api/auth/login/oidc?provider=${encodeURIComponent(p.id)}`,
+  })),
+  ...(enabledAuth.value.oauthProviders || []).map((p: { id: string; label: string }) => ({
+    ...p,
+    href: `/api/auth/login/oauth?provider=${encodeURIComponent(p.id)}`,
+  })),
+]);
 
 const consentMode = ref<"modal" | "checkbox" | "none">("none");
 const consentText = ref("");
@@ -111,14 +131,40 @@ const handleConsent = () => {
   loginDisabled.value = false;
 };
 
-const authMethods = ref(
+interface AuthMethod {
+  name: string;
+  type: "local" | "ldap";
+  providerId?: string;
+  current: boolean;
+}
+
+const defaultProvider = enabledAuth.value.defaultLoginProvider || "local";
+
+const authMethods = ref<AuthMethod[]>(
   [
-    enabledAuth.value.local && { name: "Local", current: true },
-    enabledAuth.value.ldap && { name: "LDAP", current: false },
-  ].filter(Boolean),
+    enabledAuth.value.local ? { name: "Local", type: "local" as const, current: false } : null,
+    ...(enabledAuth.value.ldapProviders || []).map((p: { id: string; label: string }) => ({
+      name: p.label,
+      type: "ldap" as const,
+      providerId: p.id,
+      current: false,
+    })),
+  ].filter(Boolean) as AuthMethod[],
 );
 
+const defaultMethod =
+  authMethods.value.find((m) =>
+    m.type === "local" ? defaultProvider === "local" : `ldap:${m.providerId}` === defaultProvider,
+  ) || authMethods.value[0];
+if (defaultMethod) defaultMethod.current = true;
+
 const selectedAuthMethod = ref(authMethods.value.find((m) => m.current)?.name || "Local");
+
+const selectedMethod = computed(
+  () =>
+    authMethods.value.find((m) => m.name === selectedAuthMethod.value) ||
+    ({ type: "local" } as AuthMethod),
+);
 
 watch(selectedAuthMethod, (newMethod, oldMethod) => {
   const deselect = authMethods.value.find((m) => m.name === oldMethod);

@@ -1,39 +1,45 @@
 import { defineEventHandler, getCookie, deleteCookie, H3Error, sendRedirect } from "h3";
-import { OIDCAuthProvider } from "~/server/auth/oidcAuthProvider";
 import { getAuthServiceManager } from "~/server/auth/authServiceManager";
-
-// let oidcAuthProvider: OIDCAuthProvider | null = null;
 
 export default defineEventHandler(async (event) => {
   try {
     const authService = getAuthServiceManager();
-    const oidcAuthProvider = authService.getProvider("oidc");
 
-    if (!oidcAuthProvider || typeof oidcAuthProvider.handleCallback !== "function") {
-      throw new H3Error("OIDC provider is not enabled or misconfigured.");
+    const rawState = getCookie(event, "pkce_state");
+    const nonce = getCookie(event, "oidc_nonce");
+    const codeVerifier = getCookie(event, "oidc_code_verifier");
+
+    if (!rawState) {
+      throw new H3Error("Missing state cookie.");
     }
 
-    const codeVerifier = getCookie(event, "pkce_code_verifier");
-    const state = getCookie(event, "pkce_state");
+    // State is encoded as "<family>:<providerId>~<oauthState>"
+    const tildeIdx = rawState.indexOf("~");
+    if (tildeIdx === -1) {
+      throw new H3Error("Malformed state cookie.");
+    }
+    const providerKey = rawState.slice(0, tildeIdx);
 
-    if (!codeVerifier || !state) {
-      throw new H3Error("Missing PKCE code_verifier or state from cookies.");
+    const provider = authService.getProvider(providerKey);
+
+    if (typeof provider.handleCallback !== "function") {
+      throw new H3Error(`Provider '${providerKey}' does not support callback authentication.`);
     }
 
-    event.context.auth = { codeVerifier, state };
+    event.context.auth = { state: rawState, nonce, codeVerifier };
 
-    const result = await oidcAuthProvider.handleCallback(event);
+    const result = await provider.handleCallback(event);
 
-    if (!result || !result.sessionId) {
-      throw new H3Error("Failed to handle OIDC callback or create session.");
+    if (!result?.sessionId) {
+      throw new H3Error("Failed to handle callback or create session.");
     }
 
-    deleteCookie(event, "pkce_code_verifier");
     deleteCookie(event, "pkce_state");
+    deleteCookie(event, "oidc_nonce");
+    deleteCookie(event, "oidc_code_verifier");
 
-    const redirectUrl = `/home`;
-    logger.debug({ service: "auth", message: `Redirecting to ${redirectUrl}` });
-    return sendRedirect(event, redirectUrl);
+    logger.debug({ service: "auth", message: `Auth callback complete for '${providerKey}', redirecting to /home` });
+    return sendRedirect(event, "/home");
   } catch (error) {
     let errorMessage = "An unknown error occurred during OIDC callback";
     if (error instanceof H3Error) {
@@ -41,7 +47,7 @@ export default defineEventHandler(async (event) => {
     } else if (error instanceof Error) {
       errorMessage = error.message;
     }
-    console.error(`OIDC Callback Error: ${errorMessage}`);
+    logger.error({ service: "auth", message: `Auth callback error: ${errorMessage}` });
     return { success: false, message: errorMessage };
   }
 });
