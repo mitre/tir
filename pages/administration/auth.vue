@@ -79,19 +79,15 @@
         class="mt-1 flex justify-between gap-x-6 pt-6 sm:mt-0 sm:flex-auto"
       >
         <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
-          <div class="flex items-start justify-between">
-            <div>
-              <div class="text-lg font-medium">{{ provider.label }}</div>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">LDAP</p>
-            </div>
-            <button
-              type="button"
-              class="ml-2 text-xs text-red-500 hover:text-red-700"
-              @click="removeLDAP(idx)"
-            >
-              Remove
-            </button>
-          </div>
+          <div class="text-lg font-medium">{{ provider.label }}</div>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">LDAP</p>
+          <button
+            type="button"
+            class="mt-2 text-xs text-red-500 hover:text-red-700"
+            @click="removeLDAP(idx)"
+          >
+            Remove
+          </button>
         </div>
         <div class="flex-1 space-y-4 text-gray-800 dark:text-white">
           <div class="flex items-center gap-4">
@@ -202,19 +198,15 @@
         class="mt-1 flex justify-between gap-x-6 pt-6 sm:mt-0 sm:flex-auto"
       >
         <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
-          <div class="flex items-start justify-between">
-            <div>
-              <div class="text-lg font-medium">{{ provider.label }}</div>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">OpenID Connect</p>
-            </div>
-            <button
-              type="button"
-              class="ml-2 text-xs text-red-500 hover:text-red-700"
-              @click="removeOIDC(idx)"
-            >
-              Remove
-            </button>
-          </div>
+          <div class="text-lg font-medium">{{ provider.label }}</div>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">OpenID Connect</p>
+          <button
+            type="button"
+            class="mt-2 text-xs text-red-500 hover:text-red-700"
+            @click="removeOIDC(idx)"
+          >
+            Remove
+          </button>
         </div>
         <div class="flex-1 space-y-4 text-gray-800 dark:text-white">
           <div class="flex items-center gap-4">
@@ -225,9 +217,14 @@
             <label class="w-48 text-left text-sm font-medium">Label</label>
             <input v-model="provider.label" type="text" class="input-field" />
           </div>
-          <div class="flex items-center gap-4">
-            <label class="w-48 text-left text-sm font-medium">Discovery URL</label>
-            <input v-model="provider.url" type="text" class="input-field" />
+          <div class="flex items-start gap-4">
+            <label class="w-48 pt-1 text-left text-sm font-medium">Discovery URL</label>
+            <div class="flex flex-1 flex-col gap-1">
+              <input v-model="provider.url" type="text" class="input-field" />
+              <p v-if="provider.url?.startsWith('http://')" class="text-xs text-amber-500">
+                HTTP detected — certificate verification is disabled for this provider. Use HTTPS in production.
+              </p>
+            </div>
           </div>
           <div class="flex items-center gap-4">
             <label class="w-48 text-left text-sm font-medium">Client ID</label>
@@ -254,6 +251,15 @@
               >
                 <UIcon name="i-heroicons-arrow-path" class="h-3 w-3" /> Fill
               </button>
+            </div>
+          </div>
+          <div class="flex items-start gap-4">
+            <label class="w-48 pt-1 text-left text-sm font-medium">Skip SSL Verification</label>
+            <div class="flex flex-1 flex-col gap-1">
+              <UISlideSwitch v-model="provider.sslInsecure" />
+              <p v-if="provider.sslInsecure" class="text-xs text-amber-500">
+                Disables TLS certificate verification. For development with self-signed certificates only.
+              </p>
             </div>
           </div>
           <div class="flex items-center gap-4">
@@ -336,19 +342,15 @@
         class="mt-1 flex justify-between gap-x-6 pt-6 sm:mt-0 sm:flex-auto"
       >
         <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
-          <div class="flex items-start justify-between">
-            <div>
-              <div class="text-lg font-medium">{{ provider.label }}</div>
-              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">GitHub OAuth</p>
-            </div>
-            <button
-              type="button"
-              class="ml-2 text-xs text-red-500 hover:text-red-700"
-              @click="removeOAuth(idx)"
-            >
-              Remove
-            </button>
-          </div>
+          <div class="text-lg font-medium">{{ provider.label }}</div>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">OAuth 2.0</p>
+          <button
+            type="button"
+            class="mt-2 text-xs text-red-500 hover:text-red-700"
+            @click="removeOAuth(idx)"
+          >
+            Remove
+          </button>
         </div>
         <div class="flex-1 space-y-4 text-gray-800 dark:text-white">
           <div class="flex items-center gap-4">
@@ -488,7 +490,7 @@
     </template>
 
     <!-- Add Provider button -->
-    <dd class="pt-6">
+    <dd class="flex justify-end pt-6">
       <div class="relative inline-block text-left">
         <button
           type="button"
@@ -618,6 +620,7 @@ function addOIDC() {
     groupMappings: "",
     groupClaimType: "claim",
     groupClaimPath: "groups",
+    sslInsecure: false,
   });
 }
 
@@ -700,6 +703,7 @@ async function testOIDCConnection(provider: OIDCProviderConfig) {
           clientId: provider.clientId,
           secret: providerSecrets.value[provider.id] || undefined,
           callback: provider.callback,
+          sslInsecure: provider.sslInsecure,
         },
       },
     );

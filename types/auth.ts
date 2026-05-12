@@ -62,6 +62,7 @@ export interface OIDCProviderConfig {
   groupMappings: string;
   groupClaimType: OIDCGroupClaimType;
   groupClaimPath: string;
+  sslInsecure: boolean;
 }
 
 export const OIDC_PROVIDER_SCHEMA = {
@@ -74,6 +75,7 @@ export const OIDC_PROVIDER_SCHEMA = {
   groupMappings: { type: "str", default: "" },
   groupClaimType: { type: "str", default: "scope" },
   groupClaimPath: { type: "str", default: "" },
+  sslInsecure: { type: "bool", default: false },
 } as const;
 
 export type OAuthProviderType = "github" | "gitlab" | "bitbucket" | "custom";

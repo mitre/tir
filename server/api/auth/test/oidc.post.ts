@@ -1,3 +1,5 @@
+import https from "node:https";
+import http from "node:http";
 import { getRawConfigValue } from "~/server/utils/config/tirConfig";
 
 const PROBE_TIMEOUT_MS = 8_000;
@@ -8,24 +10,62 @@ interface CheckResult {
   message: string;
 }
 
-async function fetchJson(url: string): Promise<{ ok: boolean; data?: any; message: string }> {
-  try {
-    const res = await fetch(url, {
-      headers: { Accept: "application/json", "User-Agent": "TIR-Auth-Test" },
-      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+function httpJson(
+  url: string,
+  options: { method?: string; headers?: Record<string, string>; body?: string; rejectUnauthorized?: boolean },
+): Promise<{ ok: boolean; status: number; data?: any; message: string }> {
+  return new Promise((resolve) => {
+    const parsed = new URL(url);
+    const isHttps = parsed.protocol === "https:";
+    const lib: typeof https = isHttps ? https : (http as any);
+
+    const agent = isHttps
+      ? new https.Agent({ rejectUnauthorized: options.rejectUnauthorized ?? true })
+      : undefined;
+
+    const req = lib.request(
+      {
+        hostname: parsed.hostname,
+        port: parsed.port || (isHttps ? "443" : "80"),
+        path: (parsed.pathname || "/") + parsed.search,
+        method: options.method ?? "GET",
+        headers: options.headers ?? { Accept: "application/json", "User-Agent": "TIR-Auth-Test" },
+        agent,
+      },
+      (res) => {
+        let body = "";
+        res.on("data", (chunk) => { body += chunk; });
+        res.on("end", () => {
+          clearTimeout(timer);
+          const status = res.statusCode ?? 0;
+          let data: any;
+          try { data = JSON.parse(body); } catch { /* non-JSON */ }
+          if (status < 200 || status >= 300) {
+            const detail = data?.error_description || data?.error || data?.message;
+            resolve({ ok: false, status, data, message: detail ? `HTTP ${status} — ${detail}` : `HTTP ${status}` });
+          } else {
+            resolve({ ok: true, status, data, message: `HTTP ${status}` });
+          }
+        });
+      },
+    );
+
+    const timer = setTimeout(() => { req.destroy(); resolve({ ok: false, status: 0, message: "Request timed out" }); }, PROBE_TIMEOUT_MS);
+
+    req.on("error", (err: any) => {
+      clearTimeout(timer);
+      resolve({ ok: false, status: 0, message: err.message ?? "Connection failed" });
     });
-    if (!res.ok) return { ok: false, message: `HTTP ${res.status}` };
-    const data = await res.json();
-    return { ok: true, data, message: `HTTP ${res.status}` };
-  } catch (err: any) {
-    return { ok: false, message: err.message ?? "Unreachable" };
-  }
+
+    if (options.body) req.write(options.body);
+    req.end();
+  });
 }
 
 export default defineEventHandler(async (event) => {
   await userCheck(event, undefined, undefined, undefined);
 
-  const { id, url, clientId, secret: providedSecret, callback } = await readBody(event);
+  const { id, url, clientId, secret: providedSecret, callback, sslInsecure } = await readBody(event);
 
   if (!url) {
     return { ok: false, checks: [{ name: "Discovery", ok: false, message: "URL is required" }] };
@@ -37,14 +77,15 @@ export default defineEventHandler(async (event) => {
     if (stored) secret = stored;
   }
 
+  const rejectUnauthorized = !sslInsecure;
   const checks: CheckResult[] = [];
   const base = url.replace(/\/$/, "");
 
   const discoveryUrl = `${base}/.well-known/openid-configuration`;
-  const discovery = await fetchJson(discoveryUrl);
+  const discovery = await httpJson(discoveryUrl, { rejectUnauthorized });
 
   if (!discovery.ok) {
-    const direct = await fetchJson(base);
+    const direct = await httpJson(base, { rejectUnauthorized });
     if (direct.ok && direct.data?.authorization_endpoint) {
       checks.push({ name: "Discovery", ok: true, message: `Found at ${base}` });
       Object.assign(discovery, direct);
@@ -58,13 +99,14 @@ export default defineEventHandler(async (event) => {
     }
   } else {
     const issuerNote = discovery.data?.issuer ? ` (issuer: ${discovery.data.issuer})` : "";
-    checks.push({ name: "Discovery", ok: true, message: `Valid OIDC metadata found${issuerNote}` });
+    const certNote = sslInsecure ? " (SSL verification disabled)" : "";
+    checks.push({ name: "Discovery", ok: true, message: `Valid OIDC metadata found${issuerNote}${certNote}` });
   }
 
   const meta = discovery.data;
 
   if (meta?.jwks_uri) {
-    const jwks = await fetchJson(meta.jwks_uri);
+    const jwks = await httpJson(meta.jwks_uri, { rejectUnauthorized });
     const keyCount = jwks.data?.keys?.length ?? 0;
     checks.push({
       name: "JWKS",
@@ -85,7 +127,7 @@ export default defineEventHandler(async (event) => {
         redirect_uri: callback || "https://localhost/callback",
       });
 
-      const res = await fetch(meta.token_endpoint, {
+      const res = await httpJson(meta.token_endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -93,11 +135,10 @@ export default defineEventHandler(async (event) => {
           "User-Agent": "TIR-Auth-Test",
         },
         body: body.toString(),
-        signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+        rejectUnauthorized,
       });
 
-      const data = await res.json().catch(() => ({}));
-      const error = data?.error;
+      const error = res.data?.error;
 
       if (error === "invalid_grant") {
         checks.push({ name: "Client credentials", ok: true, message: "Client ID and secret accepted" });

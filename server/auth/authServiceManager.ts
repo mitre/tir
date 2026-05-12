@@ -23,7 +23,7 @@ export class AuthService {
     this.config = cfg;
 
     const anyOtherEnabled =
-      cfg.ldap.some((p) => p.enable) || cfg.oidc.some((p) => p.enable);
+      cfg.ldap.some((p) => p.enable) || cfg.oidc.some((p) => p.enable) || cfg.oauth.some((p) => p.enable);
 
     if (cfg.local.enable || !anyOtherEnabled) {
       if (!cfg.local.enable && !anyOtherEnabled) {

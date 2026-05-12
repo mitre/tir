@@ -126,7 +126,7 @@ export async function loadAuthConfig(): Promise<AuthConfig> {
     Promise.all(oauthIds.map(loadOAuthProvider)),
   ]);
 
-  return { local, ldap, oidc, oauth, defaultLoginProvider: defaultLoginProvider ?? "local" };
+  return { local, ldap: ldap ?? [], oidc: oidc ?? [], oauth: oauth ?? [], defaultLoginProvider: defaultLoginProvider ?? "local" };
 }
 
 export async function saveAuthConfig(input: Partial<AuthConfig>): Promise<void> {

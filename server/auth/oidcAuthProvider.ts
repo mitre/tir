@@ -1,10 +1,54 @@
 import { webcrypto } from "crypto";
+import https from "node:https";
+import http from "node:http";
 import { H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
 import { SessionService } from "./sessionService";
 import { GroupClaimExtractor, type GroupRoleMapping } from "./groupClaimExtractor";
 import { User } from "~/db/models/user";
 import type { AuthEvent, OIDCProviderConfig } from "~/types/auth";
+
+function insecureFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+  const url = input instanceof Request ? input.url : input.toString();
+  const method = (input instanceof Request ? input.method : init?.method ?? "GET").toUpperCase();
+  const reqHeaders = Object.fromEntries(new Headers(input instanceof Request ? input.headers : init?.headers));
+  const body = typeof init?.body === "string" ? init.body
+    : init?.body instanceof URLSearchParams ? init.body.toString()
+    : undefined;
+
+  const parsed = new URL(url);
+  const isHttps = parsed.protocol === "https:";
+  const lib: typeof https = isHttps ? https : (http as any);
+  const agent = isHttps ? new https.Agent({ rejectUnauthorized: false }) : undefined;
+
+  return new Promise((resolve, reject) => {
+    const req = lib.request(
+      {
+        hostname: parsed.hostname,
+        port: parsed.port || (isHttps ? "443" : "80"),
+        path: (parsed.pathname || "/") + parsed.search,
+        method,
+        headers: reqHeaders,
+        agent,
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (c: Buffer) => chunks.push(c));
+        res.on("end", () => {
+          const resHeaders = new Headers();
+          for (const [k, v] of Object.entries(res.headers)) {
+            if (Array.isArray(v)) v.forEach((s) => resHeaders.append(k, s));
+            else if (v) resHeaders.set(k, v);
+          }
+          resolve(new Response(Buffer.concat(chunks), { status: res.statusCode ?? 200, headers: resHeaders }));
+        });
+      },
+    );
+    req.on("error", reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
 
 const sessionService = new SessionService();
 
@@ -15,6 +59,7 @@ if (!globalThis.crypto) {
 export class OIDCAuthProvider extends AuthProvider {
   private config: OIDCProviderConfig & { secret?: string };
   private extractor!: GroupClaimExtractor;
+  private cachedMetadata: any;
 
   constructor(config: OIDCProviderConfig & { secret?: string }) {
     super();
@@ -42,14 +87,45 @@ export class OIDCAuthProvider extends AuthProvider {
     });
   }
 
+  private async discover() {
+    if (this.cachedMetadata) return this.cachedMetadata;
+    const client = await import("openid-client");
+    const config = this.config;
+    const issuerUrl = new URL(config.url.replace(/\/$/, ""));
+    const httpAllowed = issuerUrl.protocol === "http:";
+
+    const options: any = {};
+    if (httpAllowed) options.execute = [client.allowInsecureRequests]; // eslint-disable-line @typescript-eslint/no-deprecated
+    if (config.sslInsecure) {
+      options[client.customFetch as any] = insecureFetch;
+      logger.warning({ service: "auth", message: `OIDC '${config.id}': SSL verification disabled — not safe for production` });
+    }
+
+    try {
+      this.cachedMetadata = await client.discovery(
+        issuerUrl,
+        config.clientId,
+        { client_secret: config.secret, token_endpoint_auth_method: "client_secret_post" },
+        undefined,
+        Reflect.ownKeys(options).length ? options : undefined,
+      );
+    } catch (error: any) {
+      logger.error({
+        service: "auth",
+        message: `OIDC '${config.id}' discovery failed: ${error.message}`,
+        cause: error.cause?.message,
+        issuerUrl: issuerUrl.href,
+      });
+      throw error;
+    }
+    return this.cachedMetadata;
+  }
+
   async authenticate(event: AuthEvent, _credentials: any) {
     const client = await import("openid-client");
     const config = this.config;
 
-    const metadata = await client.discovery(new URL(config.url), config.clientId, {
-      client_secret: config.secret,
-      token_endpoint_auth_method: "client_secret_post",
-    });
+    const metadata = await this.discover();
 
     const randomState = client.randomState();
     const nonce = client.randomNonce();
@@ -79,11 +155,7 @@ export class OIDCAuthProvider extends AuthProvider {
   async handleCallback(event: AuthEvent) {
     const client = await import("openid-client");
     const config = this.config;
-
-    const metadata = await client.discovery(new URL(config.url), config.clientId, {
-      client_secret: config.secret,
-      token_endpoint_auth_method: "client_secret_post",
-    });
+    const metadata = await this.discover();
 
     const { state, nonce, codeVerifier } = event.context.auth || {};
     if (!state) throw new Error("Missing state");
@@ -97,15 +169,17 @@ export class OIDCAuthProvider extends AuthProvider {
 
     let tokens;
     try {
-      tokens = await client.authorizationCodeGrant(metadata, callbackUrl, {
-        expectedState: state,
-        expectedNonce: nonce,
-        pkceCodeVerifier: codeVerifier,
-      });
+      tokens = await client.authorizationCodeGrant(
+        metadata,
+        callbackUrl,
+        { expectedState: state, expectedNonce: nonce, pkceCodeVerifier: codeVerifier },
+      );
     } catch (error: any) {
       logger.error({
         service: "auth",
         message: `OIDC '${config.id}' token exchange failed: ${error.message}`,
+        cause: error.cause?.message ?? error.cause,
+        code: error.code,
       });
       if (error.response?.headers) {
         logger.error({
@@ -125,6 +199,11 @@ export class OIDCAuthProvider extends AuthProvider {
 
     const groups = this.extractor.extractGroups(idTokenClaims);
     const userRoleIds = this.extractor.getAllMatchingRoles(groups);
+
+    logger.debug({
+      service: "auth",
+      message: `OIDC '${config.id}' group resolution — groups=${JSON.stringify(groups)}, roles=${JSON.stringify(userRoleIds)}`,
+    });
 
     let userRoleId: number | null = null;
     if (userRoleIds.length > 0) {

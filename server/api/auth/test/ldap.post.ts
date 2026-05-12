@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
       await client.bind("", "");
       checks.push({ name: "Connect", ok: true, message: "Connected (anonymous bind allowed)" });
     } catch (err: any) {
-      const isLdapError = err.code !== undefined || err.name?.includes("Ldap");
+      const isLdapError = typeof err.code === "number" || err.name?.includes("Ldap");
       if (isLdapError) {
         checks.push({ name: "Connect", ok: true, message: `Server reachable (${err.message})` });
       } else {
