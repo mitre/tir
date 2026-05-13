@@ -24,6 +24,16 @@ function domainFromBaseDn(baseDn: string): string {
     .join(".");
 }
 
+function firstAttr(val: unknown, fallback = ""): string {
+  if (Array.isArray(val)) return (val[0] as string) || fallback;
+  return (val as string) || fallback;
+}
+
+function allAttrs(val: unknown): string[] {
+  if (Array.isArray(val)) return val as string[];
+  return val ? [val as string] : [];
+}
+
 function buildClientOptions(config: LDAPProviderConfig): any {
   const opts: any = { url: config.url, connectTimeout: CONNECT_TIMEOUT_MS };
   if (config.ssl) {
@@ -82,9 +92,10 @@ export class LDAPAuthProvider extends AuthProvider {
 
       logger.info({ service: "auth", message: `LDAP authentication successful for: ${username}` });
 
-      const firstName = (ldapUser.givenName as string) ?? username;
-      const lastName = (ldapUser.sn as string) ?? "Unknown";
-      const email = (ldapUser.mail as string) ?? `${username}@example.com`;
+      const firstName = firstAttr(ldapUser.givenName, username);
+      const lastName = firstAttr(ldapUser.sn, "Unknown");
+      const mails = allAttrs(ldapUser.mail).filter(Boolean);
+      const email = mails.length ? mails : [`${username}@example.com`];
 
       return this.finalizeLogin(event, { email, firstName, lastName }, "ldap");
     } catch (error: any) {
@@ -160,23 +171,14 @@ export class LDAPAuthProvider extends AuthProvider {
     username: string,
     baseDn: string,
   ): { email: string; firstName: string; lastName: string } {
-    // First name - givenName, then first word of displayName, then username
-    const firstName =
-      (adUser.givenName as string) ||
-      (adUser.displayName as string)?.split(" ")[0] ||
-      username;
+    const displayName = firstAttr(adUser.displayName);
+    const firstName = firstAttr(adUser.givenName) || displayName.split(" ")[0] || username;
+    const lastName = firstAttr(adUser.sn) || displayName.split(" ").slice(1).join(" ") || "Unknown";
 
-    // Last name - sn, then remaining words of displayName
-    const lastName =
-      (adUser.sn as string) ||
-      (adUser.displayName as string)?.split(" ").slice(1).join(" ") ||
-      "Unknown";
-
-    // Email - mail attribute then userPrincipalName (often an email?) then derive from baseDn
-    let email = (adUser.mail as string) || (adUser.userPrincipalName as string);
+    let email = firstAttr(adUser.mail) || firstAttr(adUser.userPrincipalName);
     if (!email || !email.includes("@")) {
       const domain = domainFromBaseDn(baseDn);
-      const sam = (adUser.sAMAccountName as string) || username;
+      const sam = firstAttr(adUser.sAMAccountName) || username;
       email = domain ? `${sam}@${domain}` : `${sam}@example.com`;
     }
 

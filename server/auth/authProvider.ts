@@ -1,3 +1,4 @@
+import { Op } from "sequelize";
 import { User } from "~/db/models/user";
 import { SessionService } from "./sessionService";
 import type { AuthEvent } from "~/types/auth";
@@ -12,13 +13,18 @@ export abstract class AuthProvider {
 
   protected async finalizeLogin(
     event: AuthEvent,
-    profile: { email: string; firstName: string; lastName: string },
+    profile: { email: string | string[]; firstName: string; lastName: string },
     authMethod: string,
     userRoleId: number | null = null,
   ): Promise<{ sessionId: string; user: any }> {
-    const { email, firstName, lastName } = profile;
+    const { firstName, lastName } = profile;
+    const emails = Array.isArray(profile.email) ? profile.email.filter(Boolean) : [profile.email];
+    const primaryEmail = emails[0];
 
-    let user = await User.findOne({ where: { email } });
+    let user = await User.findOne({
+      where: emails.length > 1 ? { email: { [Op.in]: emails } } : { email: primaryEmail },
+    });
+    const email = user?.email ?? primaryEmail;
     if (!user) {
       user = await User.create({
         firstName,
