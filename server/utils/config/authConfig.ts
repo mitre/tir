@@ -97,11 +97,8 @@ async function saveProvider(
   const ops: Promise<void>[] = [];
   for (const [field, spec] of Object.entries(schema)) {
     const value = data[field];
-    if (spec.omit) {
-      if (!value) continue;
-    } else {
-      if (value === undefined) continue;
-    }
+    if (spec.omit && !value) continue;
+    if (!spec.omit && value === undefined) continue;
     ops.push(setRawConfigValue(keyFn(field), value));
   }
   await Promise.all(ops);
