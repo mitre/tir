@@ -3,9 +3,7 @@ import https from "node:https";
 import http from "node:http";
 import { H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
-import { SessionService } from "./sessionService";
-import { GroupClaimExtractor, type GroupRoleMapping } from "./groupClaimExtractor";
-import { User } from "~/db/models/user";
+import { GroupClaimExtractor } from "./groupClaimExtractor";
 import type { AuthEvent, OIDCProviderConfig } from "~/types/auth";
 
 function insecureFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
@@ -50,7 +48,6 @@ function insecureFetch(input: string | URL | Request, init?: RequestInit): Promi
   });
 }
 
-const sessionService = new SessionService();
 
 if (!globalThis.crypto) {
   globalThis.crypto = webcrypto as unknown as Crypto;
@@ -67,13 +64,7 @@ export class OIDCAuthProvider extends AuthProvider {
   }
 
   async init(): Promise<void> {
-    const groupRoleMappings: GroupRoleMapping[] = (this.config.groupMappings || "")
-      .split(",")
-      .filter(Boolean)
-      .map((mapping: string) => {
-        const [groupName, roleId] = mapping.split(":");
-        return { groupName: groupName.trim(), userRoleId: parseInt(roleId, 10) };
-      });
+    const groupRoleMappings = GroupClaimExtractor.parseGroupMappings(this.config.groupMappings);
 
     this.extractor = new GroupClaimExtractor({
       mode: this.config.groupClaimType,
@@ -83,7 +74,7 @@ export class OIDCAuthProvider extends AuthProvider {
 
     logger.debug({
       service: "auth",
-      message: `OIDC provider '${this.config.id}' initialized — mode=${this.config.groupClaimType}, mappings=${groupRoleMappings.length}`,
+      message: `OIDC provider '${this.config.id}' initialized -- mode=${this.config.groupClaimType}, mappings=${groupRoleMappings.length}`,
     });
   }
 
@@ -98,7 +89,7 @@ export class OIDCAuthProvider extends AuthProvider {
     if (httpAllowed) options.execute = [client.allowInsecureRequests]; // eslint-disable-line @typescript-eslint/no-deprecated
     if (config.sslInsecure) {
       options[client.customFetch as any] = insecureFetch;
-      logger.warning({ service: "auth", message: `OIDC '${config.id}': SSL verification disabled — not safe for production` });
+      logger.warning({ service: "auth", message: `OIDC '${config.label}' (${config.id}): SSL verification disabled -- not safe for production` });
     }
 
     try {
@@ -112,7 +103,7 @@ export class OIDCAuthProvider extends AuthProvider {
     } catch (error: any) {
       logger.error({
         service: "auth",
-        message: `OIDC '${config.id}' discovery failed: ${error.message}`,
+        message: `OIDC '${config.label}' (${config.id}) discovery failed: ${error.message}`,
         cause: error.cause?.message,
         issuerUrl: issuerUrl.href,
       });
@@ -136,7 +127,7 @@ export class OIDCAuthProvider extends AuthProvider {
 
     const scopeAdditions = this.extractor.buildScopeAdditions();
     const scope = ["openid", "profile", "email", ...scopeAdditions].join(" ");
-    logger.debug({ service: "auth", message: `OIDC provider '${config.id}' requesting scope: ${scope}` });
+    logger.debug({ service: "auth", message: `OIDC '${config.label}' (${config.id}) requesting scope: ${scope}` });
 
     const authorizationUrl = client.buildAuthorizationUrl(metadata, {
       client_id: config.clientId,
@@ -177,7 +168,7 @@ export class OIDCAuthProvider extends AuthProvider {
     } catch (error: any) {
       logger.error({
         service: "auth",
-        message: `OIDC '${config.id}' token exchange failed: ${error.message}`,
+        message: `OIDC '${config.label}' (${config.id}) token exchange failed: ${error.message}`,
         cause: error.cause?.message ?? error.cause,
         code: error.code,
       });
@@ -202,12 +193,12 @@ export class OIDCAuthProvider extends AuthProvider {
 
     logger.debug({
       service: "auth",
-      message: `OIDC '${config.id}' group resolution — groups=${JSON.stringify(groups)}, roles=${JSON.stringify(userRoleIds)}`,
+      message: `OIDC '${config.label}' (${config.id}) group resolution -- groups=${JSON.stringify(groups)}, roles=${JSON.stringify(userRoleIds)}`,
     });
 
     let userRoleId: number | null = null;
     if (userRoleIds.length > 0) {
-      // User role (2) takes precedence over Admin (1) when both match — least-privilege
+      // User role (2) takes precedence over Admin (1) when both match -- least-privilege
       userRoleId = userRoleIds.includes(2) ? 2 : userRoleIds.includes(1) ? 1 : null;
     }
 
@@ -221,40 +212,6 @@ export class OIDCAuthProvider extends AuthProvider {
 
     if (!email) throw new Error("ID token is missing an email claim.");
 
-    let user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      user = await User.create({
-        firstName,
-        lastName,
-        email,
-        UserRoleId: userRoleId ?? 2,
-        TimezoneId: 1,
-        creationMethod: "oidc",
-      });
-      logger.info({
-        service: "auth",
-        message: `Created new local user for OIDC user: ${email}`,
-      });
-    }
-
-    if (userRoleId && user.UserRoleId !== userRoleId) {
-      user.UserRoleId = userRoleId;
-      await user.save();
-      logger.info({
-        service: "auth",
-        message: `User role updated for ${email} → RoleId ${userRoleId}`,
-      });
-    }
-
-    logger.info({ service: "auth", message: `Successful OIDC login for: ${email}` });
-
-    const sessionId = await sessionService.createSession(user.id, event, {
-      authMethod: "oidc",
-      ipAddress: event.node.req.headers["x-forwarded-for"] || event.node.req.socket?.remoteAddress,
-      userAgent: event.node.req.headers["user-agent"],
-    });
-
-    return { sessionId, user };
+    return this.finalizeLogin(event, { email, firstName, lastName }, "oidc", userRoleId);
   }
 }

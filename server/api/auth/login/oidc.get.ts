@@ -1,15 +1,12 @@
 import { defineEventHandler, getQuery, setCookie, sendRedirect } from "h3";
 import { getAuthServiceManager } from "~/server/auth/authServiceManager";
-
-function clearCookie(event: any, name: string) {
-  setCookie(event, name, "", { path: "/", expires: new Date(0) });
-}
+import { AUTH_COOKIES, clearAuthCookie } from "~/server/utils/authCookies";
 
 export default defineEventHandler(async (event) => {
   try {
-    clearCookie(event, "pkce_state");
-    clearCookie(event, "oidc_nonce");
-    clearCookie(event, "oidc_code_verifier");
+    clearAuthCookie(event, AUTH_COOKIES.STATE);
+    clearAuthCookie(event, AUTH_COOKIES.NONCE);
+    clearAuthCookie(event, AUTH_COOKIES.CODE_VERIFIER);
 
     const authService = getAuthServiceManager();
     const query = getQuery(event);
@@ -18,28 +15,17 @@ export default defineEventHandler(async (event) => {
     if (!providerId) {
       const enabled = authService.getEnabledOIDCProviders();
       if (enabled.length === 0) throw new Error("No OIDC providers are enabled.");
-      if (enabled.length > 1) throw new Error("Multiple OIDC providers are enabled — specify ?provider=<id>.");
+      if (enabled.length > 1) throw new Error("Multiple OIDC providers are enabled -- specify ?provider=<id>.");
       providerId = enabled[0].id;
     }
 
     const result = await authService.authenticate(`oidc:${providerId}`, event, {});
 
     if (result.redirect) {
-      setCookie(event, "pkce_state", event.context.auth.state, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-      });
-      setCookie(event, "oidc_nonce", event.context.auth.nonce, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-      });
-      setCookie(event, "oidc_code_verifier", event.context.auth.codeVerifier, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-      });
+      const cookieOpts = { httpOnly: true, sameSite: "lax" as const, path: "/" };
+      setCookie(event, AUTH_COOKIES.STATE, event.context.auth.state, cookieOpts);
+      setCookie(event, AUTH_COOKIES.NONCE, event.context.auth.nonce, cookieOpts);
+      setCookie(event, AUTH_COOKIES.CODE_VERIFIER, event.context.auth.codeVerifier, cookieOpts);
       return sendRedirect(event, result.redirect);
     }
 

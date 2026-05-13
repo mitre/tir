@@ -42,7 +42,7 @@ function httpJson(
           try { data = JSON.parse(body); } catch { /* non-JSON */ }
           if (status < 200 || status >= 300) {
             const detail = data?.error_description || data?.error || data?.message;
-            resolve({ ok: false, status, data, message: detail ? `HTTP ${status} — ${detail}` : `HTTP ${status}` });
+            resolve({ ok: false, status, data, message: detail ? `HTTP ${status} -- ${detail}` : `HTTP ${status}` });
           } else {
             resolve({ ok: true, status, data, message: `HTTP ${status}` });
           }
@@ -93,7 +93,7 @@ export default defineEventHandler(async (event) => {
       checks.push({
         name: "Discovery",
         ok: false,
-        message: `${discovery.message} — is this a valid OIDC issuer URL?`,
+        message: `${discovery.message} -- is this a valid OIDC issuer URL?`,
       });
       return { ok: false, checks };
     }
@@ -150,7 +150,7 @@ export default defineEventHandler(async (event) => {
         checks.push({
           name: "Client credentials",
           ok: false,
-          message: `Ambiguous response (${error}) — try Test Login to verify`,
+          message: `Ambiguous response (${error}) -- try Test Login to verify`,
         });
       } else {
         checks.push({ name: "Client credentials", ok: false, message: `Unexpected response: HTTP ${res.status}` });
@@ -162,7 +162,7 @@ export default defineEventHandler(async (event) => {
     checks.push({
       name: "Client credentials",
       ok: false,
-      message: !clientId ? "Client ID not configured" : "No secret available — enter a secret to test credentials",
+      message: !clientId ? "Client ID not configured" : "No secret available -- enter a secret to test credentials",
     });
   } else {
     checks.push({ name: "Client credentials", ok: false, message: "Token endpoint missing from discovery document" });

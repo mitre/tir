@@ -25,13 +25,13 @@ export default defineEventHandler(async (event) => {
     }
 
     const ldapProvider = authService.getProvider(`ldap:${providerId}`);
-    const user = await ldapProvider.authenticate(event, credentials);
+    const result = await ldapProvider.authenticate(event, credentials);
 
-    if (!user) {
+    if (!result) {
       throw new H3Error("Invalid LDAP credentials");
     }
 
-    return { success: true, message: "Authenticated via LDAP", sessionId: user.sessionId, user };
+    return { success: true, message: "Authenticated via LDAP", sessionId: result.sessionId, user: result.user };
   } catch (error) {
     let errorMessage = "An unknown error occurred";
     if (error instanceof H3Error) {

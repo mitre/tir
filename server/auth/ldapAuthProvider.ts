@@ -1,16 +1,12 @@
 import { Client, type Entry } from "ldapts";
 import { H3Event, H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
-import { SessionService } from "./sessionService";
-import { User } from "~/db/models/user";
 import type { LDAPProviderConfig } from "~/types/auth";
-
-const sessionService = new SessionService();
 
 const CONNECT_TIMEOUT_MS = 10_000;
 const UAC_ACCOUNT_DISABLED = 0x0002;
 
-// RFC 4515 — escape special characters in LDAP filter values
+// RFC 4515 -- escape special characters in LDAP filter values
 function escapeFilter(value: string): string {
   return value
     .replace(/\\/g, "\\5c")
@@ -90,7 +86,7 @@ export class LDAPAuthProvider extends AuthProvider {
       const lastName = (ldapUser.sn as string) ?? "Unknown";
       const email = (ldapUser.mail as string) ?? `${username}@example.com`;
 
-      return this.finalizeLogin(event, { email, firstName, lastName }, ldapUser.dn);
+      return this.finalizeLogin(event, { email, firstName, lastName }, "ldap");
     } catch (error: any) {
       logger.info({ service: "auth", message: `LDAP auth failed for ${username}: ${error.message}` });
       return null;
@@ -141,7 +137,7 @@ export class LDAPAuthProvider extends AuthProvider {
       // Check disabled account flag (bit 1 of userAccountControl)
       const uac = parseInt(adUser.userAccountControl as string, 10);
       if (!isNaN(uac) && uac & UAC_ACCOUNT_DISABLED) {
-        logger.info({ service: "auth", message: `AD login rejected — account disabled: ${username}` });
+        logger.info({ service: "auth", message: `AD login rejected -- account disabled: ${username}` });
         return null;
       }
 
@@ -150,7 +146,7 @@ export class LDAPAuthProvider extends AuthProvider {
       logger.info({ service: "auth", message: `AD authentication successful for: ${username}` });
 
       const profile = this.extractADProfile(adUser, username, baseDn);
-      return this.finalizeLogin(event, profile, adUser.dn);
+      return this.finalizeLogin(event, profile, "ldap");
     } catch (error: any) {
       logger.info({ service: "auth", message: `AD auth failed for ${username}: ${error.message}` });
       return null;
@@ -185,35 +181,6 @@ export class LDAPAuthProvider extends AuthProvider {
     }
 
     return { email, firstName, lastName };
-  }
-
-  private async finalizeLogin(
-    event: H3Event,
-    profile: { email: string; firstName: string; lastName: string },
-    dn: string,
-  ): Promise<any> {
-    const { email, firstName, lastName } = profile;
-
-    let user = await User.findOne({ where: { email } });
-    if (!user) {
-      user = await User.create({
-        firstName,
-        lastName,
-        email,
-        UserRoleId: 2,
-        TimezoneId: 1,
-        creationMethod: "ldap",
-      });
-      logger.info({ service: "auth", message: `Created new local user for LDAP/AD user: ${email}` });
-    }
-
-    const sessionId = await sessionService.createSession(user.id, event, {
-      authMethod: "ldap",
-      ipAddress: event.node.req.headers["x-forwarded-for"] || event.node.req.socket?.remoteAddress,
-      userAgent: event.node.req.headers["user-agent"],
-    });
-
-    return { id: user.id, dn, sessionId };
   }
 
   async validateToken(_token: string): Promise<any> {

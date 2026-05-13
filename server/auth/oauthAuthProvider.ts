@@ -1,10 +1,6 @@
 import { H3Event, H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
-import { SessionService } from "./sessionService";
-import { User } from "~/db/models/user";
 import type { OAuthProviderConfig, OAuthProviderType } from "~/types/auth";
-
-const sessionService = new SessionService();
 
 interface GroupMapping {
   identifier: string;
@@ -63,7 +59,7 @@ export class OAuthAuthProvider extends AuthProvider {
     this.groupMappings = parseGroupMappings(this.config.groupMappings);
     logger.debug({
       service: "auth",
-      message: `OAuth provider '${this.config.id}' (${this.config.providerType}) initialized with ${this.groupMappings.length} group mappings`,
+      message: `OAuth '${this.config.label}' (${this.config.id}, ${this.config.providerType}) initialized with ${this.groupMappings.length} group mappings`,
     });
   }
 
@@ -268,42 +264,6 @@ export class OAuthAuthProvider extends AuthProvider {
     return res.json();
   }
 
-  private async finalizeLogin(
-    event: H3Event,
-    profile: UserProfile,
-    userRoleId: number | null,
-  ) {
-    const { email, firstName, lastName } = profile;
-
-    let user = await User.findOne({ where: { email } });
-    if (!user) {
-      user = await User.create({
-        firstName,
-        lastName,
-        email,
-        UserRoleId: userRoleId ?? 2,
-        TimezoneId: 1,
-        creationMethod: "oauth",
-      });
-      logger.info({ service: "auth", message: `Created new local user for OAuth user: ${email}` });
-    }
-
-    if (userRoleId && user.UserRoleId !== userRoleId) {
-      user.UserRoleId = userRoleId;
-      await user.save();
-      logger.info({ service: "auth", message: `User role updated for ${email} → RoleId ${userRoleId}` });
-    }
-
-    logger.info({ service: "auth", message: `Successful OAuth login for: ${email} via ${this.config.providerType}` });
-
-    const sessionId = await sessionService.createSession(user.id, event, {
-      authMethod: "oauth",
-      ipAddress: event.node.req.headers["x-forwarded-for"] || event.node.req.socket?.remoteAddress,
-      userAgent: event.node.req.headers["user-agent"],
-    });
-
-    return { sessionId, user };
-  }
 }
 
 function parseGroupMappings(raw: string): GroupMapping[] {
@@ -328,7 +288,7 @@ function resolveRole(
 
   logger.debug({
     service: "auth",
-    message: `OAuth role resolution — user groups: [${userGroups.join(", ") || "none"}], mappings: [${mappings.map((m) => `${m.identifier}→${m.userRoleId}`).join(", ")}]`,
+    message: `OAuth role resolution -- user groups: [${userGroups.join(", ") || "none"}], mappings: [${mappings.map((m) => `${m.identifier}->${m.userRoleId}`).join(", ")}]`,
   });
 
   let userRoleId: number | null = null;

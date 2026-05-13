@@ -1,13 +1,14 @@
-import { defineEventHandler, getCookie, deleteCookie, H3Error, sendRedirect } from "h3";
+import { defineEventHandler, getCookie, H3Error, sendRedirect } from "h3";
 import { getAuthServiceManager } from "~/server/auth/authServiceManager";
+import { AUTH_COOKIES, clearAuthCookie } from "~/server/utils/authCookies";
 
 export default defineEventHandler(async (event) => {
   try {
     const authService = getAuthServiceManager();
 
-    const rawState = getCookie(event, "pkce_state");
-    const nonce = getCookie(event, "oidc_nonce");
-    const codeVerifier = getCookie(event, "oidc_code_verifier");
+    const rawState = getCookie(event, AUTH_COOKIES.STATE);
+    const nonce = getCookie(event, AUTH_COOKIES.NONCE);
+    const codeVerifier = getCookie(event, AUTH_COOKIES.CODE_VERIFIER);
 
     if (!rawState) {
       throw new H3Error("Missing state cookie.");
@@ -34,9 +35,9 @@ export default defineEventHandler(async (event) => {
       throw new H3Error("Failed to handle callback or create session.");
     }
 
-    deleteCookie(event, "pkce_state");
-    deleteCookie(event, "oidc_nonce");
-    deleteCookie(event, "oidc_code_verifier");
+    clearAuthCookie(event, AUTH_COOKIES.STATE);
+    clearAuthCookie(event, AUTH_COOKIES.NONCE);
+    clearAuthCookie(event, AUTH_COOKIES.CODE_VERIFIER);
 
     logger.debug({ service: "auth", message: `Auth callback complete for '${providerKey}', redirecting to /home` });
     return sendRedirect(event, "/home");

@@ -1,13 +1,10 @@
 import { defineEventHandler, getQuery, setCookie, sendRedirect } from "h3";
 import { getAuthServiceManager } from "~/server/auth/authServiceManager";
-
-function clearCookie(event: any, name: string) {
-  setCookie(event, name, "", { path: "/", expires: new Date(0) });
-}
+import { AUTH_COOKIES, clearAuthCookie } from "~/server/utils/authCookies";
 
 export default defineEventHandler(async (event) => {
   try {
-    clearCookie(event, "pkce_state");
+    clearAuthCookie(event, AUTH_COOKIES.STATE);
 
     const authService = getAuthServiceManager();
     const query = getQuery(event);
@@ -17,18 +14,14 @@ export default defineEventHandler(async (event) => {
       const enabled = authService.getEnabledOAuthProviders();
       if (enabled.length === 0) throw new Error("No OAuth providers are enabled.");
       if (enabled.length > 1)
-        throw new Error("Multiple OAuth providers are enabled — specify ?provider=<id>.");
+        throw new Error("Multiple OAuth providers are enabled -- specify ?provider=<id>.");
       providerId = enabled[0].id;
     }
 
     const result = await authService.authenticate(`oauth:${providerId}`, event, {});
 
     if (result.redirect) {
-      setCookie(event, "pkce_state", event.context.auth.state, {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-      });
+      setCookie(event, AUTH_COOKIES.STATE, event.context.auth.state, { httpOnly: true, sameSite: "lax", path: "/" });
       return sendRedirect(event, result.redirect);
     }
 

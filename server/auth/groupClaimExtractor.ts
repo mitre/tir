@@ -10,6 +10,19 @@ export interface GroupClaimExtractorOptions {
 }
 
 export class GroupClaimExtractor {
+  static parseGroupMappings(raw: string): GroupRoleMapping[] {
+    return (raw || "")
+      .split(",")
+      .filter(Boolean)
+      .map((entry) => {
+        const lastColon = entry.lastIndexOf(":");
+        return {
+          groupName: entry.slice(0, lastColon).trim(),
+          userRoleId: parseInt(entry.slice(lastColon + 1).trim(), 10),
+        };
+      });
+  }
+
   private mode: "scope" | "claim";
   private claimPath: string;
   private groupRoleMappings: GroupRoleMapping[];
