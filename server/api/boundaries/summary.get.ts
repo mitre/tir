@@ -21,7 +21,6 @@ import {
 import { initializeCounts } from "../../utils/findings";
 import { PerfTimer } from "../../utils/perfTimer";
 import { createControlRecords } from "../../utils/controls";
-import { decodeToken } from "../../utils/currentUser";
 import { NessusPlugin } from "~/db/models/nessusPlugin";
 import { NessusReportItem } from "~/db/models/nessusReportItem";
 import { Cve } from "~/db/models/cve";
