@@ -124,7 +124,7 @@ export class OAuthAuthProvider extends AuthProvider {
     }
 
     const userRoleId = resolveRole(userGroups, this.groupMappings, this.config.groupMappings);
-    return this.finalizeLogin(event, profile, userRoleId);
+    return this.finalizeLogin(event, profile, "oauth", userRoleId);
   }
 
   private async exchangeToken(
