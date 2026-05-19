@@ -30,8 +30,8 @@
           </div>
 
           <div class="hidden sm:block">
-            <div class="border-b border-gray-200">
-              <nav class="-mb-px flex space-x-8" aria-label="Authentication Methods">
+            <div class="relative border-b border-gray-200">
+              <nav class="-mb-px flex space-x-8 overflow-x-auto pb-px" aria-label="Authentication Methods">
                 <div
                   v-for="method in authMethods"
                   :key="method.name"
@@ -173,3 +173,10 @@ watch(selectedAuthMethod, (newMethod, oldMethod) => {
   if (select) select.current = true;
 });
 </script>
+
+<style scoped>
+nav[aria-label="Authentication Methods"] {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+</style>
