@@ -9,14 +9,6 @@ export default defineEventHandler(async (event) => {
   const rawToken = getCookie(event, "tirtoken");
   let userId: number;
 
-  // if (rawToken) {
-  //   userId = decodeToken(rawToken);
-  // } else {
-  //   throw createError({
-  //     statusCode: 401,
-  //     statusMessage: "Unknown User.",
-  //   });
-  // }
   userId = 1;
 
   if (!systemId) {
