@@ -300,7 +300,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (!uniqueFinding.Stigs[0] || !uniqueFinding.Stigs[0].id) {
+    if (!uniqueFinding.Stigs[0]?.id) {
       break;
     }
 
