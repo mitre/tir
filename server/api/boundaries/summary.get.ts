@@ -356,7 +356,7 @@ export default defineEventHandler(async (event) => {
 
   const stigDetails = [];
 
-  if (boundary && boundary.Systems) {
+  if (boundary?.Systems) {
     for (const system of boundary.Systems) {
       if (system.Stigs) {
         if (system.Stigs.length === 0) {
@@ -558,7 +558,7 @@ export default defineEventHandler(async (event) => {
       Not_Reviewed: 0,
     };
 
-    if (record.ControlRecordItems && record.ControlRecordItems.length) {
+    if (record.ControlRecordItems?.length) {
       for (const item of record.ControlRecordItems) {
         switch (item.ComplianceStatusId) {
           case 1:
