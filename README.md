@@ -38,7 +38,6 @@ npm install
 
 ```ini
 SQLITE=true
-JWT_KEY= //Required: Key that TIR will use for JWT
 SECRET_KEY= //Required
 INIT_PASSWORD= //Required:  Initial Password for initial TIR admin Account
 ```
@@ -52,7 +51,6 @@ DATABASE_PORT= //Optional: Defaults to 5432
 DATABASE_USER= //Required: Postgres User
 DATABASE_PASSWORD= //Required: Postgres User INIT_PASSWORD
 DATABASE_NAME= //Required: Database Name for TIR
-JWT_KEY= //Required: Key that TIR will use for JWT
 INIT_PASSWORD= //Required:  Initial Password for initial TIR admin Account
 ```
 
