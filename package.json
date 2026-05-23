@@ -68,7 +68,7 @@
     "pinia": "^3.0.0",
     "pinia-plugin-persistedstate": "^4.7.1",
     "postgres": "~3.3.5",
-    "rollup": "^4.22.4",
+    "rollup": "^4.59.0",
     "sequelize": "~6.32.1",
     "sqlite3": "~5.1.6",
     "tar": "^7.0.0",
