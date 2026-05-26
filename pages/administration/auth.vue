@@ -157,6 +157,26 @@
             </div>
           </template>
 
+          <div class="flex items-center gap-4">
+            <label class="w-48 text-left text-sm font-medium">Group Attribute</label>
+            <div class="flex flex-1 flex-col gap-1">
+              <input v-model="provider.groupAttribute" type="text" placeholder="memberOf" class="input-field" />
+              <p class="text-xs text-gray-400">
+                LDAP attribute holding group memberships. Default: <code>memberOf</code> (works for AD and OpenLDAP with memberOf overlay).
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <label class="w-48 text-left text-sm font-medium">Group Mappings</label>
+            <div class="flex flex-1 flex-col gap-1">
+              <input v-model="provider.groupMappings" type="text" placeholder="Admins:1,Domain Users:2" class="input-field" />
+              <p class="text-xs text-gray-400">
+                Format: <code>groupName:roleId</code> — comma-separated. RoleId 1=Admin, 2=User.
+                Leave empty to grant all authenticated users the User role.
+              </p>
+            </div>
+          </div>
+
           <!-- Test button -->
           <div class="flex items-center gap-3 pt-2">
             <button
@@ -597,6 +617,8 @@ function addLDAP() {
     ssl: false,
     sslInsecure: false,
     sslCa: "",
+    groupAttribute: "memberOf",
+    groupMappings: "",
   });
 }
 

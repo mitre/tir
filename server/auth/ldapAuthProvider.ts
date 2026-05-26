@@ -1,6 +1,7 @@
 import { Client, type Entry } from "ldapts";
 import { H3Event, H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
+import { GroupClaimExtractor } from "./groupClaimExtractor";
 import type { LDAPProviderConfig } from "~/types/auth";
 
 const CONNECT_TIMEOUT_MS = 10_000;
@@ -34,6 +35,11 @@ function allAttrs(val: unknown): string[] {
   return val ? [val as string] : [];
 }
 
+function extractGroupName(dn: string): string {
+  const match = dn.match(/^cn=([^,]+)/i);
+  return match ? match[1] : dn;
+}
+
 function buildClientOptions(config: LDAPProviderConfig): any {
   const opts: any = { url: config.url, connectTimeout: CONNECT_TIMEOUT_MS };
   if (config.ssl) {
@@ -56,6 +62,19 @@ export class LDAPAuthProvider extends AuthProvider {
 
   async init(): Promise<void> {}
 
+  private resolveGroupRole(groups: string[]): number | null {
+    const mappingsRaw = (this.config.groupMappings || "").trim();
+    if (!mappingsRaw) return null;
+    const extractor = new GroupClaimExtractor({
+      mode: "claim",
+      claimPath: "",
+      groupRoleMappings: GroupClaimExtractor.parseGroupMappings(mappingsRaw),
+    });
+    const roleIds = extractor.getAllMatchingRoles(groups);
+    if (roleIds.length === 0) return null;
+    return roleIds.includes(2) ? 2 : roleIds.includes(1) ? 1 : null;
+  }
+
   async authenticate(event: H3Event, credentials: any): Promise<any> {
     if (this.config.template === "msad") {
       return this.authenticateMSAD(event, credentials);
@@ -71,6 +90,7 @@ export class LDAPAuthProvider extends AuthProvider {
       throw new H3Error("LDAP configuration is incomplete.");
     }
 
+    const groupAttr = this.config.groupAttribute || "memberOf";
     const client = new Client(buildClientOptions(this.config));
 
     try {
@@ -79,7 +99,7 @@ export class LDAPAuthProvider extends AuthProvider {
       const { searchEntries } = await client.search(baseDn, {
         scope: "sub",
         filter: `(uid=${escapeFilter(username)})`,
-        attributes: ["dn", "cn", "sn", "givenName", "mail"],
+        attributes: ["dn", "cn", "sn", "givenName", "mail", groupAttr],
       });
 
       if (searchEntries.length !== 1) {
@@ -97,8 +117,21 @@ export class LDAPAuthProvider extends AuthProvider {
       const mails = allAttrs(ldapUser.mail).filter(Boolean);
       const email = mails.length ? mails : [`${username}@example.com`];
 
-      return this.finalizeLogin(event, { email, firstName, lastName }, "ldap");
+      const groups = allAttrs(ldapUser[groupAttr]).map((g) => extractGroupName(g).toLowerCase());
+      const userRoleId = this.resolveGroupRole(groups);
+
+      logger.info({
+        service: "auth",
+        message: `LDAP '${this.config.label}' group resolution for ${username} -- groups=${JSON.stringify(groups)}, role=${userRoleId}`,
+      });
+
+      if ((this.config.groupMappings || "").trim() && userRoleId === null) {
+        throw new H3Error("Unauthorized: You do not belong to any permitted groups.");
+      }
+
+      return this.finalizeLogin(event, { email, firstName, lastName }, "ldap", userRoleId);
     } catch (error: any) {
+      if (error instanceof H3Error) throw error;
       logger.info({ service: "auth", message: `LDAP auth failed for ${username}: ${error.message}` });
       return null;
     } finally {
@@ -114,12 +147,13 @@ export class LDAPAuthProvider extends AuthProvider {
       throw new H3Error("LDAP configuration is incomplete.");
     }
 
+    const groupAttr = this.config.groupAttribute || "memberOf";
     const client = new Client(buildClientOptions(this.config));
 
     try {
       await client.bind(bindDn, ldapPassword);
 
-      // Search by sAMAccountName or userPrincipalName - handle both domain\user and user@domain 
+      // Search by sAMAccountName or userPrincipalName - handle both domain\user and user@domain
       const escaped = escapeFilter(username);
       const filter = `(|(sAMAccountName=${escaped})(userPrincipalName=${escaped}))`;
 
@@ -135,6 +169,7 @@ export class LDAPAuthProvider extends AuthProvider {
           "sn",
           "mail",
           "userAccountControl",
+          groupAttr,
         ],
       });
 
@@ -156,9 +191,22 @@ export class LDAPAuthProvider extends AuthProvider {
 
       logger.info({ service: "auth", message: `AD authentication successful for: ${username}` });
 
+      const groups = allAttrs(adUser[groupAttr]).map((g) => extractGroupName(g).toLowerCase());
+      const userRoleId = this.resolveGroupRole(groups);
+
+      logger.info({
+        service: "auth",
+        message: `AD '${this.config.label}' group resolution for ${username} -- groups=${JSON.stringify(groups)}, role=${userRoleId}`,
+      });
+
+      if ((this.config.groupMappings || "").trim() && userRoleId === null) {
+        throw new H3Error("Unauthorized: You do not belong to any permitted groups.");
+      }
+
       const profile = this.extractADProfile(adUser, username, baseDn);
-      return this.finalizeLogin(event, profile, "ldap");
+      return this.finalizeLogin(event, profile, "ldap", userRoleId);
     } catch (error: any) {
+      if (error instanceof H3Error) throw error;
       logger.info({ service: "auth", message: `AD auth failed for ${username}: ${error.message}` });
       return null;
     } finally {

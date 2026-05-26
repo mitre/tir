@@ -34,6 +34,8 @@ export interface LDAPProviderConfig {
   ssl: boolean;
   sslInsecure: boolean;
   sslCa: string;
+  groupAttribute: string;
+  groupMappings: string;
 }
 
 export const LDAP_PROVIDER_SCHEMA = {
@@ -47,6 +49,8 @@ export const LDAP_PROVIDER_SCHEMA = {
   ssl: { type: "bool", default: false },
   sslInsecure: { type: "bool", default: false },
   sslCa: { type: "str", default: "" },
+  groupAttribute: { type: "str", default: "memberOf" },
+  groupMappings: { type: "str", default: "" },
 } as const;
 
 export type OIDCGroupClaimType = "scope" | "claim";
