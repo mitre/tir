@@ -363,26 +363,42 @@ function sanitizeValue(value: any) {
 }
 
 async function parseExcelFile(filePath: string) {
-  const workbook = new Excel.Workbook();
-  await workbook.xlsx.readFile(filePath);
+  logger.info({ service: "SCTM", message: "parseExcelFile: start streaming read" });
 
   const data: any[] = [];
+  const workbookReader = new Excel.stream.xlsx.WorkbookReader(filePath, {
+    worksheets: "emit",
+    sharedStrings: "cache",
+    hyperlinks: "ignore",
+    styles: "ignore",
+  });
 
-  workbook.eachSheet((worksheet) => {
-    worksheet.eachRow((row, rowNumber) => {
-      // Skip header row
-      if (rowNumber === 1) return;
+  const controlRegex = /^[A-Z]{2}-\d+(\(\d+\))?$/;
+
+  for await (const worksheetReader of workbookReader) {
+    for await (const row of worksheetReader) {
+      const controlNumber = String(row.getCell(1).value || "")
+        .replace(/\s+/g, "")
+        .trim()
+        .toUpperCase();
+
+      if (!controlRegex.test(controlNumber)) continue;
 
       const rowData: Record<string, any> = {};
 
-      row.eachCell((cell, colNumber) => {
+      for (let colNumber = 1; colNumber <= HEADER_MAP.length; colNumber++) {
         const key = HEADER_MAP[colNumber - 1];
-        if (!key) return; // skip unused columns
-        rowData[key] = cell.value;
-      });
+        if (!key) continue;
+
+        rowData[key] = row.getCell(colNumber).value;
+      }
 
       data.push(rowData);
-    });
+    }
+  }
+  logger.info({
+    service: "SCTM",
+    message: `parseExcelFile: done, rows parsed=${data.length}`,
   });
 
   return data;
