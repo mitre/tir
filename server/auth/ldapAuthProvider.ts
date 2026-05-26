@@ -35,10 +35,6 @@ function allAttrs(val: unknown): string[] {
   return val ? [val as string] : [];
 }
 
-function extractGroupName(dn: string): string {
-  const match = dn.match(/^cn=([^,]+)/i);
-  return match ? match[1] : dn;
-}
 
 function buildClientOptions(config: LDAPProviderConfig): any {
   const opts: any = { url: config.url, connectTimeout: CONNECT_TIMEOUT_MS };
@@ -68,7 +64,7 @@ export class LDAPAuthProvider extends AuthProvider {
     const extractor = new GroupClaimExtractor({
       mode: "claim",
       claimPath: "",
-      groupRoleMappings: GroupClaimExtractor.parseGroupMappings(mappingsRaw),
+      groupRoleMappings: GroupClaimExtractor.parseGroupMappings(mappingsRaw, "|"),
     });
     const roleIds = extractor.getAllMatchingRoles(groups);
     if (roleIds.length === 0) return null;
@@ -117,7 +113,7 @@ export class LDAPAuthProvider extends AuthProvider {
       const mails = allAttrs(ldapUser.mail).filter(Boolean);
       const email = mails.length ? mails : [`${username}@example.com`];
 
-      const groups = allAttrs(ldapUser[groupAttr]).map((g) => extractGroupName(g).toLowerCase());
+      const groups = allAttrs(ldapUser[groupAttr]).map((g) => g.toLowerCase());
       const userRoleId = this.resolveGroupRole(groups);
 
       logger.info({
@@ -191,7 +187,7 @@ export class LDAPAuthProvider extends AuthProvider {
 
       logger.info({ service: "auth", message: `AD authentication successful for: ${username}` });
 
-      const groups = allAttrs(adUser[groupAttr]).map((g) => extractGroupName(g).toLowerCase());
+      const groups = allAttrs(adUser[groupAttr]).map((g) => g.toLowerCase());
       const userRoleId = this.resolveGroupRole(groups);
 
       logger.info({

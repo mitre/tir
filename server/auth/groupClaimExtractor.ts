@@ -10,9 +10,9 @@ export interface GroupClaimExtractorOptions {
 }
 
 export class GroupClaimExtractor {
-  static parseGroupMappings(raw: string): GroupRoleMapping[] {
+  static parseGroupMappings(raw: string, delimiter = ","): GroupRoleMapping[] {
     return (raw || "")
-      .split(",")
+      .split(delimiter)
       .filter(Boolean)
       .map((entry) => {
         const lastColon = entry.lastIndexOf(":");
