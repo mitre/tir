@@ -311,7 +311,6 @@ const { data: currentAlert, refresh: refreshAlerts } = useAsyncData(
   "currentAlert",
   async () => {
     if (!currentUser.value?.id) return null;
-    console.log("Fetching alerts for user:", currentUser.value.id);
     return await $fetch("/api/config/alert", {
       method: "GET",
       query: { userId: currentUser.value.id },
@@ -470,9 +469,7 @@ const markAsRead = async (alertId) => {
       headers: { "Content-Type": "application/json" },
     });
     const responseData = await response.json();
-    if (responseData.success) {
-      console.log("Alert marked as read");
-    } else {
+    if (!responseData.success) {
       console.error("Failed to mark alert as read");
     }
   } catch (error) {
@@ -527,21 +524,17 @@ watch(
 
 async function logoutUser() {
   try {
-    console.log("Logging out...");
     await $fetch("/api/auth/logout", { method: "POST" });
-
+    
     // Clear frontend state
     currentUser.value = null;
-    console.log("Cleared currentUser:", currentUser.value);
 
     // Stop polling alerts
     alertsStore.stopPolling();
-    console.log("Stopped alert polling.");
 
     // Redirect to login page
     router.push("/");
 
-    console.log("Logout successful, redirected.");
   } catch (error) {
     console.error("Logout error:", error);
   }
