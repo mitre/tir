@@ -525,7 +525,6 @@ watch(
 async function logoutUser() {
   try {
     await $fetch("/api/auth/logout", { method: "POST" });
-    
     // Clear frontend state
     currentUser.value = null;
 
