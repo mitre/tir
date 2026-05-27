@@ -467,9 +467,7 @@ const markAsRead = async (alertId) => {
       headers: { "Content-Type": "application/json" },
     });
     const responseData = await response.json();
-    if (responseData.success) {
-      console.log("Alert marked as read");
-    } else {
+    if (!responseData.success) {
       console.error("Failed to mark alert as read");
     }
   } catch (error) {
@@ -524,21 +522,17 @@ watch(
 
 async function logoutUser() {
   try {
-    console.log("Logging out...");
     await $fetch("/api/auth/logout", { method: "POST" });
-
+    
     // Clear frontend state
     currentUser.value = null;
-    console.log("Cleared currentUser:", currentUser.value);
 
     // Stop polling alerts
     alertsStore.stopPolling();
-    console.log("Stopped alert polling.");
 
     // Redirect to login page
     router.push("/");
 
-    console.log("Logout successful, redirected.");
   } catch (error) {
     console.error("Logout error:", error);
   }
