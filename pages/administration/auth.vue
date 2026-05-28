@@ -326,46 +326,10 @@
           </p>
 
           <!-- Login test results -->
-          <div
+          <AuthLoginTestResult
             v-if="loginTests[provider.id] && !loginTests[provider.id].loading"
-            class="rounded border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-700 dark:bg-gray-800"
-          >
-            <template v-if="loginTests[provider.id].error">
-              <p class="text-red-500">{{ loginTests[provider.id].error }}</p>
-            </template>
-            <template v-else>
-              <div class="mb-1 flex items-center gap-2">
-                <UIcon
-                  :name="loginTests[provider.id].denied ? 'i-heroicons-x-circle' : 'i-heroicons-check-circle'"
-                  :class="loginTests[provider.id].denied ? 'text-red-500' : 'text-green-500'"
-                  class="h-4 w-4 shrink-0"
-                />
-                <span class="font-medium">{{
-                  loginTests[provider.id].denied ? "Access denied — not in any mapped group" : "Access granted"
-                }}</span>
-              </div>
-              <div class="mt-1 space-y-0.5 text-gray-600 dark:text-gray-400">
-                <p>
-                  <span class="font-medium">User:</span> {{ loginTests[provider.id].firstName }}
-                  {{ loginTests[provider.id].lastName }} ({{ loginTests[provider.id].email }})
-                </p>
-                <p>
-                  <span class="font-medium">Role:</span>
-                  {{
-                    loginTests[provider.id].userRoleId === 1
-                      ? "Admin"
-                      : loginTests[provider.id].denied
-                        ? "None"
-                        : "User"
-                  }}
-                </p>
-                <p>
-                  <span class="font-medium">Groups:</span>
-                  {{ loginTests[provider.id].groups?.length ? loginTests[provider.id].groups?.join(", ") : "none" }}
-                </p>
-              </div>
-            </template>
-          </div>
+            :result="loginTests[provider.id]"
+          />
         </div>
       </dd>
 
@@ -560,46 +524,10 @@
           </p>
 
           <!-- Login test results -->
-          <div
+          <AuthLoginTestResult
             v-if="loginTests[provider.id] && !loginTests[provider.id].loading"
-            class="rounded border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-700 dark:bg-gray-800"
-          >
-            <template v-if="loginTests[provider.id].error">
-              <p class="text-red-500">{{ loginTests[provider.id].error }}</p>
-            </template>
-            <template v-else>
-              <div class="mb-1 flex items-center gap-2">
-                <UIcon
-                  :name="loginTests[provider.id].denied ? 'i-heroicons-x-circle' : 'i-heroicons-check-circle'"
-                  :class="loginTests[provider.id].denied ? 'text-red-500' : 'text-green-500'"
-                  class="h-4 w-4 shrink-0"
-                />
-                <span class="font-medium">{{
-                  loginTests[provider.id].denied ? "Access denied — not in any mapped group" : "Access granted"
-                }}</span>
-              </div>
-              <div class="mt-1 space-y-0.5 text-gray-600 dark:text-gray-400">
-                <p>
-                  <span class="font-medium">User:</span> {{ loginTests[provider.id].firstName }}
-                  {{ loginTests[provider.id].lastName }} ({{ loginTests[provider.id].email }})
-                </p>
-                <p>
-                  <span class="font-medium">Role:</span>
-                  {{
-                    loginTests[provider.id].userRoleId === 1
-                      ? "Admin"
-                      : loginTests[provider.id].denied
-                        ? "None"
-                        : "User"
-                  }}
-                </p>
-                <p>
-                  <span class="font-medium">Groups:</span>
-                  {{ loginTests[provider.id].groups?.length ? loginTests[provider.id].groups?.join(", ") : "none" }}
-                </p>
-              </div>
-            </template>
-          </div>
+            :result="loginTests[provider.id]"
+          />
         </div>
       </dd>
       <!-- OAuth providers -->
@@ -806,46 +734,10 @@
           </p>
 
           <!-- Login test results -->
-          <div
+          <AuthLoginTestResult
             v-if="loginTests[provider.id] && !loginTests[provider.id].loading"
-            class="rounded border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-700 dark:bg-gray-800"
-          >
-            <template v-if="loginTests[provider.id].error">
-              <p class="text-red-500">{{ loginTests[provider.id].error }}</p>
-            </template>
-            <template v-else>
-              <div class="mb-1 flex items-center gap-2">
-                <UIcon
-                  :name="loginTests[provider.id].denied ? 'i-heroicons-x-circle' : 'i-heroicons-check-circle'"
-                  :class="loginTests[provider.id].denied ? 'text-red-500' : 'text-green-500'"
-                  class="h-4 w-4 shrink-0"
-                />
-                <span class="font-medium">{{
-                  loginTests[provider.id].denied ? "Access denied — not in any mapped group" : "Access granted"
-                }}</span>
-              </div>
-              <div class="mt-1 space-y-0.5 text-gray-600 dark:text-gray-400">
-                <p>
-                  <span class="font-medium">User:</span> {{ loginTests[provider.id].firstName }}
-                  {{ loginTests[provider.id].lastName }} ({{ loginTests[provider.id].email }})
-                </p>
-                <p>
-                  <span class="font-medium">Role:</span>
-                  {{
-                    loginTests[provider.id].userRoleId === 1
-                      ? "Admin"
-                      : loginTests[provider.id].denied
-                        ? "None"
-                        : "User"
-                  }}
-                </p>
-                <p>
-                  <span class="font-medium">Groups:</span>
-                  {{ loginTests[provider.id].groups?.length ? loginTests[provider.id].groups?.join(", ") : "none" }}
-                </p>
-              </div>
-            </template>
-          </div>
+            :result="loginTests[provider.id]"
+          />
         </div>
       </dd>
     </template>
@@ -906,7 +798,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AuthConfig, LDAPProviderConfig, OIDCProviderConfig, OAuthProviderConfig } from "~/types/auth";
+import type { AuthConfig, LDAPProviderConfig, OIDCProviderConfig, OAuthProviderConfig, LoginTestResult } from "~/types/auth";
 
 definePageMeta({ layout: "admin" });
 
@@ -917,17 +809,6 @@ const showProviderMenu = ref(false);
 interface TestResult {
   loading: boolean;
   checks?: { name: string; ok: boolean; message: string }[];
-  error?: string;
-}
-
-interface LoginTestResult {
-  loading: boolean;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  groups?: string[];
-  userRoleId?: number | null;
-  denied?: boolean;
   error?: string;
 }
 

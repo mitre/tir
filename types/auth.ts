@@ -2,6 +2,17 @@ import type { H3Event } from "h3";
 
 export type AuthEvent = H3Event;
 
+export interface LoginTestResult {
+  loading: boolean;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  groups?: string[];
+  userRoleId?: number | null;
+  denied?: boolean;
+  error?: string;
+}
+
 export interface LocalAuthConfig {
   enable: boolean;
   passwordLength: number;
