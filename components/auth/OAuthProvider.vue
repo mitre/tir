@@ -21,86 +21,86 @@
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Label</label>
-        <input
+        <AppInput
           v-model="provider.label"
           type="text"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Provider</label>
-        <select
+        <AppSelect
           v-model="provider.providerType"
-          class="input-field"
+          class="flex-1"
         >
           <option value="github">GitHub</option>
           <option value="gitlab">GitLab</option>
           <option value="bitbucket">Bitbucket</option>
           <option value="custom">Custom</option>
-        </select>
+        </AppSelect>
       </div>
       <div
         v-if="provider.providerType === 'gitlab'"
         class="flex items-center gap-4"
       >
         <label class="w-48 text-left text-sm font-medium">GitLab URL</label>
-        <input
+        <AppInput
           v-model="provider.baseUrl"
           type="text"
           placeholder="https://gitlab.com"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <template v-if="provider.providerType === 'custom'">
         <div class="flex items-center gap-4">
           <label class="w-48 text-left text-sm font-medium">Authorization URL</label>
-          <input
+          <AppInput
             v-model="provider.authorizationUrl"
             type="text"
-            class="input-field"
+            class="flex-1"
           />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-48 text-left text-sm font-medium">Token URL</label>
-          <input
+          <AppInput
             v-model="provider.tokenUrl"
             type="text"
-            class="input-field"
+            class="flex-1"
           />
         </div>
         <div class="flex items-center gap-4">
           <label class="w-48 text-left text-sm font-medium">User Info URL</label>
-          <input
+          <AppInput
             v-model="provider.userInfoUrl"
             type="text"
-            class="input-field"
+            class="flex-1"
           />
         </div>
       </template>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Client ID</label>
-        <input
+        <AppInput
           v-model="provider.clientId"
           type="text"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Client Secret</label>
-        <input
+        <AppInput
           v-model="secret"
           type="password"
           :placeholder="provider.secretSet ? '•••••• (set)' : 'Enter secret'"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Callback URL</label>
         <div class="flex flex-1 gap-2">
-          <input
+          <AppInput
             v-model="provider.callback"
             type="text"
-            class="input-field"
+            class="flex-1"
           />
           <button
             type="button"
@@ -119,11 +119,11 @@
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Group Mappings</label>
         <div class="flex flex-1 flex-col gap-1">
-          <input
+          <AppInput
             v-model="provider.groupMappings"
             type="text"
             :placeholder="mappingPlaceholder"
-            class="input-field"
+            class="w-full"
           />
           <p class="text-xs text-gray-400">
             {{ mappingHint }}
@@ -137,11 +137,11 @@
       >
         <label class="w-48 text-left text-sm font-medium">Group Claim Path</label>
         <div class="flex flex-1 flex-col gap-1">
-          <input
+          <AppInput
             v-model="provider.groupClaimPath"
             type="text"
             placeholder="groups"
-            class="input-field"
+            class="w-full"
           />
           <p class="text-xs text-gray-400">Dot-notation path to the groups array in the user info response.</p>
         </div>
@@ -250,8 +250,3 @@ function testLogin() {
 }
 </script>
 
-<style scoped lang="postcss">
-.input-field {
-  @apply flex-1 rounded border px-2 py-1 text-sm placeholder-gray-400 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500;
-}
-</style>

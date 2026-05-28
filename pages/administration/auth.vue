@@ -38,69 +38,10 @@
     </dd>
 
     <!-- Local Auth -->
-    <dd class="mt-1 flex justify-between gap-x-6 pt-6 sm:mt-0 sm:flex-auto">
-      <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
-        <div class="text-lg font-medium">Local Auth</div>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Built-in username/password authentication.</p>
-      </div>
-      <div
-        v-if="authConfig"
-        class="flex-1 space-y-4 text-gray-800 dark:text-white"
-      >
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Enabled</label>
-          <UISlideSwitch
-            v-model="authConfig.local.enable"
-            class="ml-auto"
-          />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Min Length</label>
-          <input
-            v-model.number="authConfig.local.passwordLength"
-            type="number"
-            min="1"
-            class="input-field"
-          />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Uppercase Letters</label>
-          <input
-            v-model.number="authConfig.local.upperCount"
-            type="number"
-            min="0"
-            class="input-field"
-          />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Lowercase Letters</label>
-          <input
-            v-model.number="authConfig.local.lowerCount"
-            type="number"
-            min="0"
-            class="input-field"
-          />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Numbers</label>
-          <input
-            v-model.number="authConfig.local.numberCount"
-            type="number"
-            min="0"
-            class="input-field"
-          />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Special Characters</label>
-          <input
-            v-model.number="authConfig.local.specialCount"
-            type="number"
-            min="0"
-            class="input-field"
-          />
-        </div>
-      </div>
-    </dd>
+    <AuthLocalProvider
+      v-if="authConfig"
+      v-model:local="authConfig.local"
+    />
 
     <!-- Dynamic provider sections -->
     <template v-if="authConfig">
@@ -313,12 +254,3 @@ async function saveAuthConfig() {
   authConfig.value = await $fetch<AuthConfig>("/api/config/authLoad");
 }
 </script>
-
-<style scoped lang="postcss">
-.input-field {
-  @apply flex-1 rounded border px-2 py-1 text-sm
-    placeholder-gray-400
-    dark:bg-gray-800 dark:text-white
-    dark:placeholder-gray-500;
-}
-</style>

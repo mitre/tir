@@ -21,19 +21,19 @@
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Label</label>
-        <input
+        <AppInput
           v-model="provider.label"
           type="text"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-start gap-4">
         <label class="w-48 pt-1 text-left text-sm font-medium">Discovery URL</label>
         <div class="flex flex-1 flex-col gap-1">
-          <input
+          <AppInput
             v-model="provider.url"
             type="text"
-            class="input-field"
+            class="w-full"
           />
           <p
             v-if="provider.url?.startsWith('http://')"
@@ -45,28 +45,28 @@
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Client ID</label>
-        <input
+        <AppInput
           v-model="provider.clientId"
           type="text"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Client Secret</label>
-        <input
+        <AppInput
           v-model="secret"
           type="password"
           :placeholder="provider.secretSet ? '•••••• (set)' : 'Enter secret'"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Callback URL</label>
         <div class="flex flex-1 gap-2">
-          <input
+          <AppInput
             v-model="provider.callback"
             type="text"
-            class="input-field"
+            class="flex-1"
           />
           <button
             type="button"
@@ -96,13 +96,13 @@
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Group Source</label>
-        <select
+        <AppSelect
           v-model="provider.groupClaimType"
-          class="input-field"
+          class="flex-1"
         >
           <option value="claim">Standard Claim (Keycloak, Okta, Auth0…)</option>
           <option value="scope">Custom Scope (TIR-specific)</option>
-        </select>
+        </AppSelect>
       </div>
       <div
         v-if="provider.groupClaimType === 'claim'"
@@ -110,11 +110,11 @@
       >
         <label class="w-48 text-left text-sm font-medium">Claim Path</label>
         <div class="flex flex-1 flex-col gap-1">
-          <input
+          <AppInput
             v-model="provider.groupClaimPath"
             type="text"
             placeholder="groups"
-            class="input-field"
+            class="w-full"
           />
           <p class="text-xs text-gray-400">
             Common paths: <code>groups</code> · <code>realm_access.roles</code> ·
@@ -125,11 +125,11 @@
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Group Mappings</label>
         <div class="flex flex-1 flex-col gap-1">
-          <input
+          <AppInput
             v-model="provider.groupMappings"
             type="text"
             placeholder="admin:1,users:2"
-            class="input-field"
+            class="w-full"
           />
           <p class="text-xs text-gray-400">
             Format: <code>groupName:roleId</code> — comma-separated. RoleId 1=Admin, 2=User.
@@ -224,9 +224,3 @@ function testLogin() {
   );
 }
 </script>
-
-<style scoped lang="postcss">
-.input-field {
-  @apply flex-1 rounded border px-2 py-1 text-sm placeholder-gray-400 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500;
-}
-</style>

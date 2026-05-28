@@ -21,53 +21,53 @@
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Label</label>
-        <input
+        <AppInput
           v-model="provider.label"
           type="text"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Directory Type</label>
-        <select
+        <AppSelect
           v-model="provider.template"
-          class="input-field"
+          class="flex-1"
         >
           <option value="openldap">OpenLDAP</option>
           <option value="msad">MS Active Directory</option>
-        </select>
+        </AppSelect>
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">URL</label>
-        <input
+        <AppInput
           v-model="provider.url"
           type="text"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Bind DN</label>
-        <input
+        <AppInput
           v-model="provider.bindDn"
           type="text"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Password</label>
-        <input
+        <AppInput
           v-model="secret"
           type="password"
           :placeholder="provider.passwordSet ? '•••••• (set)' : 'Enter password'"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Base DN</label>
-        <input
+        <AppInput
           v-model="provider.baseDn"
           type="text"
-          class="input-field"
+          class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
@@ -81,11 +81,12 @@
         <div class="flex items-start gap-4">
           <label class="w-48 pt-1 text-left text-sm font-medium">CA Certificate</label>
           <div class="flex flex-1 flex-col gap-1">
-            <textarea
+            <AppTextarea
               v-model="provider.sslCa"
               placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
               rows="4"
-              class="input-field font-mono text-xs"
+              size="xs"
+              class="w-full font-mono"
             />
             <p class="text-xs text-gray-400">Paste the CA or self-signed certificate here for full verification.</p>
           </div>
@@ -104,11 +105,11 @@
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Group Attribute</label>
         <div class="flex flex-1 flex-col gap-1">
-          <input
+          <AppInput
             v-model="provider.groupAttribute"
             type="text"
             placeholder="memberOf"
-            class="input-field"
+            class="w-full"
           />
           <p class="text-xs text-gray-400">
             LDAP attribute holding group memberships. Default: <code>memberOf</code>
@@ -119,11 +120,11 @@
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Group Mappings</label>
         <div class="flex flex-1 flex-col gap-1">
-          <input
+          <AppInput
             v-model="provider.groupMappings"
             type="text"
             placeholder="cn=admins,ou=groups,dc=example,dc=com:1|cn=staff,ou=groups,dc=example,dc=com:2"
-            class="input-field"
+            class="w-full"
           />
           <p class="text-xs text-gray-400">
             Format: <code>fullDN:roleId</code> — pipe-separated. RoleId 1=Admin, 2=User. Leave empty to grant all
@@ -156,21 +157,23 @@
       >
         <div class="flex items-center gap-3">
           <label class="w-24 shrink-0 text-xs font-medium text-gray-600 dark:text-gray-400">Username</label>
-          <input
+          <AppInput
             v-model="loginForm.username"
             type="text"
             placeholder="jsmith"
-            class="input-field text-xs"
+            size="xs"
+            class="flex-1"
             @keyup.enter="testLogin"
           />
         </div>
         <div class="flex items-center gap-3">
           <label class="w-24 shrink-0 text-xs font-medium text-gray-600 dark:text-gray-400">Password</label>
-          <input
+          <AppInput
             v-model="loginForm.testPassword"
             type="password"
             placeholder="User's password"
-            class="input-field text-xs"
+            size="xs"
+            class="flex-1"
             @keyup.enter="testLogin"
           />
         </div>
@@ -261,9 +264,3 @@ async function testLogin() {
   }
 }
 </script>
-
-<style scoped lang="postcss">
-.input-field {
-  @apply flex-1 rounded border px-2 py-1 text-sm placeholder-gray-400 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500;
-}
-</style>
