@@ -13,6 +13,12 @@ export interface LoginTestResult {
   error?: string;
 }
 
+export interface ConnectionTestResult {
+  loading: boolean;
+  checks?: { name: string; ok: boolean; message: string }[];
+  error?: string;
+}
+
 export interface LocalAuthConfig {
   enable: boolean;
   passwordLength: number;

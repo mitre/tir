@@ -300,30 +300,7 @@
           </div>
 
           <!-- Connection test results -->
-          <div
-            v-if="ldapTests[provider.id]?.checks"
-            class="space-y-1 rounded border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-700 dark:bg-gray-800"
-          >
-            <div
-              v-for="check in ldapTests[provider.id].checks"
-              :key="check.name"
-              class="flex items-center gap-2"
-            >
-              <UIcon
-                :name="check.ok ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'"
-                :class="check.ok ? 'text-green-500' : 'text-red-500'"
-                class="h-4 w-4 shrink-0"
-              />
-              <span class="font-medium">{{ check.name }}</span>
-              <span class="text-gray-400">— {{ check.message }}</span>
-            </div>
-          </div>
-          <p
-            v-if="ldapTests[provider.id]?.error"
-            class="text-xs text-red-500"
-          >
-            {{ ldapTests[provider.id].error }}
-          </p>
+          <AuthConnectionTestResult :result="ldapTests[provider.id]" />
 
           <!-- Login test results -->
           <AuthLoginTestResult
@@ -498,30 +475,7 @@
           </div>
 
           <!-- Connection test results -->
-          <div
-            v-if="oidcTests[provider.id]?.checks"
-            class="space-y-1 rounded border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-700 dark:bg-gray-800"
-          >
-            <div
-              v-for="check in oidcTests[provider.id].checks"
-              :key="check.name"
-              class="flex items-center gap-2"
-            >
-              <UIcon
-                :name="check.ok ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'"
-                :class="check.ok ? 'text-green-500' : 'text-red-500'"
-                class="h-4 w-4 shrink-0"
-              />
-              <span class="font-medium">{{ check.name }}</span>
-              <span class="text-gray-400">— {{ check.message }}</span>
-            </div>
-          </div>
-          <p
-            v-if="oidcTests[provider.id]?.error"
-            class="text-xs text-red-500"
-          >
-            {{ oidcTests[provider.id].error }}
-          </p>
+          <AuthConnectionTestResult :result="oidcTests[provider.id]" />
 
           <!-- Login test results -->
           <AuthLoginTestResult
@@ -708,30 +662,7 @@
           </div>
 
           <!-- Connection test results -->
-          <div
-            v-if="oauthTests[provider.id]?.checks"
-            class="space-y-1 rounded border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-700 dark:bg-gray-800"
-          >
-            <div
-              v-for="check in oauthTests[provider.id].checks"
-              :key="check.name"
-              class="flex items-center gap-2"
-            >
-              <UIcon
-                :name="check.ok ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'"
-                :class="check.ok ? 'text-green-500' : 'text-red-500'"
-                class="h-4 w-4 shrink-0"
-              />
-              <span class="font-medium">{{ check.name }}</span>
-              <span class="text-gray-400">— {{ check.message }}</span>
-            </div>
-          </div>
-          <p
-            v-if="oauthTests[provider.id]?.error"
-            class="text-xs text-red-500"
-          >
-            {{ oauthTests[provider.id].error }}
-          </p>
+          <AuthConnectionTestResult :result="oauthTests[provider.id]" />
 
           <!-- Login test results -->
           <AuthLoginTestResult
@@ -798,7 +729,14 @@
 </template>
 
 <script setup lang="ts">
-import type { AuthConfig, LDAPProviderConfig, OIDCProviderConfig, OAuthProviderConfig, LoginTestResult } from "~/types/auth";
+import type {
+  AuthConfig,
+  LDAPProviderConfig,
+  OIDCProviderConfig,
+  OAuthProviderConfig,
+  LoginTestResult,
+  ConnectionTestResult,
+} from "~/types/auth";
 
 definePageMeta({ layout: "admin" });
 
@@ -806,11 +744,7 @@ const authConfig = ref<AuthConfig>();
 const providerSecrets = ref<Record<string, string>>({});
 const showProviderMenu = ref(false);
 
-interface TestResult {
-  loading: boolean;
-  checks?: { name: string; ok: boolean; message: string }[];
-  error?: string;
-}
+type TestResult = ConnectionTestResult;
 
 interface LDAPLoginForm {
   visible: boolean;
