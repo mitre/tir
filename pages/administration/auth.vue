@@ -354,9 +354,9 @@
                   {{
                     loginTests[provider.id].userRoleId === 1
                       ? "Admin"
-                      : loginTests[provider.id].userRoleId === 2
-                        ? "User"
-                        : "None"
+                      : loginTests[provider.id].denied
+                        ? "None"
+                        : "User"
                   }}
                 </p>
                 <p>
@@ -588,9 +588,9 @@
                   {{
                     loginTests[provider.id].userRoleId === 1
                       ? "Admin"
-                      : loginTests[provider.id].userRoleId === 2
-                        ? "User"
-                        : "None"
+                      : loginTests[provider.id].denied
+                        ? "None"
+                        : "User"
                   }}
                 </p>
                 <p>
@@ -834,9 +834,9 @@
                   {{
                     loginTests[provider.id].userRoleId === 1
                       ? "Admin"
-                      : loginTests[provider.id].userRoleId === 2
-                        ? "User"
-                        : "None"
+                      : loginTests[provider.id].denied
+                        ? "None"
+                        : "User"
                   }}
                 </p>
                 <p>
@@ -1103,7 +1103,7 @@ async function testLDAPLogin(provider: LDAPProviderConfig) {
   if (!form?.username || !form?.testPassword) return;
   loginTests.value[provider.id] = { loading: true };
   try {
-    const result = await $fetch<LoginTestResult & { ok: boolean }>("/api/auth/test/ldap-login", {
+    const result = await $fetch<Omit<LoginTestResult, "loading"> & { ok: boolean }>("/api/auth/test/ldap-login", {
       method: "POST",
       body: {
         id: provider.id,
