@@ -26,6 +26,9 @@ export default defineEventHandler(async (event) => {
       setCookie(event, AUTH_COOKIES.STATE, event.context.auth.state, cookieOpts);
       setCookie(event, AUTH_COOKIES.NONCE, event.context.auth.nonce, cookieOpts);
       setCookie(event, AUTH_COOKIES.CODE_VERIFIER, event.context.auth.codeVerifier, cookieOpts);
+      if (query.test === "true") {
+        setCookie(event, AUTH_COOKIES.TEST_MODE, "1", { httpOnly: true, sameSite: "lax", path: "/", maxAge: 300 });
+      }
       return sendRedirect(event, result.redirect);
     }
 

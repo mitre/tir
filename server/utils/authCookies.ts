@@ -5,6 +5,7 @@ export const AUTH_COOKIES = {
   STATE: "pkce_state",
   NONCE: "oidc_nonce",
   CODE_VERIFIER: "oidc_code_verifier",
+  TEST_MODE: "tir_auth_test",
 } as const;
 
 export function clearAuthCookie(event: H3Event, name: string) {

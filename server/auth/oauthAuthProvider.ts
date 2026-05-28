@@ -1,5 +1,6 @@
 import { H3Event, H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
+import type { TestLoginResult } from "./authProvider";
 import type { OAuthProviderConfig, OAuthProviderType } from "~/types/auth";
 
 interface GroupMapping {
@@ -87,7 +88,7 @@ export class OAuthAuthProvider extends AuthProvider {
     return { redirect: `${authorizeUrl}?${params}` };
   }
 
-  async handleCallback(event: H3Event) {
+  private async resolveFromCode(event: H3Event) {
     const { state } = event.context.auth || {};
     if (!state) throw new Error("Missing state in OAuth callback.");
 
@@ -123,8 +124,28 @@ export class OAuthAuthProvider extends AuthProvider {
       userGroups = extractClaimGroups(userInfo, this.config.groupClaimPath);
     }
 
+    return { profile, userGroups };
+  }
+
+  async handleCallback(event: H3Event) {
+    const { profile, userGroups } = await this.resolveFromCode(event);
     const userRoleId = resolveRole(userGroups, this.groupMappings, this.config.groupMappings);
     return this.finalizeLogin(event, profile, "oauth", userRoleId);
+  }
+
+  async handleTestCallback(event: H3Event): Promise<TestLoginResult> {
+    const { profile, userGroups } = await this.resolveFromCode(event);
+    const userRoleId = resolveRoleQuiet(userGroups, this.groupMappings);
+    const denied = this.config.groupMappings.length > 0 && userRoleId === null;
+    return {
+      providerId: this.config.id,
+      email: profile.email,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      groups: userGroups,
+      userRoleId,
+      denied,
+    };
   }
 
   private async exchangeToken(
@@ -305,6 +326,21 @@ function resolveRole(
 
   if (rawMappings && !userRoleId) {
     throw new H3Error("Unauthorized: You do not belong to any permitted groups.");
+  }
+  return userRoleId;
+}
+
+function resolveRoleQuiet(userGroups: string[], mappings: GroupMapping[]): number | null {
+  if (mappings.length === 0) return null;
+  let userRoleId: number | null = null;
+  for (const group of userGroups) {
+    for (const mapping of mappings) {
+      if (group === mapping.identifier) {
+        if (userRoleId === null || (userRoleId !== 2 && mapping.userRoleId === 2)) {
+          userRoleId = mapping.userRoleId;
+        }
+      }
+    }
   }
   return userRoleId;
 }

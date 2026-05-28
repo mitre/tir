@@ -3,6 +3,7 @@ import https from "node:https";
 import http from "node:http";
 import { H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
+import type { TestLoginResult } from "./authProvider";
 import { GroupClaimExtractor } from "./groupClaimExtractor";
 import type { AuthEvent, OIDCProviderConfig } from "~/types/auth";
 
@@ -143,7 +144,7 @@ export class OIDCAuthProvider extends AuthProvider {
     return { redirect: authorizationUrl };
   }
 
-  async handleCallback(event: AuthEvent) {
+  private async resolveFromTokens(event: AuthEvent) {
     const client = await import("openid-client");
     const config = this.config;
     const metadata = await this.discover();
@@ -198,12 +199,7 @@ export class OIDCAuthProvider extends AuthProvider {
 
     let userRoleId: number | null = null;
     if (userRoleIds.length > 0) {
-      // User role (2) takes precedence over Admin (1) when both match -- least-privilege
       userRoleId = userRoleIds.includes(2) ? 2 : userRoleIds.includes(1) ? 1 : null;
-    }
-
-    if ((config.groupMappings || "").length > 0 && !userRoleId) {
-      throw new H3Error("Unauthorized: You do not belong to any permitted groups.");
     }
 
     const email = String(idTokenClaims.email ?? "");
@@ -212,6 +208,25 @@ export class OIDCAuthProvider extends AuthProvider {
 
     if (!email) throw new Error("ID token is missing an email claim.");
 
+    return { email, firstName, lastName, groups, userRoleId };
+  }
+
+  async handleCallback(event: AuthEvent) {
+    const config = this.config;
+    const { email, firstName, lastName, userRoleId } = await this.resolveFromTokens(event);
+
+    if ((config.groupMappings || "").length > 0 && !userRoleId) {
+      throw new H3Error("Unauthorized: You do not belong to any permitted groups.");
+    }
+
     return this.finalizeLogin(event, { email, firstName, lastName }, "oidc", userRoleId);
+  }
+
+  async handleTestCallback(event: AuthEvent): Promise<TestLoginResult> {
+    const config = this.config;
+    const { email, firstName, lastName, groups, userRoleId } = await this.resolveFromTokens(event);
+    const denied = (config.groupMappings || "").length > 0 && userRoleId === null;
+
+    return { providerId: config.id, email, firstName, lastName, groups, userRoleId, denied };
   }
 }

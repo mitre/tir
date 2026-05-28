@@ -1,7 +1,17 @@
 import { Op } from "sequelize";
-import { User } from "~/db/models/user";
 import { SessionService } from "./sessionService";
+import { User } from "~/db/models/user";
 import type { AuthEvent } from "~/types/auth";
+
+export interface TestLoginResult {
+  providerId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  groups: string[];
+  userRoleId: number | null;
+  denied: boolean;
+}
 
 const sessionService = new SessionService();
 
@@ -9,6 +19,7 @@ export abstract class AuthProvider {
   abstract init(): Promise<void>;
   abstract authenticate(event: AuthEvent, credentials?: any): Promise<any>;
   handleCallback?(event: AuthEvent): Promise<any>;
+  handleTestCallback?(event: AuthEvent): Promise<TestLoginResult>;
   validateToken?(token: string): Promise<any>;
 
   protected async finalizeLogin(
