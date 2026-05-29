@@ -1,0 +1,34 @@
+name: 📚 Documentation
+description: Missing, wrong, or unclear docs
+title: "[Docs] "
+labels: ["type:docs"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Doc Location (URL or file path)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: Issue Type
+      options:
+        - Missing — docs don't exist yet
+        - Incorrect — docs are wrong
+        - Unclear — docs are confusing
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs to change and why?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested Content (optional)
