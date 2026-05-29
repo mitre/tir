@@ -1,6 +1,6 @@
 <template>
   <div>
-  <dl class="mb-6 space-y-6 divide-y divide-gray-100 border-b border-t border-gray-200 pb-6 pt-6 text-sm leading-6">
+  <dl class="mb-6 space-y-6 divide-y divide-gray-100 border-t border-gray-200 pb-6 pt-6 text-sm leading-6">
     <!-- Default Login Tab -->
     <dd
       v-if="authConfig"
