@@ -1,4 +1,5 @@
 <template>
+  <div>
   <dl class="mb-6 space-y-6 divide-y divide-gray-100 border-b border-t border-gray-200 pb-6 pt-6 text-sm leading-6">
     <!-- Default Login Tab -->
     <dd
@@ -109,18 +110,15 @@
         </div>
       </div>
     </dd>
-
-    <!-- Save button -->
-    <div class="flex justify-end pt-6">
-      <button
-        type="button"
-        class="text-sm font-semibold text-indigo-600 hover:bg-indigo-500"
-        @click="saveAuthConfig"
-      >
-        Save
-      </button>
-    </div>
   </dl>
+
+  <UISaveBar
+    :dirty="dirty"
+    :saving="saving"
+    @save="saveAuthConfig"
+    @discard="discardChanges"
+  />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -131,12 +129,31 @@ definePageMeta({ layout: "admin" });
 const authConfig = ref<AuthConfig>();
 const providerSecrets = ref<Record<string, string>>({});
 const showProviderMenu = ref(false);
+const dirty = ref(false);
+const saving = ref(false);
+
+let cleanSnapshot = "";
+
+function takeSnapshot() {
+  cleanSnapshot = JSON.stringify(authConfig.value);
+  providerSecrets.value = {};
+  dirty.value = false;
+}
+
+watch(
+  [authConfig, providerSecrets],
+  () => {
+    if (!authConfig.value) return;
+    const hasSecrets = Object.values(providerSecrets.value).some(Boolean);
+    dirty.value = hasSecrets || JSON.stringify(authConfig.value) !== cleanSnapshot;
+  },
+  { deep: true },
+);
 
 onMounted(async () => {
   authConfig.value = await $fetch<AuthConfig>("/api/config/authLoad");
-});
+  takeSnapshot();
 
-onMounted(() => {
   document.addEventListener("click", (e) => {
     if (!(e.target as Element).closest(".relative")) {
       showProviderMenu.value = false;
@@ -230,27 +247,34 @@ function removeOAuth(idx: number) {
 
 async function saveAuthConfig() {
   if (!authConfig.value) return;
+  saving.value = true;
+  try {
+    const body = {
+      defaultLoginProvider: authConfig.value.defaultLoginProvider,
+      local: authConfig.value.local,
+      ldap: authConfig.value.ldap.map((p) => ({
+        ...p,
+        ...(providerSecrets.value[p.id] ? { password: providerSecrets.value[p.id] } : {}),
+      })),
+      oidc: authConfig.value.oidc.map((p) => ({
+        ...p,
+        ...(providerSecrets.value[p.id] ? { secret: providerSecrets.value[p.id] } : {}),
+      })),
+      oauth: authConfig.value.oauth.map((p) => ({
+        ...p,
+        ...(providerSecrets.value[p.id] ? { secret: providerSecrets.value[p.id] } : {}),
+      })),
+    };
+    await $fetch("/api/config/authSave", { method: "POST", body });
+    authConfig.value = await $fetch<AuthConfig>("/api/config/authLoad");
+    takeSnapshot();
+  } finally {
+    saving.value = false;
+  }
+}
 
-  const body = {
-    defaultLoginProvider: authConfig.value.defaultLoginProvider,
-    local: authConfig.value.local,
-    ldap: authConfig.value.ldap.map((p) => ({
-      ...p,
-      ...(providerSecrets.value[p.id] ? { password: providerSecrets.value[p.id] } : {}),
-    })),
-    oidc: authConfig.value.oidc.map((p) => ({
-      ...p,
-      ...(providerSecrets.value[p.id] ? { secret: providerSecrets.value[p.id] } : {}),
-    })),
-    oauth: authConfig.value.oauth.map((p) => ({
-      ...p,
-      ...(providerSecrets.value[p.id] ? { secret: providerSecrets.value[p.id] } : {}),
-    })),
-  };
-
-  await $fetch("/api/config/authSave", { method: "POST", body });
-
-  providerSecrets.value = {};
+async function discardChanges() {
   authConfig.value = await $fetch<AuthConfig>("/api/config/authLoad");
+  takeSnapshot();
 }
 </script>

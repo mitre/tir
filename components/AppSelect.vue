@@ -1,7 +1,7 @@
 <template>
   <select
     :class="[
-      'rounded-md border-0 py-1.5 text-gray-800 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-500 dark:bg-gray-800 dark:text-white dark:ring-white/10 sm:leading-6',
+      'rounded border px-2 py-1 dark:bg-gray-800 dark:text-white',
       size === 'xs' ? 'text-xs' : 'text-sm',
     ]"
     v-bind="$attrs"

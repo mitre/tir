@@ -1,5 +1,5 @@
 <template>
-  <dd class="mt-1 flex justify-between gap-x-6 pt-6 sm:mt-0 sm:flex-auto">
+  <dd class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
     <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
       <div class="text-lg font-medium">Local Auth</div>
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Built-in username/password authentication.</p>
