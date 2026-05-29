@@ -1,1 +1,5 @@
 blank_issues_enabled: false
+contact_links:
+  - name: ❓ Questions & Support
+    url: https://github.com/mitre/tir/discussions/categories/q-a
+    about: Ask questions and get help in Discussions instead of opening an issue.
