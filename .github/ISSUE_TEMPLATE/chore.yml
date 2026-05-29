@@ -1,0 +1,33 @@
+name: 🔧 Chore
+description: Internal work, refactor, or maintenance
+title: "[Task] "
+labels: ["type:chore"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      placeholder: What are we doing and why?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / Files Affected
+      placeholder: List files, modules, or services involved.
+
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Subtasks
+      placeholder: |
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / Rollback Plan
