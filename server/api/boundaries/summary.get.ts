@@ -21,7 +21,6 @@ import {
 import { initializeCounts } from "../../utils/findings";
 import { PerfTimer } from "../../utils/perfTimer";
 import { createControlRecords } from "../../utils/controls";
-import { decodeToken } from "../../utils/currentUser";
 import { NessusPlugin } from "~/db/models/nessusPlugin";
 import { NessusReportItem } from "~/db/models/nessusReportItem";
 import { Cve } from "~/db/models/cve";
@@ -301,7 +300,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (!uniqueFinding.Stigs[0] || !uniqueFinding.Stigs[0].id) {
+    if (!uniqueFinding.Stigs[0]?.id) {
       break;
     }
 
@@ -357,7 +356,7 @@ export default defineEventHandler(async (event) => {
 
   const stigDetails = [];
 
-  if (boundary && boundary.Systems) {
+  if (boundary?.Systems) {
     for (const system of boundary.Systems) {
       if (system.Stigs) {
         if (system.Stigs.length === 0) {
@@ -559,7 +558,7 @@ export default defineEventHandler(async (event) => {
       Not_Reviewed: 0,
     };
 
-    if (record.ControlRecordItems && record.ControlRecordItems.length) {
+    if (record.ControlRecordItems?.length) {
       for (const item of record.ControlRecordItems) {
         switch (item.ComplianceStatusId) {
           case 1:

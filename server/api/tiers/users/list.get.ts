@@ -1,5 +1,5 @@
 import { Tier, TierRole, User, Tier_User } from "../../../../db/models";
-import jwt from "jsonwebtoken";
+
 
 export default defineEventHandler<{ query: { TierId: string } }>(async (event) => {
   const query = getQuery(event);

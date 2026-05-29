@@ -1,4 +1,3 @@
-import jwt from "jsonwebtoken";
 import { User, Boundary, BoundaryRole, Boundary_User } from "../../../../db/models";
 
 export default defineEventHandler<{ query: { BoundaryId: string } }>(async (event) => {

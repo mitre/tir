@@ -1,5 +1,4 @@
 import { Tier, Tier_User, User, UserRole, TierRole } from "../../../db/models";
-import { decodeToken } from "../../utils/currentUser";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);

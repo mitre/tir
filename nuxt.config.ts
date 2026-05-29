@@ -30,7 +30,6 @@ export default defineNuxtConfig({
     database_password: process.env.DATABASE_PASSWORD,
     database_name: process.env.DATABASE_NAME,
     temp_folder: process.env.TEMP_FOLDER || os.tmpdir(),
-    jwt_key: process.env.JWT_KEY,
     secret_key: process.env.SECRET_KEY,
     oidc_secret: process.env.OIDC_SECRET,
     oidc_callback: process.env.OIDC_CALLBACK,
