@@ -3,21 +3,18 @@
     <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
       <div class="text-lg font-medium">{{ provider.label }}</div>
       <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">LDAP</p>
-      <button
-        type="button"
-        class="mt-2 text-xs text-red-500 hover:text-red-700"
-        @click="$emit('remove')"
-      >
-        Remove
-      </button>
     </div>
     <div class="flex-1 space-y-4 text-gray-800 dark:text-white">
       <div class="flex items-center gap-4">
         <label class="w-24 text-left text-sm font-medium">Enabled</label>
-        <UISlideSwitch
-          v-model="provider.enable"
-          class="ml-auto"
-        />
+        <div class="ml-auto flex items-center gap-2">
+          <UIRemoveProviderConfirm
+            :name="provider.label"
+            as-icon
+            @remove="$emit('remove')"
+          />
+          <UISlideSwitch v-model="provider.enable" />
+        </div>
       </div>
       <div class="flex items-center gap-4">
         <label class="w-48 text-left text-sm font-medium">Label</label>
