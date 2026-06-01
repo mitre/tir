@@ -193,6 +193,6 @@ async function loginUser() {
 }
 
 function ssoLogin(href: string) {
-  window.location.href = window.location.origin + href;
+  globalThis.location.href = globalThis.location.origin + href;
 }
 </script>

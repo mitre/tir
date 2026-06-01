@@ -168,8 +168,8 @@ function nextId(prefix: string, existing: string[]): string {
 }
 
 function callbackUrl(): string {
-  if (typeof window === "undefined") return "";
-  return `${window.location.origin}/api/auth/callback`;
+  if (typeof globalThis.window === "undefined") return "";
+  return `${globalThis.location.origin}/api/auth/callback`;
 }
 
 function addLDAP() {

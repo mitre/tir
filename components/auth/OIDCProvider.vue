@@ -228,12 +228,12 @@ const connectionTest = ref<ConnectionTestResult>();
 const loginTest = ref<LoginTestResult>();
 
 function callbackUrl(): string {
-  if (typeof window === "undefined") return "";
-  return `${window.location.origin}/api/auth/callback`;
+  if (typeof globalThis.window === "undefined") return "";
+  return `${globalThis.location.origin}/api/auth/callback`;
 }
 
 function onMessage(event: MessageEvent) {
-  if (event.origin !== window.location.origin) return;
+  if (event.origin !== globalThis.location.origin) return;
   const data = event.data;
   if (!data || data.type !== "tir_test_login" || data.providerId !== provider.value.id) return;
   if (data.error) {
