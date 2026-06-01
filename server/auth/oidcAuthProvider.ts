@@ -55,7 +55,7 @@ if (!globalThis.crypto) {
 }
 
 export class OIDCAuthProvider extends AuthProvider {
-  private config: OIDCProviderConfig & { secret?: string };
+  private readonly config: OIDCProviderConfig & { secret?: string };
   private extractor!: GroupClaimExtractor;
   private cachedMetadata: any;
 

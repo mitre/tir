@@ -23,8 +23,8 @@ const emit = defineEmits<{ "update:modelValue": [value: string | number] }>();
 function onInput(event: Event) {
   const raw = (event.target as HTMLInputElement).value;
   if (props.modelModifiers?.number) {
-    const n = parseFloat(raw);
-    emit("update:modelValue", isNaN(n) ? raw : n);
+    const n = Number.parseFloat(raw);
+    emit("update:modelValue", Number.isNaN(n) ? raw : n);
   } else {
     emit("update:modelValue", raw);
   }

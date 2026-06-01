@@ -18,14 +18,14 @@ export class GroupClaimExtractor {
         const lastColon = entry.lastIndexOf(":");
         return {
           groupName: entry.slice(0, lastColon).trim(),
-          userRoleId: parseInt(entry.slice(lastColon + 1).trim(), 10),
+          userRoleId: Number.parseInt(entry.slice(lastColon + 1).trim(), 10),
         };
       });
   }
 
-  private mode: "scope" | "claim";
-  private claimPath: string;
-  private groupRoleMappings: GroupRoleMapping[];
+  private readonly mode: "scope" | "claim";
+  private readonly claimPath: string;
+  private readonly groupRoleMappings: GroupRoleMapping[];
 
   constructor(options: GroupClaimExtractorOptions) {
     this.mode = options.mode;

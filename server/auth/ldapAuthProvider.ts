@@ -49,7 +49,7 @@ function buildClientOptions(config: LDAPProviderConfig): any {
 }
 
 export class LDAPAuthProvider extends AuthProvider {
-  private config: LDAPProviderConfig & { password?: string };
+  private readonly config: LDAPProviderConfig & { password?: string };
 
   constructor(config: LDAPProviderConfig & { password?: string }) {
     super();
@@ -177,8 +177,8 @@ export class LDAPAuthProvider extends AuthProvider {
       const adUser = searchEntries[0] as Entry;
 
       // Check disabled account flag (bit 1 of userAccountControl)
-      const uac = parseInt(adUser.userAccountControl as string, 10);
-      if (!isNaN(uac) && uac & UAC_ACCOUNT_DISABLED) {
+      const uac = Number.parseInt(adUser.userAccountControl as string, 10);
+      if (!Number.isNaN(uac) && uac & UAC_ACCOUNT_DISABLED) {
         logger.info({ service: "auth", message: `AD login rejected -- account disabled: ${username}` });
         return null;
       }

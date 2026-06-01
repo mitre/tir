@@ -109,8 +109,8 @@ export default defineEventHandler(async (event) => {
 
       ldapUser = searchEntries[0] as Entry;
 
-      const uac = parseInt(ldapUser.userAccountControl as string, 10);
-      if (!isNaN(uac) && uac & UAC_ACCOUNT_DISABLED) {
+      const uac = Number.parseInt(ldapUser.userAccountControl as string, 10);
+      if (!Number.isNaN(uac) && uac & UAC_ACCOUNT_DISABLED) {
         throw createError({ statusCode: 403, message: "Account is disabled in Active Directory." });
       }
     } else {

@@ -5,7 +5,7 @@ import { type AuthConfig } from "~/types/auth";
 import { getRawConfigValue } from "~/server/utils/config/tirConfig";
 
 export class AuthService {
-  private providers: Map<string, AuthProvider> = new Map();
+  private readonly providers: Map<string, AuthProvider> = new Map();
   private config: AuthConfig;
 
   private constructor(cfg: AuthConfig) {

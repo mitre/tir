@@ -48,7 +48,7 @@ export const KNOWN_PROVIDERS: Record<
 };
 
 export class OAuthAuthProvider extends AuthProvider {
-  private config: OAuthProviderConfig & { secret?: string };
+  private readonly config: OAuthProviderConfig & { secret?: string };
   private groupMappings: GroupMapping[] = [];
 
   constructor(config: OAuthProviderConfig & { secret?: string }) {
@@ -295,7 +295,7 @@ function parseGroupMappings(raw: string): GroupMapping[] {
       const lastColon = entry.lastIndexOf(":");
       return {
         identifier: entry.slice(0, lastColon).trim().toLowerCase(),
-        userRoleId: parseInt(entry.slice(lastColon + 1).trim(), 10),
+        userRoleId: Number.parseInt(entry.slice(lastColon + 1).trim(), 10),
       };
     });
 }
