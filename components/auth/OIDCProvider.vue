@@ -6,28 +6,45 @@
     </div>
     <div class="flex-1 space-y-4 text-gray-800 dark:text-white">
       <div class="flex items-center gap-4">
-        <label class="w-24 text-left text-sm font-medium">Enabled</label>
+        <label
+          :for="`oidc-${provider.id}-enable`"
+          class="w-24 text-left text-sm font-medium"
+          >Enabled</label
+        >
         <div class="ml-auto flex items-center gap-2">
           <UIRemoveProviderConfirm
             :name="provider.label"
             as-icon
             @remove="$emit('remove')"
           />
-          <UISlideSwitch v-model="provider.enable" />
+          <UISlideSwitch
+            :id="`oidc-${provider.id}-enable`"
+            v-model="provider.enable"
+          />
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Label</label>
+        <label
+          :for="`oidc-${provider.id}-label`"
+          class="w-48 text-left text-sm font-medium"
+          >Label</label
+        >
         <AppInput
+          :id="`oidc-${provider.id}-label`"
           v-model="provider.label"
           type="text"
           class="flex-1"
         />
       </div>
       <div class="flex items-start gap-4">
-        <label class="w-48 pt-1 text-left text-sm font-medium">Discovery URL</label>
+        <label
+          :for="`oidc-${provider.id}-url`"
+          class="w-48 pt-1 text-left text-sm font-medium"
+          >Discovery URL</label
+        >
         <div class="flex flex-1 flex-col gap-1">
           <AppInput
+            :id="`oidc-${provider.id}-url`"
             v-model="provider.url"
             type="text"
             class="w-full"
@@ -41,16 +58,26 @@
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Client ID</label>
+        <label
+          :for="`oidc-${provider.id}-client-id`"
+          class="w-48 text-left text-sm font-medium"
+          >Client ID</label
+        >
         <AppInput
+          :id="`oidc-${provider.id}-client-id`"
           v-model="provider.clientId"
           type="text"
           class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Client Secret</label>
+        <label
+          :for="`oidc-${provider.id}-client-secret`"
+          class="w-48 text-left text-sm font-medium"
+          >Client Secret</label
+        >
         <AppInput
+          :id="`oidc-${provider.id}-client-secret`"
           v-model="secret"
           type="password"
           :placeholder="provider.secretSet ? '•••••• (set)' : 'Enter secret'"
@@ -58,9 +85,14 @@
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Callback URL</label>
+        <label
+          :for="`oidc-${provider.id}-callback`"
+          class="w-48 text-left text-sm font-medium"
+          >Callback URL</label
+        >
         <div class="flex flex-1 gap-2">
           <AppInput
+            :id="`oidc-${provider.id}-callback`"
             v-model="provider.callback"
             type="text"
             class="flex-1"
@@ -80,9 +112,16 @@
         </div>
       </div>
       <div class="flex items-start gap-4">
-        <label class="w-48 pt-1 text-left text-sm font-medium">Skip SSL Verification</label>
+        <label
+          :for="`oidc-${provider.id}-ssl-insecure`"
+          class="w-48 pt-1 text-left text-sm font-medium"
+          >Skip SSL Verification</label
+        >
         <div class="flex flex-1 flex-col gap-1">
-          <UISlideSwitch v-model="provider.sslInsecure" />
+          <UISlideSwitch
+            :id="`oidc-${provider.id}-ssl-insecure`"
+            v-model="provider.sslInsecure"
+          />
           <p
             v-if="provider.sslInsecure"
             class="text-xs text-amber-500"
@@ -92,8 +131,13 @@
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Group Source</label>
+        <label
+          :for="`oidc-${provider.id}-group-claim-type`"
+          class="w-48 text-left text-sm font-medium"
+          >Group Source</label
+        >
         <AppSelect
+          :id="`oidc-${provider.id}-group-claim-type`"
           v-model="provider.groupClaimType"
           class="flex-1"
         >
@@ -105,9 +149,14 @@
         v-if="provider.groupClaimType === 'claim'"
         class="flex items-center gap-4"
       >
-        <label class="w-48 text-left text-sm font-medium">Claim Path</label>
+        <label
+          :for="`oidc-${provider.id}-group-claim-path`"
+          class="w-48 text-left text-sm font-medium"
+          >Claim Path</label
+        >
         <div class="flex flex-1 flex-col gap-1">
           <AppInput
+            :id="`oidc-${provider.id}-group-claim-path`"
             v-model="provider.groupClaimPath"
             type="text"
             placeholder="groups"
@@ -120,9 +169,14 @@
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Group Mappings</label>
+        <label
+          :for="`oidc-${provider.id}-group-mappings`"
+          class="w-48 text-left text-sm font-medium"
+          >Group Mappings</label
+        >
         <div class="flex flex-1 flex-col gap-1">
           <AppInput
+            :id="`oidc-${provider.id}-group-mappings`"
             v-model="provider.groupMappings"
             type="text"
             placeholder="admin:1,users:2"
@@ -185,7 +239,15 @@ function onMessage(event: MessageEvent) {
   if (data.error) {
     loginTest.value = { loading: false, error: data.error };
   } else {
-    loginTest.value = { loading: false, email: data.email, firstName: data.firstName, lastName: data.lastName, groups: data.groups, userRoleId: data.userRoleId, denied: data.denied };
+    loginTest.value = {
+      loading: false,
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      groups: data.groups,
+      userRoleId: data.userRoleId,
+      denied: data.denied,
+    };
   }
 }
 

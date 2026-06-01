@@ -6,27 +6,44 @@
     </div>
     <div class="flex-1 space-y-4 text-gray-800 dark:text-white">
       <div class="flex items-center gap-4">
-        <label class="w-24 text-left text-sm font-medium">Enabled</label>
+        <label
+          :for="`oauth-${provider.id}-enable`"
+          class="w-24 text-left text-sm font-medium"
+          >Enabled</label
+        >
         <div class="ml-auto flex items-center gap-2">
           <UIRemoveProviderConfirm
             :name="provider.label"
             as-icon
             @remove="$emit('remove')"
           />
-          <UISlideSwitch v-model="provider.enable" />
+          <UISlideSwitch
+            :id="`oauth-${provider.id}-enable`"
+            v-model="provider.enable"
+          />
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Label</label>
+        <label
+          :for="`oauth-${provider.id}-label`"
+          class="w-48 text-left text-sm font-medium"
+          >Label</label
+        >
         <AppInput
+          :id="`oauth-${provider.id}-label`"
           v-model="provider.label"
           type="text"
           class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Provider</label>
+        <label
+          :for="`oauth-${provider.id}-provider-type`"
+          class="w-48 text-left text-sm font-medium"
+          >Provider</label
+        >
         <AppSelect
+          :id="`oauth-${provider.id}-provider-type`"
           v-model="provider.providerType"
           class="flex-1"
         >
@@ -40,8 +57,13 @@
         v-if="provider.providerType === 'gitlab'"
         class="flex items-center gap-4"
       >
-        <label class="w-48 text-left text-sm font-medium">GitLab URL</label>
+        <label
+          :for="`oauth-${provider.id}-base-url`"
+          class="w-48 text-left text-sm font-medium"
+          >GitLab URL</label
+        >
         <AppInput
+          :id="`oauth-${provider.id}-base-url`"
           v-model="provider.baseUrl"
           type="text"
           placeholder="https://gitlab.com"
@@ -50,24 +72,39 @@
       </div>
       <template v-if="provider.providerType === 'custom'">
         <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Authorization URL</label>
+          <label
+            :for="`oauth-${provider.id}-authorization-url`"
+            class="w-48 text-left text-sm font-medium"
+            >Authorization URL</label
+          >
           <AppInput
+            :id="`oauth-${provider.id}-authorization-url`"
             v-model="provider.authorizationUrl"
             type="text"
             class="flex-1"
           />
         </div>
         <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Token URL</label>
+          <label
+            :for="`oauth-${provider.id}-token-url`"
+            class="w-48 text-left text-sm font-medium"
+            >Token URL</label
+          >
           <AppInput
+            :id="`oauth-${provider.id}-token-url`"
             v-model="provider.tokenUrl"
             type="text"
             class="flex-1"
           />
         </div>
         <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">User Info URL</label>
+          <label
+            :for="`oauth-${provider.id}-user-info-url`"
+            class="w-48 text-left text-sm font-medium"
+            >User Info URL</label
+          >
           <AppInput
+            :id="`oauth-${provider.id}-user-info-url`"
             v-model="provider.userInfoUrl"
             type="text"
             class="flex-1"
@@ -75,16 +112,26 @@
         </div>
       </template>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Client ID</label>
+        <label
+          :for="`oauth-${provider.id}-client-id`"
+          class="w-48 text-left text-sm font-medium"
+          >Client ID</label
+        >
         <AppInput
+          :id="`oauth-${provider.id}-client-id`"
           v-model="provider.clientId"
           type="text"
           class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Client Secret</label>
+        <label
+          :for="`oauth-${provider.id}-client-secret`"
+          class="w-48 text-left text-sm font-medium"
+          >Client Secret</label
+        >
         <AppInput
+          :id="`oauth-${provider.id}-client-secret`"
           v-model="secret"
           type="password"
           :placeholder="provider.secretSet ? '•••••• (set)' : 'Enter secret'"
@@ -92,9 +139,14 @@
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Callback URL</label>
+        <label
+          :for="`oauth-${provider.id}-callback`"
+          class="w-48 text-left text-sm font-medium"
+          >Callback URL</label
+        >
         <div class="flex flex-1 gap-2">
           <AppInput
+            :id="`oauth-${provider.id}-callback`"
             v-model="provider.callback"
             type="text"
             class="flex-1"
@@ -114,9 +166,14 @@
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Group Mappings</label>
+        <label
+          :for="`oauth-${provider.id}-group-mappings`"
+          class="w-48 text-left text-sm font-medium"
+          >Group Mappings</label
+        >
         <div class="flex flex-1 flex-col gap-1">
           <AppInput
+            :id="`oauth-${provider.id}-group-mappings`"
             v-model="provider.groupMappings"
             type="text"
             :placeholder="mappingPlaceholder"
@@ -132,9 +189,14 @@
         v-if="provider.providerType === 'custom'"
         class="flex items-center gap-4"
       >
-        <label class="w-48 text-left text-sm font-medium">Group Claim Path</label>
+        <label
+          :for="`oauth-${provider.id}-group-claim-path`"
+          class="w-48 text-left text-sm font-medium"
+          >Group Claim Path</label
+        >
         <div class="flex flex-1 flex-col gap-1">
           <AppInput
+            :id="`oauth-${provider.id}-group-claim-path`"
             v-model="provider.groupClaimPath"
             type="text"
             placeholder="groups"
@@ -211,7 +273,15 @@ function onMessage(event: MessageEvent) {
   if (data.error) {
     loginTest.value = { loading: false, error: data.error };
   } else {
-    loginTest.value = { loading: false, email: data.email, firstName: data.firstName, lastName: data.lastName, groups: data.groups, userRoleId: data.userRoleId, denied: data.denied };
+    loginTest.value = {
+      loading: false,
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      groups: data.groups,
+      userRoleId: data.userRoleId,
+      denied: data.denied,
+    };
   }
 }
 
@@ -246,4 +316,3 @@ function testLogin() {
   );
 }
 </script>
-

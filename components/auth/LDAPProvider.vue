@@ -6,27 +6,44 @@
     </div>
     <div class="flex-1 space-y-4 text-gray-800 dark:text-white">
       <div class="flex items-center gap-4">
-        <label class="w-24 text-left text-sm font-medium">Enabled</label>
+        <label
+          :for="`ldap-${provider.id}-enable`"
+          class="w-24 text-left text-sm font-medium"
+          >Enabled</label
+        >
         <div class="ml-auto flex items-center gap-2">
           <UIRemoveProviderConfirm
             :name="provider.label"
             as-icon
             @remove="$emit('remove')"
           />
-          <UISlideSwitch v-model="provider.enable" />
+          <UISlideSwitch
+            :id="`ldap-${provider.id}-enable`"
+            v-model="provider.enable"
+          />
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Label</label>
+        <label
+          :for="`ldap-${provider.id}-label`"
+          class="w-48 text-left text-sm font-medium"
+          >Label</label
+        >
         <AppInput
+          :id="`ldap-${provider.id}-label`"
           v-model="provider.label"
           type="text"
           class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Directory Type</label>
+        <label
+          :for="`ldap-${provider.id}-template`"
+          class="w-48 text-left text-sm font-medium"
+          >Directory Type</label
+        >
         <AppSelect
+          :id="`ldap-${provider.id}-template`"
           v-model="provider.template"
           class="flex-1"
         >
@@ -35,24 +52,39 @@
         </AppSelect>
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">URL</label>
+        <label
+          :for="`ldap-${provider.id}-url`"
+          class="w-48 text-left text-sm font-medium"
+          >URL</label
+        >
         <AppInput
+          :id="`ldap-${provider.id}-url`"
           v-model="provider.url"
           type="text"
           class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Bind DN</label>
+        <label
+          :for="`ldap-${provider.id}-bind-dn`"
+          class="w-48 text-left text-sm font-medium"
+          >Bind DN</label
+        >
         <AppInput
+          :id="`ldap-${provider.id}-bind-dn`"
           v-model="provider.bindDn"
           type="text"
           class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Password</label>
+        <label
+          :for="`ldap-${provider.id}-password`"
+          class="w-48 text-left text-sm font-medium"
+          >Password</label
+        >
         <AppInput
+          :id="`ldap-${provider.id}-password`"
           v-model="secret"
           type="password"
           :placeholder="provider.passwordSet ? '•••••• (set)' : 'Enter password'"
@@ -60,25 +92,40 @@
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Base DN</label>
+        <label
+          :for="`ldap-${provider.id}-base-dn`"
+          class="w-48 text-left text-sm font-medium"
+          >Base DN</label
+        >
         <AppInput
+          :id="`ldap-${provider.id}-base-dn`"
           v-model="provider.baseDn"
           type="text"
           class="flex-1"
         />
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Use SSL/TLS</label>
+        <label
+          :for="`ldap-${provider.id}-ssl`"
+          class="w-48 text-left text-sm font-medium"
+          >Use SSL/TLS</label
+        >
         <UISlideSwitch
+          :id="`ldap-${provider.id}-ssl`"
           v-model="provider.ssl"
           class="ml-auto"
         />
       </div>
       <template v-if="provider.ssl">
         <div class="flex items-start gap-4">
-          <label class="w-48 pt-1 text-left text-sm font-medium">CA Certificate</label>
+          <label
+            :for="`ldap-${provider.id}-ssl-ca`"
+            class="w-48 pt-1 text-left text-sm font-medium"
+            >CA Certificate</label
+          >
           <div class="flex flex-1 flex-col gap-1">
             <AppTextarea
+              :id="`ldap-${provider.id}-ssl-ca`"
               v-model="provider.sslCa"
               placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
               rows="4"
@@ -89,9 +136,16 @@
           </div>
         </div>
         <div class="flex items-start gap-4">
-          <label class="w-48 pt-1 text-left text-sm font-medium">Skip Verification</label>
+          <label
+            :for="`ldap-${provider.id}-ssl-insecure`"
+            class="w-48 pt-1 text-left text-sm font-medium"
+            >Skip Verification</label
+          >
           <div class="flex flex-1 flex-col gap-1">
-            <UISlideSwitch v-model="provider.sslInsecure" />
+            <UISlideSwitch
+              :id="`ldap-${provider.id}-ssl-insecure`"
+              v-model="provider.sslInsecure"
+            />
             <p class="text-xs text-amber-500">
               Disables all certificate verification. Vulnerable to man-in-the-middle attacks. Use the CA Certificate
               field if you want to allow self-signed certificate.
@@ -100,9 +154,14 @@
         </div>
       </template>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Group Attribute</label>
+        <label
+          :for="`ldap-${provider.id}-group-attribute`"
+          class="w-48 text-left text-sm font-medium"
+          >Group Attribute</label
+        >
         <div class="flex flex-1 flex-col gap-1">
           <AppInput
+            :id="`ldap-${provider.id}-group-attribute`"
             v-model="provider.groupAttribute"
             type="text"
             placeholder="memberOf"
@@ -115,9 +174,14 @@
         </div>
       </div>
       <div class="flex items-center gap-4">
-        <label class="w-48 text-left text-sm font-medium">Group Mappings</label>
+        <label
+          :for="`ldap-${provider.id}-group-mappings`"
+          class="w-48 text-left text-sm font-medium"
+          >Group Mappings</label
+        >
         <div class="flex flex-1 flex-col gap-1">
           <AppInput
+            :id="`ldap-${provider.id}-group-mappings`"
             v-model="provider.groupMappings"
             type="text"
             placeholder="cn=admins,ou=groups,dc=example,dc=com:1|cn=staff,ou=groups,dc=example,dc=com:2"
@@ -153,8 +217,13 @@
         class="flex flex-col gap-2 rounded border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800"
       >
         <div class="flex items-center gap-3">
-          <label class="w-24 shrink-0 text-xs font-medium text-gray-600 dark:text-gray-400">Username</label>
+          <label
+            :for="`ldap-${provider.id}-test-username`"
+            class="w-24 shrink-0 text-xs font-medium text-gray-600 dark:text-gray-400"
+            >Username</label
+          >
           <AppInput
+            :id="`ldap-${provider.id}-test-username`"
             v-model="loginForm.username"
             type="text"
             placeholder="jsmith"
@@ -164,8 +233,13 @@
           />
         </div>
         <div class="flex items-center gap-3">
-          <label class="w-24 shrink-0 text-xs font-medium text-gray-600 dark:text-gray-400">Password</label>
+          <label
+            :for="`ldap-${provider.id}-test-password`"
+            class="w-24 shrink-0 text-xs font-medium text-gray-600 dark:text-gray-400"
+            >Password</label
+          >
           <AppInput
+            :id="`ldap-${provider.id}-test-password`"
             v-model="loginForm.testPassword"
             type="password"
             placeholder="User's password"
