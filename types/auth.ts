@@ -30,11 +30,11 @@ export interface LocalAuthConfig {
 
 export const LOCAL_SCHEMA = {
   enable: { type: "bool", default: true },
-  passwordLength: { type: "num", default: 8 },
-  upperCount: { type: "num", default: 0 },
-  lowerCount: { type: "num", default: 0 },
-  numberCount: { type: "num", default: 0 },
-  specialCount: { type: "num", default: 0 },
+  passwordLength: { type: "num", default: 15 },
+  upperCount: { type: "num", default: 1 },
+  lowerCount: { type: "num", default: 1 },
+  numberCount: { type: "num", default: 1 },
+  specialCount: { type: "num", default: 1 },
 } as const;
 
 export type LDAPTemplate = "openldap" | "msad";
