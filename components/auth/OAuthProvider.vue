@@ -180,8 +180,7 @@
             class="w-full"
           />
           <p class="text-xs text-gray-400">
-            {{ mappingHint }}
-            Leave empty to grant all authenticated users the User role.
+            {{ mappingHint }} RoleId 1=Admin, 2=User. Leave empty to grant all authenticated users the User role.
           </p>
         </div>
       </div>
