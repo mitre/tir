@@ -90,25 +90,31 @@
           class="w-48 text-left text-sm font-medium"
           >Callback URL</label
         >
-        <div class="flex flex-1 gap-2">
-          <AppInput
-            :id="`oidc-${provider.id}-callback`"
-            v-model="provider.callback"
-            type="text"
-            class="flex-1"
-          />
-          <button
-            type="button"
-            class="shrink-0 rounded border border-gray-300 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
-            title="Fill with this server's callback URL"
-            @click="provider.callback = callbackUrl()"
-          >
-            <UIcon
-              name="i-heroicons-arrow-path"
-              class="h-3 w-3"
+        <div class="flex flex-1 flex-col gap-1">
+          <div class="flex gap-2">
+            <AppInput
+              :id="`oidc-${provider.id}-callback`"
+              v-model="provider.callback"
+              type="text"
+              class="flex-1"
             />
-            Fill
-          </button>
+            <button
+              type="button"
+              class="shrink-0 rounded border border-gray-300 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
+              title="Fill with this server's callback URL"
+              @click="provider.callback = callbackUrl()"
+            >
+              <UIcon
+                name="i-heroicons-arrow-path"
+                class="h-3 w-3"
+              />
+              Fill
+            </button>
+          </div>
+          <p class="text-xs text-gray-400">
+            The default value usually works as-is. Register this URL as an allowed callback/redirect URL with your
+            identity provider.
+          </p>
         </div>
       </div>
       <div class="flex items-start gap-4">
