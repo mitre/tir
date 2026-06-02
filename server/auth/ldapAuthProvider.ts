@@ -39,11 +39,13 @@ function allAttrs(val: unknown): string[] {
 function buildClientOptions(config: LDAPProviderConfig): any {
   const opts: any = { url: config.url, connectTimeout: CONNECT_TIMEOUT_MS };
   if (config.ssl) {
-    opts.tlsOptions = config.sslInsecure
-      ? { rejectUnauthorized: false }
-      : config.sslCa
-        ? { ca: config.sslCa }
-        : {};
+    if (config.sslInsecure) {
+      opts.tlsOptions = { rejectUnauthorized: false };
+    } else if (config.sslCa) {
+      opts.tlsOptions = { ca: config.sslCa };
+    } else {
+      opts.tlsOptions = {};
+    }
   }
   return opts;
 }
@@ -67,8 +69,9 @@ export class LDAPAuthProvider extends AuthProvider {
       groupRoleMappings: GroupClaimExtractor.parseGroupMappings(mappingsRaw, "|"),
     });
     const roleIds = extractor.getAllMatchingRoles(groups);
-    if (roleIds.length === 0) return null;
-    return roleIds.includes(2) ? 2 : roleIds.includes(1) ? 1 : null;
+    if (roleIds.includes(2)) return 2;
+    if (roleIds.includes(1)) return 1;
+    return null;
   }
 
   async authenticate(event: H3Event, credentials: any): Promise<any> {

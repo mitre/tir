@@ -108,10 +108,11 @@ export default defineEventHandler(async (event) => {
   if (meta?.jwks_uri) {
     const jwks = await httpJson(meta.jwks_uri, { rejectUnauthorized });
     const keyCount = jwks.data?.keys?.length ?? 0;
+    const keyPlural = keyCount !== 1 ? "s" : "";
     checks.push({
       name: "JWKS",
       ok: jwks.ok && keyCount > 0,
-      message: jwks.ok ? `${keyCount} signing key${keyCount !== 1 ? "s" : ""} found` : jwks.message,
+      message: jwks.ok ? `${keyCount} signing key${keyPlural} found` : jwks.message,
     });
   } else {
     checks.push({ name: "JWKS", ok: false, message: "jwks_uri missing from discovery document" });

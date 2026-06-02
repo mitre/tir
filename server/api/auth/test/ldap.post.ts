@@ -29,11 +29,13 @@ export default defineEventHandler(async (event) => {
 
   const clientOptions: any = { url, connectTimeout: CONNECT_TIMEOUT_MS };
   if (ssl) {
-    clientOptions.tlsOptions = sslInsecure
-      ? { rejectUnauthorized: false }
-      : sslCa
-        ? { ca: sslCa }
-        : {};
+    if (sslInsecure) {
+      clientOptions.tlsOptions = { rejectUnauthorized: false };
+    } else if (sslCa) {
+      clientOptions.tlsOptions = { ca: sslCa };
+    } else {
+      clientOptions.tlsOptions = {};
+    }
   }
 
   const client = new Client(clientOptions);

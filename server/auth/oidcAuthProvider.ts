@@ -11,9 +11,9 @@ function insecureFetch(input: string | URL | Request, init?: RequestInit): Promi
   const url = input instanceof Request ? input.url : input.toString();
   const method = (input instanceof Request ? input.method : init?.method ?? "GET").toUpperCase();
   const reqHeaders = Object.fromEntries(new Headers(input instanceof Request ? input.headers : init?.headers));
-  const body = typeof init?.body === "string" ? init.body
-    : init?.body instanceof URLSearchParams ? init.body.toString()
-    : undefined;
+  let body: string | undefined;
+  if (typeof init?.body === "string") body = init.body;
+  else if (init?.body instanceof URLSearchParams) body = init.body.toString();
 
   const parsed = new URL(url);
   const isHttps = parsed.protocol === "https:";
@@ -198,9 +198,8 @@ export class OIDCAuthProvider extends AuthProvider {
     });
 
     let userRoleId: number | null = null;
-    if (userRoleIds.length > 0) {
-      userRoleId = userRoleIds.includes(2) ? 2 : userRoleIds.includes(1) ? 1 : null;
-    }
+    if (userRoleIds.includes(2)) userRoleId = 2;
+    else if (userRoleIds.includes(1)) userRoleId = 1;
 
     const email = String(idTokenClaims.email ?? "");
     const firstName = String(idTokenClaims.given_name || "Unknown");

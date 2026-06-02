@@ -41,8 +41,9 @@ function resolveRoleQuiet(groupMappings: string, groups: string[]): number | nul
     groupRoleMappings: GroupClaimExtractor.parseGroupMappings(raw, "|"),
   });
   const roleIds = extractor.getAllMatchingRoles(groups);
-  if (roleIds.length === 0) return null;
-  return roleIds.includes(2) ? 2 : roleIds.includes(1) ? 1 : null;
+  if (roleIds.includes(2)) return 2;
+  if (roleIds.includes(1)) return 1;
+  return null;
 }
 
 export default defineEventHandler(async (event) => {
@@ -84,7 +85,13 @@ export default defineEventHandler(async (event) => {
 
   const clientOptions: any = { url, connectTimeout: CONNECT_TIMEOUT_MS };
   if (ssl) {
-    clientOptions.tlsOptions = sslInsecure ? { rejectUnauthorized: false } : sslCa ? { ca: sslCa } : {};
+    if (sslInsecure) {
+      clientOptions.tlsOptions = { rejectUnauthorized: false };
+    } else if (sslCa) {
+      clientOptions.tlsOptions = { ca: sslCa };
+    } else {
+      clientOptions.tlsOptions = {};
+    }
   }
 
   const attr = groupAttribute || "memberOf";
