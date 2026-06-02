@@ -1,7 +1,7 @@
 name: 🐛 Bug Report
 description: Something is broken
-title: "[Bug] "
-labels: ["type:bug", "needs-triage"]
+type: Bug
+labels: ["needs-triage"]
 body:
   - type: textarea
     id: summary
