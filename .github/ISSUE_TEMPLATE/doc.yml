@@ -1,7 +1,7 @@
 name: 📚 Documentation
 description: Missing, wrong, or unclear docs
-title: "[Docs] "
-labels: ["type:docs"]
+type: Task
+labels: ["documentation"]
 body:
   - type: input
     id: location
