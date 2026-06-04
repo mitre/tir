@@ -9,7 +9,8 @@
         <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
           <div class="text-lg font-medium">Default Login Tab</div>
           <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            The tab pre-selected when users open the login page.
+            Choose the tab shown when users open the login page. Only Local and LDAP providers appear as tabs; OAuth and
+            OIDC providers are always visible as buttons so they cannot be set as the default.
           </p>
         </div>
         <div class="flex flex-1 flex-wrap gap-4 text-gray-800 dark:text-white">
