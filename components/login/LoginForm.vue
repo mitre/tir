@@ -1,7 +1,13 @@
 <template>
-  <form class="space-y-2" @submit.prevent>
-    <div>
-      <label for="username" class="block text-sm font-medium leading-6 text-gray-800 dark:text-white">
+  <form
+    class="space-y-2"
+    @submit.prevent
+  >
+    <div v-if="props.hasCredentialAuth">
+      <label
+        for="username"
+        class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"
+      >
         Username
       </label>
       <div class="mt-2">
@@ -17,9 +23,12 @@
       </div>
     </div>
 
-    <div>
+    <div v-if="props.hasCredentialAuth">
       <div class="flex items-center justify-between">
-        <label for="password" class="block text-sm font-medium leading-6 text-gray-800 dark:text-white">
+        <label
+          for="password"
+          class="block text-sm font-medium leading-6 text-gray-800 dark:text-white"
+        >
           Password
         </label>
       </div>
@@ -38,7 +47,7 @@
 
     <fieldset v-if="props.consentMode === 'checkbox'">
       <div class="space-y-5">
-        <div class="relative flex items-start">
+        <div class="relative flex items-start justify-center">
           <div class="flex h-6 items-center">
             <input
               id="consent-checkbox"
@@ -49,7 +58,10 @@
             />
           </div>
           <div class="ml-3 text-sm leading-6">
-            <label for="consent-checkbox" class="font-medium text-gray-500">
+            <label
+              for="consent-checkbox"
+              class="font-medium text-gray-500"
+            >
               I agree to the terms of the
               <a
                 class="cursor-pointer font-semibold leading-6 text-indigo-400 hover:text-indigo-300"
@@ -71,7 +83,7 @@
       @confirm="open = false"
     />
 
-    <div>
+    <div v-if="props.hasCredentialAuth">
       <button
         type="submit"
         :disabled="missingConsent"
@@ -88,18 +100,25 @@
       </button>
     </div>
 
-    <LoginFailed :show="dialogOpen" :dialog-open="dialogOpen" :message="errorMessage" @change="dialogOpen = false" />
+    <LoginFailed
+      :show="dialogOpen"
+      :dialog-open="dialogOpen"
+      :message="errorMessage"
+      @change="dialogOpen = false"
+    />
   </form>
 
   <!-- Single Sign On Buttons -->
   <template v-if="props.ssoProviders.length > 0">
-    <div class="my-4">
+    <div :class="props.hasCredentialAuth ? 'my-4' : 'mb-4 mt-12'">
       <div class="relative">
         <div class="absolute inset-0 flex items-center">
           <div class="w-full border-t border-gray-300"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-          <span class="bg-gray-100 px-4 text-gray-500 dark:bg-gray-900">or sign in with</span>
+          <span class="bg-gray-100 px-4 text-gray-500 dark:bg-gray-900">
+            {{ props.hasCredentialAuth ? "or sign in with" : "Sign in with" }}
+          </span>
         </div>
       </div>
     </div>
@@ -145,6 +164,11 @@ const props = defineProps({
     type: Array as PropType<{ id: string; label: string; href: string }[]>,
     required: false,
     default: () => [],
+  },
+  hasCredentialAuth: {
+    type: Boolean,
+    required: false,
+    default: true,
   },
 });
 

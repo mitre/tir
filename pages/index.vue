@@ -10,28 +10,49 @@
 
     <div class="flex h-screen flex-1 flex-col justify-between px-6 py-8 lg:px-8">
       <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-        <img class="mx-auto h-40 w-40" src="../assets/TIR_Icon.svg" alt="Your Company" />
+        <img
+          class="mx-auto h-40 w-40"
+          src="../assets/TIR_Icon.svg"
+          alt="Your Company"
+        />
         <h1 class="mt-8 text-center text-3xl font-bold text-gray-800 dark:text-white">Welcome to TIR</h1>
         <h4 class="mt-5 text-center text-xl font-bold text-gray-800 dark:text-white">Sign in to your account</h4>
 
         <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-          <div class="sm:hidden">
-            <label for="authMethods" class="sr-only">Select authentication method</label>
+          <div
+            v-if="hasCredentialAuth"
+            class="sm:hidden"
+          >
+            <label
+              for="authMethods"
+              class="sr-only"
+              >Select authentication method</label
+            >
             <select
               id="authMethods"
               v-model="selectedAuthMethod"
               name="authMethods"
               class="block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base sm:text-sm"
             >
-              <option v-for="method in authMethods" :key="method.name" :value="method.name">
+              <option
+                v-for="method in authMethods"
+                :key="method.name"
+                :value="method.name"
+              >
                 {{ method.name }}
               </option>
             </select>
           </div>
 
-          <div class="hidden sm:block">
+          <div
+            v-if="hasCredentialAuth"
+            class="hidden sm:block"
+          >
             <div class="relative border-b border-gray-200">
-              <nav class="-mb-px flex space-x-8 overflow-x-auto pb-px" aria-label="Authentication Methods">
+              <nav
+                class="-mb-px flex space-x-8 overflow-x-auto pb-px"
+                aria-label="Authentication Methods"
+              >
                 <div
                   v-for="method in authMethods"
                   :key="method.name"
@@ -56,6 +77,7 @@
               :consent-text="consentText"
               :title="loginBannerTitle"
               :sso-providers="ssoProviders"
+              :has-credential-auth="hasCredentialAuth"
             />
           </div>
         </div>
@@ -152,6 +174,8 @@ const authMethods = ref<AuthMethod[]>(
   ].filter(Boolean) as AuthMethod[],
 );
 
+const hasCredentialAuth = computed(() => authMethods.value.length > 0);
+
 const defaultMethod =
   authMethods.value.find((m) =>
     m.type === "local" ? defaultProvider === "local" : `ldap:${m.providerId}` === defaultProvider,
@@ -161,9 +185,7 @@ if (defaultMethod) defaultMethod.current = true;
 const selectedAuthMethod = ref(authMethods.value.find((m) => m.current)?.name || "Local");
 
 const selectedMethod = computed(
-  () =>
-    authMethods.value.find((m) => m.name === selectedAuthMethod.value) ||
-    ({ type: "local" } as AuthMethod),
+  () => authMethods.value.find((m) => m.name === selectedAuthMethod.value) || ({ type: "local" } as AuthMethod),
 );
 
 watch(selectedAuthMethod, (newMethod, oldMethod) => {
