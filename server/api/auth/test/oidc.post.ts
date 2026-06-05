@@ -84,7 +84,11 @@ export default defineEventHandler(async (event) => {
   const discoveryUrl = `${base}/.well-known/openid-configuration`;
   const discovery = await httpJson(discoveryUrl, { rejectUnauthorized });
 
-  if (!discovery.ok) {
+  if (discovery.ok) {
+    const issuerNote = discovery.data?.issuer ? ` (issuer: ${discovery.data.issuer})` : "";
+    const certNote = sslInsecure ? " (SSL verification disabled)" : "";
+    checks.push({ name: "Discovery", ok: true, message: `Valid OIDC metadata found${issuerNote}${certNote}` });
+  } else {
     const direct = await httpJson(base, { rejectUnauthorized });
     if (direct.ok && direct.data?.authorization_endpoint) {
       checks.push({ name: "Discovery", ok: true, message: `Found at ${base}` });
@@ -97,10 +101,6 @@ export default defineEventHandler(async (event) => {
       });
       return { ok: false, checks };
     }
-  } else {
-    const issuerNote = discovery.data?.issuer ? ` (issuer: ${discovery.data.issuer})` : "";
-    const certNote = sslInsecure ? " (SSL verification disabled)" : "";
-    checks.push({ name: "Discovery", ok: true, message: `Valid OIDC metadata found${issuerNote}${certNote}` });
   }
 
   const meta = discovery.data;
@@ -108,7 +108,7 @@ export default defineEventHandler(async (event) => {
   if (meta?.jwks_uri) {
     const jwks = await httpJson(meta.jwks_uri, { rejectUnauthorized });
     const keyCount = jwks.data?.keys?.length ?? 0;
-    const keyPlural = keyCount !== 1 ? "s" : "";
+    const keyPlural = keyCount === 1 ? "" : "s";
     checks.push({
       name: "JWKS",
       ok: jwks.ok && keyCount > 0,
@@ -163,7 +163,7 @@ export default defineEventHandler(async (event) => {
     checks.push({
       name: "Client credentials",
       ok: false,
-      message: !clientId ? "Client ID not configured" : "No secret available -- enter a secret to test credentials",
+      message: clientId ? "No secret available -- enter a secret to test credentials" : "Client ID not configured",
     });
   } else {
     checks.push({ name: "Client credentials", ok: false, message: "Token endpoint missing from discovery document" });

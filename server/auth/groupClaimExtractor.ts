@@ -83,5 +83,5 @@ export class GroupClaimExtractor {
 
 function resolveDotPath(obj: Record<string, any>, path: string): any {
   if (!path) return undefined;
-  return path.split(".").reduce((cur, key) => (cur != null ? cur[key] : undefined), obj);
+  return path.split(".").reduce((cur, key) => (cur == null ? undefined : cur[key]), obj);
 }

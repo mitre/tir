@@ -62,7 +62,7 @@ async function loadLocalConfig(): Promise<LocalAuthConfig> {
 async function saveLocalConfig(input: LocalAuthConfig): Promise<void> {
   await Promise.all(
     Object.entries(input).map(([field, value]) =>
-      value !== undefined ? setRawConfigValue(localKey(field), value) : Promise.resolve(),
+      value === undefined ? Promise.resolve() : setRawConfigValue(localKey(field), value),
     ),
   );
 }

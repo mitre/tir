@@ -80,14 +80,14 @@ export default defineEventHandler(async (event) => {
       } catch (err: any) {
         checks.push({ name: "Bind", ok: false, message: err.message ?? "Bind failed" });
       }
-    } else if (!bindDn) {
-      checks.push({ name: "Bind", ok: false, message: "Bind DN not configured" });
-    } else {
+    } else if (bindDn) {
       checks.push({
         name: "Bind",
         ok: false,
         message: "No password available - enter a password to test bind",
       });
+    } else {
+      checks.push({ name: "Bind", ok: false, message: "Bind DN not configured" });
     }
   } finally {
     try {
