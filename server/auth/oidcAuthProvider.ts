@@ -36,7 +36,7 @@ function insecureFetch(input: string | URL | Request, init?: RequestInit): Promi
         res.on("end", () => {
           const resHeaders = new Headers();
           for (const [k, v] of Object.entries(res.headers)) {
-            if (Array.isArray(v)) v.forEach((s) => resHeaders.append(k, s));
+            if (Array.isArray(v)) for (const s of v) resHeaders.append(k, s);
             else if (v) resHeaders.set(k, v);
           }
           resolve(new Response(Buffer.concat(chunks), { status: res.statusCode ?? 200, headers: resHeaders }));
