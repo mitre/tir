@@ -14,11 +14,17 @@
           </p>
         </div>
         <div class="flex flex-1 flex-wrap gap-4 text-gray-800 dark:text-white">
-          <label class="flex cursor-pointer items-center gap-2">
+          <label
+            :class="[
+              'flex items-center gap-2',
+              authConfig.local.enable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+            ]"
+          >
             <input
               v-model="authConfig.defaultLoginProvider"
               type="radio"
               value="local"
+              :disabled="!authConfig.local.enable"
               class="text-indigo-600"
             />
             <span class="text-sm">Local</span>
@@ -26,12 +32,13 @@
           <label
             v-for="p in authConfig.ldap"
             :key="p.id"
-            class="flex cursor-pointer items-center gap-2"
+            :class="['flex items-center gap-2', p.enable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50']"
           >
             <input
               v-model="authConfig.defaultLoginProvider"
               type="radio"
               :value="`ldap:${p.id}`"
+              :disabled="!p.enable"
               class="text-indigo-600"
             />
             <span class="text-sm">{{ p.label }}</span>
@@ -141,10 +148,35 @@ function takeSnapshot() {
   dirty.value = false;
 }
 
+function defaultProviderEnabled(): boolean {
+  const cfg = authConfig.value;
+  if (!cfg || !cfg.defaultLoginProvider) return true;
+  if (cfg.defaultLoginProvider === "local") return cfg.local.enable;
+  if (cfg.defaultLoginProvider.startsWith("ldap:")) {
+    const id = cfg.defaultLoginProvider.slice("ldap:".length);
+    return Boolean(cfg.ldap.find((p) => p.id === id)?.enable);
+  }
+  return false;
+}
+
+function firstEnabledProvider(): string {
+  const cfg = authConfig.value;
+  if (!cfg) return "";
+  if (cfg.local.enable) return "local";
+  const ldap = cfg.ldap.find((p) => p.enable);
+  return ldap ? `ldap:${ldap.id}` : "";
+}
+
+function normalizeDefaultProvider() {
+  if (!authConfig.value || defaultProviderEnabled()) return;
+  authConfig.value.defaultLoginProvider = firstEnabledProvider();
+}
+
 watch(
   [authConfig, providerSecrets],
   () => {
     if (!authConfig.value) return;
+    normalizeDefaultProvider();
     const hasSecrets = Object.values(providerSecrets.value).some(Boolean);
     dirty.value = hasSecrets || JSON.stringify(authConfig.value) !== cleanSnapshot;
   },
@@ -153,6 +185,7 @@ watch(
 
 onMounted(async () => {
   authConfig.value = await $fetch<AuthConfig>("/api/config/authLoad");
+  normalizeDefaultProvider();
   takeSnapshot();
 
   document.addEventListener("click", (e) => {
@@ -285,6 +318,7 @@ async function saveAuthConfig() {
 
 async function discardChanges() {
   authConfig.value = await $fetch<AuthConfig>("/api/config/authLoad");
+  normalizeDefaultProvider();
   takeSnapshot();
 }
 </script>
