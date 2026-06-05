@@ -46,8 +46,10 @@ export default defineEventHandler(async (event) => {
 
   if (providerType === "github" || providerType === "gitlab" || providerType === "bitbucket") {
     const p = KNOWN_PROVIDERS[providerType];
-    checks.push(await probeGet(`${providerType} API`, p.health(base)));
-    checks.push(await probe(`${providerType} OAuth endpoint`, p.authorize(base)));
+    checks.push(
+      await probeGet(`${providerType} API`, p.health(base)),
+      await probe(`${providerType} OAuth endpoint`, p.authorize(base)),
+    );
   } else if (providerType === "custom") {
     if (authorizationUrl) checks.push(await probe("Authorization URL", authorizationUrl));
     else checks.push({ name: "Authorization URL", ok: false, message: "Not configured" });

@@ -307,9 +307,10 @@ function resolveRole(
 ): number | null {
   if (mappings.length === 0) return null;
 
+  const mappingSummary = mappings.map((m) => `${m.identifier}->${m.userRoleId}`).join(", ");
   logger.debug({
     service: "auth",
-    message: `OAuth role resolution -- user groups: [${userGroups.join(", ") || "none"}], mappings: [${mappings.map((m) => `${m.identifier}->${m.userRoleId}`).join(", ")}]`,
+    message: `OAuth role resolution -- user groups: [${userGroups.join(", ") || "none"}], mappings: [${mappingSummary}]`,
   });
 
   let userRoleId: number | null = null;
