@@ -80,7 +80,11 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!bindPassword) {
-    throw createError({ statusCode: 400, message: "Bind password is required — enter it in the Password field or save the config first." });
+    throw createError({
+      statusCode: 400,
+      message:
+        "Bind password is required — enter it in the Password field or save the config first.",
+    });
   }
 
   const clientOptions: any = { url, connectTimeout: CONNECT_TIMEOUT_MS };
@@ -107,11 +111,24 @@ export default defineEventHandler(async (event) => {
       const { searchEntries } = await client.search(baseDn, {
         scope: "sub",
         filter: `(|(sAMAccountName=${escaped})(userPrincipalName=${escaped}))`,
-        attributes: ["dn", "sAMAccountName", "userPrincipalName", "displayName", "givenName", "sn", "mail", "userAccountControl", attr],
+        attributes: [
+          "dn",
+          "sAMAccountName",
+          "userPrincipalName",
+          "displayName",
+          "givenName",
+          "sn",
+          "mail",
+          "userAccountControl",
+          attr,
+        ],
       });
 
       if (searchEntries.length !== 1) {
-        throw createError({ statusCode: 404, message: `User not found or not unique: ${username}` });
+        throw createError({
+          statusCode: 404,
+          message: `User not found or not unique: ${username}`,
+        });
       }
 
       ldapUser = searchEntries[0] as Entry;
@@ -128,7 +145,10 @@ export default defineEventHandler(async (event) => {
       });
 
       if (searchEntries.length !== 1) {
-        throw createError({ statusCode: 404, message: `User not found or not unique: ${username}` });
+        throw createError({
+          statusCode: 404,
+          message: `User not found or not unique: ${username}`,
+        });
       }
 
       ldapUser = searchEntries[0] as Entry;
@@ -150,7 +170,7 @@ export default defineEventHandler(async (event) => {
       firstName = firstAttr(ldapUser.givenName) || displayName.split(" ")[0] || username;
       lastName = firstAttr(ldapUser.sn) || displayName.split(" ").slice(1).join(" ") || "Unknown";
       email = firstAttr(ldapUser.mail) || firstAttr(ldapUser.userPrincipalName);
-      if (!email || !email.includes("@")) {
+      if (!email?.includes("@")) {
         const domain = domainFromBaseDn(baseDn);
         const sam = firstAttr(ldapUser.sAMAccountName) || username;
         email = domain ? `${sam}@${domain}` : `${sam}@example.com`;
@@ -167,6 +187,8 @@ export default defineEventHandler(async (event) => {
     if (err.statusCode) throw err;
     throw createError({ statusCode: 401, message: err.message ?? "Authentication failed." });
   } finally {
-    try { await client.unbind(); } catch {}
+    try {
+      await client.unbind();
+    } catch {}
   }
 });

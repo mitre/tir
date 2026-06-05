@@ -35,7 +35,6 @@ function allAttrs(val: unknown): string[] {
   return val ? [val as string] : [];
 }
 
-
 function buildClientOptions(config: LDAPProviderConfig): any {
   const opts: any = { url: config.url, connectTimeout: CONNECT_TIMEOUT_MS };
   if (config.ssl) {
@@ -121,7 +120,11 @@ export class LDAPAuthProvider extends AuthProvider {
 
       logger.info({
         service: "auth",
-        message: `LDAP '${this.config.label}' group resolution for ${username} -- groups=${JSON.stringify(groups)}, role=${userRoleId}`,
+        message: `LDAP '${
+          this.config.label
+        }' group resolution for ${username} -- groups=${JSON.stringify(
+          groups,
+        )}, role=${userRoleId}`,
       });
 
       if ((this.config.groupMappings || "").trim() && userRoleId === null) {
@@ -131,7 +134,10 @@ export class LDAPAuthProvider extends AuthProvider {
       return this.finalizeLogin(event, { email, firstName, lastName }, "ldap", userRoleId);
     } catch (error: any) {
       if (error instanceof H3Error) throw error;
-      logger.info({ service: "auth", message: `LDAP auth failed for ${username}: ${error.message}` });
+      logger.info({
+        service: "auth",
+        message: `LDAP auth failed for ${username}: ${error.message}`,
+      });
       return null;
     } finally {
       await client.unbind();
@@ -182,7 +188,10 @@ export class LDAPAuthProvider extends AuthProvider {
       // Check disabled account flag (bit 1 of userAccountControl)
       const uac = Number.parseInt(adUser.userAccountControl as string, 10);
       if (!Number.isNaN(uac) && uac & UAC_ACCOUNT_DISABLED) {
-        logger.info({ service: "auth", message: `AD login rejected -- account disabled: ${username}` });
+        logger.info({
+          service: "auth",
+          message: `AD login rejected -- account disabled: ${username}`,
+        });
         return null;
       }
 
@@ -195,7 +204,11 @@ export class LDAPAuthProvider extends AuthProvider {
 
       logger.info({
         service: "auth",
-        message: `AD '${this.config.label}' group resolution for ${username} -- groups=${JSON.stringify(groups)}, role=${userRoleId}`,
+        message: `AD '${
+          this.config.label
+        }' group resolution for ${username} -- groups=${JSON.stringify(
+          groups,
+        )}, role=${userRoleId}`,
       });
 
       if ((this.config.groupMappings || "").trim() && userRoleId === null) {
@@ -223,7 +236,7 @@ export class LDAPAuthProvider extends AuthProvider {
     const lastName = firstAttr(adUser.sn) || displayName.split(" ").slice(1).join(" ") || "Unknown";
 
     let email = firstAttr(adUser.mail) || firstAttr(adUser.userPrincipalName);
-    if (!email || !email.includes("@")) {
+    if (!email?.includes("@")) {
       const domain = domainFromBaseDn(baseDn);
       const sam = firstAttr(adUser.sAMAccountName) || username;
       email = domain ? `${sam}@${domain}` : `${sam}@example.com`;
