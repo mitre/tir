@@ -2,38 +2,16 @@ import { Client, type Entry } from "ldapts";
 import { H3Event, H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
 import { GroupClaimExtractor } from "./groupClaimExtractor";
+import {
+  UAC_ACCOUNT_DISABLED,
+  escapeFilter,
+  domainFromBaseDn,
+  firstAttr,
+  allAttrs,
+} from "./ldapUtils";
 import type { LDAPProviderConfig } from "~/types/auth";
 
 const CONNECT_TIMEOUT_MS = 10_000;
-const UAC_ACCOUNT_DISABLED = 0x0002;
-
-// RFC 4515 -- escape special characters in LDAP filter values
-function escapeFilter(value: string): string {
-  return value
-    .replace(/\\/g, "\\5c")
-    .replace(/\0/g, "\\00")
-    .replace(/\(/g, "\\28")
-    .replace(/\)/g, "\\29")
-    .replace(/\*/g, "\\2a");
-}
-
-function domainFromBaseDn(baseDn: string): string {
-  return baseDn
-    .split(",")
-    .filter((p) => p.trim().toLowerCase().startsWith("dc="))
-    .map((p) => p.trim().slice(3))
-    .join(".");
-}
-
-function firstAttr(val: unknown, fallback = ""): string {
-  if (Array.isArray(val)) return (val[0] as string) || fallback;
-  return (val as string) || fallback;
-}
-
-function allAttrs(val: unknown): string[] {
-  if (Array.isArray(val)) return val as string[];
-  return val ? [val as string] : [];
-}
 
 function buildClientOptions(config: LDAPProviderConfig): any {
   const opts: any = { url: config.url, connectTimeout: CONNECT_TIMEOUT_MS };

@@ -1,36 +1,15 @@
 import { Client, type Entry } from "ldapts";
 import { GroupClaimExtractor } from "~/server/auth/groupClaimExtractor";
+import {
+  UAC_ACCOUNT_DISABLED,
+  escapeFilter,
+  firstAttr,
+  allAttrs,
+  domainFromBaseDn,
+} from "~/server/auth/ldapUtils";
 import { getRawConfigValue } from "~/server/utils/config/tirConfig";
 
 const CONNECT_TIMEOUT_MS = 10_000;
-const UAC_ACCOUNT_DISABLED = 0x0002;
-
-function escapeFilter(value: string): string {
-  return value
-    .replace(/\\/g, "\\5c")
-    .replace(/\0/g, "\\00")
-    .replace(/\(/g, "\\28")
-    .replace(/\)/g, "\\29")
-    .replace(/\*/g, "\\2a");
-}
-
-function firstAttr(val: unknown, fallback = ""): string {
-  if (Array.isArray(val)) return (val[0] as string) || fallback;
-  return (val as string) || fallback;
-}
-
-function allAttrs(val: unknown): string[] {
-  if (Array.isArray(val)) return val as string[];
-  return val ? [val as string] : [];
-}
-
-function domainFromBaseDn(baseDn: string): string {
-  return baseDn
-    .split(",")
-    .filter((p) => p.trim().toLowerCase().startsWith("dc="))
-    .map((p) => p.trim().slice(3))
-    .join(".");
-}
 
 function resolveRoleQuiet(groupMappings: string, groups: string[]): number | null {
   const raw = (groupMappings || "").trim();
