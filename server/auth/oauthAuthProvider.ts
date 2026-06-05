@@ -160,7 +160,7 @@ export class OAuthAuthProvider extends AuthProvider {
       if (!this.config.tokenUrl) throw new H3Error("Custom OAuth: tokenUrl is required.");
       tokenUrl = this.config.tokenUrl;
     } else {
-      tokenUrl = KNOWN_PROVIDERS[providerType as Exclude<OAuthProviderType, "custom">].token(
+      tokenUrl = KNOWN_PROVIDERS[providerType].token(
         this.config.baseUrl,
       );
     }

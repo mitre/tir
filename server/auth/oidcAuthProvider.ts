@@ -89,7 +89,7 @@ export class OIDCAuthProvider extends AuthProvider {
     const options: any = {};
     if (httpAllowed) options.execute = [client.allowInsecureRequests]; // eslint-disable-line @typescript-eslint/no-deprecated
     if (config.sslInsecure) {
-      options[client.customFetch as any] = insecureFetch;
+      options[client.customFetch] = insecureFetch;
       logger.warning({ service: "auth", message: `OIDC '${config.label}' (${config.id}): SSL verification disabled -- not safe for production` });
     }
 
