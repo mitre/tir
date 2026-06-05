@@ -23,43 +23,47 @@ export class AuthService {
     this.config = cfg;
 
     const anyOtherEnabled =
-      cfg.ldap.some((p) => p.enable) || cfg.oidc.some((p) => p.enable) || cfg.oauth.some((p) => p.enable);
+      cfg.ldap.some((p) => p.enable) ||
+      cfg.oidc.some((p) => p.enable) ||
+      cfg.oauth.some((p) => p.enable);
+    const noProvidersEnabled = !cfg.local.enable && !anyOtherEnabled;
 
-    if (cfg.local.enable || !anyOtherEnabled) {
-      if (!cfg.local.enable && !anyOtherEnabled) {
-        logger.alert({
-          service: "auth",
-          message: "No auth providers enabled. Falling back to local auth.",
-        });
-      }
+    if (noProvidersEnabled) {
+      logger.alert({
+        service: "auth",
+        message: "No auth providers enabled. Falling back to local auth.",
+      });
+    }
+    if (cfg.local.enable || noProvidersEnabled) {
       this.providers.set("local", await authProviderRegistry.local(cfg.local));
     }
 
-    for (const ldapCfg of cfg.ldap) {
-      if (!ldapCfg.enable) continue;
-      const password = await getRawConfigValue(`auth:ldap:${ldapCfg.id}:password`);
-      const fullCfg = { ...ldapCfg, ...(password ? { password } : {}) };
-      this.providers.set(`ldap:${ldapCfg.id}`, await authProviderRegistry.ldap(fullCfg));
-    }
-
-    for (const oidcCfg of cfg.oidc) {
-      if (!oidcCfg.enable) continue;
-      const secret = await getRawConfigValue(`auth:oidc:${oidcCfg.id}:secret`);
-      const fullCfg = { ...oidcCfg, ...(secret ? { secret } : {}) };
-      this.providers.set(`oidc:${oidcCfg.id}`, await authProviderRegistry.oidc(fullCfg));
-    }
-
-    for (const oauthCfg of cfg.oauth) {
-      if (!oauthCfg.enable) continue;
-      const secret = await getRawConfigValue(`auth:oauth:${oauthCfg.id}:secret`);
-      const fullCfg = { ...oauthCfg, ...(secret ? { secret } : {}) };
-      this.providers.set(`oauth:${oauthCfg.id}`, await authProviderRegistry.oauth(fullCfg));
-    }
+    await this.loadProviderGroup("ldap", cfg.ldap, "password", authProviderRegistry.ldap);
+    await this.loadProviderGroup("oidc", cfg.oidc, "secret", authProviderRegistry.oidc);
+    await this.loadProviderGroup("oauth", cfg.oauth, "secret", authProviderRegistry.oauth);
 
     logger.info({
       service: "auth",
       message: `Auth providers loaded: ${[...this.providers.keys()].join(", ")}`,
     });
+  }
+
+  private async loadProviderGroup<
+    C extends { id: string; enable: boolean },
+    S extends "password" | "secret",
+  >(
+    kind: "ldap" | "oidc" | "oauth",
+    configs: C[],
+    secretField: S,
+    build: (cfg: C & Partial<Record<S, string>>) => Promise<AuthProvider>,
+  ) {
+    for (const cfg of configs) {
+      if (!cfg.enable) continue;
+      const secret = await getRawConfigValue(`auth:${kind}:${cfg.id}:${secretField}`);
+      const fullCfg = { ...cfg, ...(secret ? { [secretField]: secret } : {}) } as C &
+        Partial<Record<S, string>>;
+      this.providers.set(`${kind}:${cfg.id}`, await build(fullCfg));
+    }
   }
 
   getProvider(key: string): AuthProvider {
