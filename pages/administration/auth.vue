@@ -202,7 +202,7 @@ function nextId(prefix: string, existing: string[]): string {
 }
 
 function callbackUrl(): string {
-  if (typeof globalThis.window === "undefined") return "";
+  if (globalThis.window === undefined) return "";
   return `${globalThis.location.origin}/api/auth/callback`;
 }
 

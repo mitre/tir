@@ -267,7 +267,7 @@ const mappingPlaceholder = computed(() => placeholders[provider.value.providerTy
 const mappingHint = computed(() => hints[provider.value.providerType] ?? "Format: identifier:roleId —");
 
 function callbackUrl(): string {
-  if (typeof globalThis.window === "undefined") return "";
+  if (globalThis.window === undefined) return "";
   return `${globalThis.location.origin}/api/auth/callback`;
 }
 
