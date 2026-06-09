@@ -7,14 +7,22 @@ export async function processNessus(xmlContent: any, systemView: any[]) {
   let hostMAC = "N/A";
   let hostFqdn = "N/A";
   let systemId = null;
+  let credentialed = "";
   const totalSystemIDs: any[] = [];
   const hostArray = [];
-  let credentialed = "";
   const jsonObj = await parseStringPromise(xmlContent, { explicitArray: false });
   const reportHost = jsonObj.NessusClientData_v2.Report.ReportHost;
   if (reportHost.length > 0) {
     console.log("Multiple Hosts");
     for (let i = 0; i < reportHost.length; i++) {
+      let netBiosName = "N/A";
+      let hostName = "N/A";
+      let hostIp = "N/A";
+      let hostMAC = "N/A";
+      let hostFqdn = "N/A";
+      let systemId = null;
+      let credentialed = "";
+
       const credentialedResult = jsonObj.NessusClientData_v2.Report.ReportHost[
         i
       ].HostProperties.tag.filter(

@@ -3,8 +3,8 @@ import * as path from "path";
 import { IncomingMessage } from "http";
 import { parseXml, XMLDocument } from "libxmljs";
 import formidable from "formidable";
-import AdmZip from "adm-zip";
 import { DateTime } from "luxon";
+import {open} from "yauzl";
 import { importChecklist, importChecklistV3 } from "../../utils/checklist";
 import { importXccdf } from "../../utils/xccdf";
 import { System, Boundary, Boundary_User } from "../../../db/models";
@@ -145,40 +145,72 @@ const verifyXccdf = (xmlData: string): boolean => {
   }
   return false;
 };
-
 const processZip = async (zipFile: string, outputPath: string): Promise<string[]> => {
   if (!fs.existsSync(outputPath)) {
     fs.mkdirSync(outputPath, { recursive: true });
   }
 
-  const filelist = await extractLibrary(zipFile, outputPath);
-
-  return filelist;
+  try {
+    const fileList = await extractZip(zipFile, outputPath);
+    console.log('Extracted files:', fileList);
+    return fileList;
+  } catch (err) {
+    console.error(err);
+    throw err; 
+  }
 };
 
-const extractLibrary = async (sourceZip: string, outputDirectory: string): Promise<string[]> => {
-  const temporaryExtraction = path.join(outputDirectory, "tempExtraction");
-  const mainZip = new AdmZip(sourceZip);
-  const fileList: string[] = [];
-  await mainZip.extractAllTo(temporaryExtraction, true);
+const extractZip = (sourceZip: string, outputDirectory: string): Promise<string[]> => {
+  return new Promise((resolve, reject) => {
+    const fileList: string[] = [];
 
-  fs.readdirSync(temporaryExtraction, {
-    encoding: "utf8",
-    recursive: true,
-  }).forEach((nestedFile) => {
-    const filePath = path.join(temporaryExtraction, nestedFile);
-    if (
-      path.extname(nestedFile) === ".ckl" ||
-      path.extname(nestedFile) === ".cklb" ||
-      path.extname(nestedFile) === ".xml" ||
-      path.extname(nestedFile) === ".nessus"
-    ) {
-      fileList.push(filePath);
-    }
+    open(sourceZip, { lazyEntries: true }, (err, zipfile) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      zipfile.readEntry(); // Read first entry
+
+      zipfile.on('entry', (entry) => {
+        if (
+          path.extname(entry.fileName) === '.ckl' ||
+          path.extname(entry.fileName) === '.cklb' ||
+          path.extname(entry.fileName) === '.xml' ||
+          path.extname(entry.fileName) === '.nessus'
+        ) {
+          const entryPath = path.join(outputDirectory, entry.fileName);
+          fs.mkdirSync(path.dirname(entryPath), { recursive: true });
+          zipfile.openReadStream(entry, (err, readStream) => {
+            if (err) {
+              reject(err);
+            } else {
+              const writeStream = fs.createWriteStream(entryPath);
+              readStream.pipe(writeStream);
+              readStream.on('end', () => {
+                zipfile.readEntry();
+                fileList.push(entryPath);
+              });
+              readStream.on('error', (err) => {
+                reject(err);
+              });
+            }
+          });
+        } else {
+          zipfile.readEntry();
+        }
+      });
+
+      zipfile.on('end', () => {
+        fs.unlinkSync(sourceZip);
+        resolve(fileList);
+      });
+
+      zipfile.on('error', (err) => {
+        reject(err);
+      });
+    });
   });
-
-  fs.rmSync(sourceZip);
-  return fileList;
 };
 
 const createOrFindSystem = async (SystemName: string, BoundaryId: number): Promise<number> => {

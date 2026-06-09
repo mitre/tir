@@ -1,4 +1,4 @@
-import AdmZip from "adm-zip";
+import {ZipFile} from 'yazl';
 import { System } from "../../../db/models";
 import { convertToCKL3 } from "../../utils/checklist_v3";
 
@@ -8,24 +8,43 @@ export default defineEventHandler(async (event) => {
   // Use query params to endpoint:
   //       singlestig   (true/false)
   //       boundary     (number)
-  if (checkResult.BoundaryRoleId) {
-    const system = await System.findAll({ where: { BoundaryId: query.BoundaryId } });
+  //       IgnoreOverrides (true/false)
+
+  const ignoreOverrides = query.IgnoreOverrides === "true";
+
+  if (checkResult.BoundaryRoleId || query.BoundaryId !== null) {
+    const system = await System.findAll({ where: { BoundaryId: query.BoundaryId as number } });
     // Get Checklist Array
-    const checklists = await convertToCKL3(system, query.singlestig);
+    const checklists = await convertToCKL3(system, query.SingleStigPerCkl as string, ignoreOverrides);
 
     // Zip and return checklist array for boundary X
-    const zip = new AdmZip();
+    const zip = new ZipFile();
     for (const ckl of checklists) {
       const pretty = JSON.stringify(ckl);
       // using ckl.target_data.host_name / as folder containing each file to be zipped
-      zip.addFile(
-        ckl.target_data.host_name + "/" + ckl.title + ".cklb",
-        Buffer.from(pretty, "utf8"),
-        "Entering checklist v3 for " + ckl.title,
-      );
+      if (query.groupValue === "host") {
+         zip.addBuffer(
+          Buffer.from(pretty, "utf8"),
+          ckl.target_data.host_name + "/" + ckl.title + ".cklb",
+        );
+      } else if (query.groupValue === "system") {
+        zip.addBuffer(
+          Buffer.from(pretty, "utf8"),
+          ckl.target_data.tir_name + "/" + ckl.title + ".cklb",
+        );
+      }
     }
-    const willSendThis = zip.toBuffer();
-    return willSendThis;
+        // Set the response headers
+    event.node.res.setHeader('Content-Type', 'application/zip');
+    event.node.res.setHeader('Content-Disposition', `attachment; filename="${query.BoundaryName}-ChecklistsV3.zip"`);
+
+    // Pipe the ZIP file to the response
+    zip.outputStream.pipe(event.node.res);
+    zip.end();
+    return new Promise((resolve, reject) => {
+      event.node.res.on('finish', resolve);
+      event.node.res.on('error', reject);
+    });
   } else {
     throw createError({
       statusCode: 401,

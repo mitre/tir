@@ -1,10 +1,9 @@
 import * as fs from "fs";
 import * as path from "path";
 import { IncomingMessage } from "http";
+import { pipeline } from "node:stream/promises";
 import formidable from "formidable";
-import AdmZip from "adm-zip";
-import { parseStringPromise } from "xml2js";
-import { DateTime } from "luxon";
+import {open, ZipFile} from "yauzl";
 import {
   Assessment,
   AssessmentItem,
@@ -509,22 +508,46 @@ const processZip = async (zipFile: string, outputPath: string): Promise<string[]
   return filelist;
 };
 const extractLibrary = async (sourceZip: string, outputDirectory: string): Promise<string[]> => {
-  const temporaryExtraction = path.join(outputDirectory, "tempExtraction");
-  const mainZip = new AdmZip(sourceZip);
+  const temp = path.join(outputDirectory, "tempExtraction");
   const fileList: string[] = [];
-  await mainZip.extractAllTo(temporaryExtraction, true);
 
-  fs.readdirSync(temporaryExtraction, {
-    encoding: "utf8",
-    recursive: true,
-  }).forEach((nestedFile) => {
-    const filePath = path.join(temporaryExtraction, nestedFile);
-    if (path.extname(nestedFile) === ".json") {
-      fileList.push(filePath);
-    }
+  fs.mkdirSync(temp, { recursive: true });
+
+  const zip = await new Promise<ZipFile>((resolve, reject) => {
+    open(sourceZip, { lazyEntries: true }, (err, zipfile) => {
+      if (err || !zipfile) return reject(err);
+      resolve(zipfile);
+    });
   });
-
-  fs.rmSync(sourceZip);
+  await new Promise<void>((resolve, reject) => {
+    zip.readEntry();
+    zip.on("entry", (entry) => {
+      try {
+        if (entry.fileName.endsWith("/")) {
+          zip.readEntry();
+          return;
+        }
+        if (path.extname(entry.fileName).toLowerCase() === ".json") {
+          const outPath = path.join(temp, path.basename(entry.fileName));
+          zip.openReadStream(entry, async (err, readStream) => {
+            if (err || !readStream) return reject(err);
+            const writeStream = fs.createWriteStream(outPath);
+            await pipeline(readStream, writeStream);
+            fileList.push(outPath);
+            zip.readEntry();
+          });
+        } else {
+          zip.readEntry();
+        }
+      } catch (err) {
+        reject(err);
+      }
+    });
+    zip.on("end", resolve);
+    zip.on("error", reject);
+  });
+  zip.close();
+  fs.rmSync(sourceZip, { force: true });
   return fileList;
 };
 /**

@@ -2,7 +2,7 @@ import type { VulnCounts } from "~/types/nessus";
 import type { FindingCounts } from "~/types/findings";
 import type { ControlFindingCounts } from "~/types/controlFindings";
 
-type SystemEntry = {
+export type SystemEntry = {
   id: number;
   name: string;
   stigsApplied: number[];
@@ -17,6 +17,13 @@ type StigEntry = {
   findings: FindingCounts;
 };
 
+type PolicyDocument = {
+  id: number;
+  title: string;
+  version: string;
+  creationDate: string;
+  lastUpdate: string;
+}
 export type CveEntry = {
   id: number;
   cveId: string;
@@ -53,7 +60,7 @@ export type SctmEntry = {
   id: number;
   controlFamilyId: number;
   controlFamilyName: string | null;
-  abbreviation: string,
+  abbreviation: string;
   date: string;
   findings: ControlFindingCounts;
 };
@@ -65,7 +72,9 @@ export type BoundarySumary = {
     StigLibraryId: number;
     stigLibrary: string;
     PolicyDocumentId: number;
+    PolicyDocument:  PolicyDocument | undefined;
     TierId: number;
+    Tier: string | undefined;
   };
   boundaryView: StigEntry[];
   systemView: SystemEntry[];

@@ -3,8 +3,6 @@ import {
   Assessment,
   AssessmentItem,
   Boundary,
-  EvaluationItem,
-  Override,
   Stig,
   StigData,
   StigLibrary,
@@ -37,7 +35,6 @@ import { FindingCounts } from "~/types/findings";
 import { ControlFindingCounts } from "~/types/controlFindings";
 import { Tier } from "~/db/models/tier";
 import { PolicyDocument } from "~/db/models/policyDocument";
-import { StigOverride } from "~/db/models/stigOverride";
 
 export default defineEventHandler(async (event) => {
   const perfTimer = new PerfTimer();
@@ -92,26 +89,6 @@ export default defineEventHandler(async (event) => {
       {
         model: PolicyDocument,
       },
-      {
-        model: ControlRecord,
-        include: [
-          {
-            model: ControlRecordItem,
-            attributes: ["ComplianceStatusId", "AuditControlStatusId", "AssessorControlStatusId"],
-          },
-          {
-            model: ControlFamily,
-            attributes: ["id", "name"],
-            include: [
-              {
-                model: Control,
-                include: [ControlNumber],
-                limit: 1, // only need one to extract abbreviation
-              },
-            ],
-          },
-        ],
-      },
     ],
     where: {
       id: BoundaryId,
@@ -151,7 +128,7 @@ export default defineEventHandler(async (event) => {
     StigLibraryId: boundary.StigLibrary.id,
     stigLibrary: boundary.StigLibrary.filename,
     PolicyDocumentId: boundary.PolicyDocumentId,
-    PolicyDocument: boundary.PolicyDocument,
+    PolicyDocument: boundary?.PolicyDocument,
     TierId: boundary.TierId,
     Tier: boundary.Tier?.name,
   };
@@ -191,6 +168,7 @@ export default defineEventHandler(async (event) => {
       },
       {
         model: Stig,
+        required: true,
         attributes: ["id"],
         include: [
           {
@@ -244,25 +222,6 @@ export default defineEventHandler(async (event) => {
     ],
   });
 
-  const overrides = await Override.findAll({
-    include: {
-      model: System,
-      where: {
-        BoundaryId,
-      },
-    },
-  });
-
-  const stigOverrides = await StigOverride.findAll({
-    where: { type: "status" },
-    include: {
-      model: System,
-      where: {
-        BoundaryId,
-      },
-    },
-  });
-
   type SystemEntry = {
     id: number;
     name: string;
@@ -300,7 +259,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (!uniqueFinding.Stigs[0]?.id) {
+    if (!uniqueFinding.Stigs[0] || !uniqueFinding.Stigs[0].id) {
       break;
     }
 
@@ -356,7 +315,7 @@ export default defineEventHandler(async (event) => {
 
   const stigDetails = [];
 
-  if (boundary?.Systems) {
+  if (boundary && boundary.Systems) {
     for (const system of boundary.Systems) {
       if (system.Stigs) {
         if (system.Stigs.length === 0) {
@@ -376,13 +335,13 @@ export default defineEventHandler(async (event) => {
       boundaryView[i].title = details.title;
       boundaryView[i].version = `v${details.version}r${details.stigRelease}`;
       boundaryView[i].date = details.stigDate;
-      if (details.Evaluations[0]) {
+      if (details.Evaluations && details.Evaluations[0]) {
         boundaryView[i].lastUpdate = details.Evaluations[0].lastUpdate;
       }
     }
   }
 
-  const severityToValue = {
+  const severityToValue: { [key: string]: number } = {
     None: 0,
     Low: 1,
     Medium: 2,
@@ -416,8 +375,8 @@ export default defineEventHandler(async (event) => {
         pluginOutput: reportItem.pluginOutput,
         cvss3TemporalScore: reportItem.cvss3TemporalScore,
         cvssTemporalScore: reportItem.cvssTemporalScore,
-        severityOverride: reportItem.severityOverride,
-        statusOverride: reportItem.statusOverride,
+        severityOverride: reportItem.severityOverride ?? undefined,
+        statusOverride: reportItem.statusOverride ?? undefined,
         NessusReport: {
           id: reportItem.NessusReportId,
           System: {
@@ -461,7 +420,7 @@ export default defineEventHandler(async (event) => {
       id: vulnSummary[i].id,
       pluginId: vulnSummary[i].pluginId,
       pluginName: vulnSummary[i].pluginName,
-      riskFactor: valueToSeverity[severitySummary],
+      riskFactor: valueToSeverity[severitySummary as keyof typeof valueToSeverity],
       riskOverride: severityOverriden,
       status: uniqueTransform(statusSummary),
       Cves: cvesInVuln,
@@ -484,7 +443,7 @@ export default defineEventHandler(async (event) => {
   }
 
   vulnView.push(...notOpenVulns);
-
+  perfTimer.start("SCTM");
   const sctmView: SctmEntry[] = [];
   const auditCounts: ControlFindingCounts = {
     Compliant: 0,
@@ -499,56 +458,83 @@ export default defineEventHandler(async (event) => {
     Not_Applicable: 0,
     Not_Reviewed: 0,
   };
-  const revName = `rev${boundary.PolicyDocument.version}`;
+  const revName = `rev${boundary.PolicyDocument?.version}`;
   const revision = await ControlRevision.findOne({ where: { name: revName } });
-
-  let controlRecords: any[] = [];
-  if (revision) {
-    controlRecords = (boundary?.ControlRecords || []).filter(
-      (cr: any) => cr.ControlRevisionId === revision.id,
-    );
-  } else {
-    logger.info({
-      service: "SCTM",
-      message: `Revision ${revName} not found. Skipping ControlRecord filtering/creation...`,
+  if (!revision) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: `Control Revision ${revName} not found.`,
     });
   }
-
-  if (revision && !controlRecords?.length && boundary?.PolicyDocument?.version) {
+  let controlRecords = await ControlRecord.findAll({
+    where: {
+      BoundaryId,
+      ControlRevisionId: revision.id,
+    },
+    include: [
+      {
+        model: ControlRecordItem,
+        attributes: ["ComplianceStatusId", "AuditControlStatusId", "AssessorControlStatusId"],
+      },
+      {
+        model: ControlFamily,
+        attributes: ["id", "name"],
+        include: [
+          {
+            model: Control,
+            include: [ControlNumber],
+            limit: 1,
+          },
+        ],
+      },
+    ],
+  });
+  if (!controlRecords.length && boundary?.PolicyDocument?.version) {
     // Create new ControlRecords
     await createControlRecords(boundary.id, boundary.PolicyDocument.version);
 
     // Reload the boundary's ControlRecords after creation
-    const refreshedBoundary = await Boundary.findByPk(boundary.id, {
+    controlRecords = await ControlRecord.findAll({
+      where: { BoundaryId, ControlRevisionId: revision.id },
       include: [
         {
-          model: ControlRecord,
+          model: ControlRecordItem,
+          attributes: ["ComplianceStatusId", "AuditControlStatusId", "AssessorControlStatusId"],
+        },
+        {
+          model: ControlFamily,
+          attributes: ["id", "name"],
           include: [
             {
-              model: ControlRecordItem,
-              attributes: ["ComplianceStatusId", "AuditControlStatusId", "AssessorControlStatusId"],
-            },
-            {
-              model: ControlFamily,
-              attributes: ["id", "name"],
-              include: [
-                {
-                  model: Control,
-                  include: [ControlNumber],
-                  limit: 1, // only need one to extract abbreviation
-                },
-              ],
+              model: Control,
+              include: [ControlNumber],
+              limit: 1,
             },
           ],
         },
       ],
     });
-    controlRecords = (refreshedBoundary?.ControlRecords || []).filter(
-      (cr: any) => cr.ControlRevisionId === revision.id,
-    );
   }
 
   // Populate sctmView
+  const increment = (counts: any, id?: number) => {
+    if (!id) return;
+    switch (id) {
+      case 1:
+        counts.Compliant++;
+        break;
+      case 2:
+        counts.Non_Compliant++;
+        break;
+      case 3:
+        counts.Not_Applicable++;
+        break;
+      case 4:
+        counts.Not_Reviewed++;
+        break;
+    }
+  };
+
   for (const record of controlRecords) {
     const family = record.ControlFamily;
     const counts: ControlFindingCounts = {
@@ -558,51 +544,10 @@ export default defineEventHandler(async (event) => {
       Not_Reviewed: 0,
     };
 
-    if (record.ControlRecordItems?.length) {
-      for (const item of record.ControlRecordItems) {
-        switch (item.ComplianceStatusId) {
-          case 1:
-            counts.Compliant += 1;
-            break;
-          case 2:
-            counts.Non_Compliant += 1;
-            break;
-          case 3:
-            counts.Not_Applicable += 1;
-            break;
-          case 4:
-            counts.Not_Reviewed += 1;
-            break;
-        }
-        switch (item.AuditControlStatusId) {
-          case 1:
-            auditCounts.Compliant += 1;
-            break;
-          case 2:
-            auditCounts.Non_Compliant += 1;
-            break;
-          case 3:
-            auditCounts.Not_Applicable += 1;
-            break;
-          case 4:
-            auditCounts.Not_Reviewed += 1;
-            break;
-        }
-        switch (item.AssessorControlStatusId) {
-          case 1:
-            assessorCounts.Compliant += 1;
-            break;
-          case 2:
-            assessorCounts.Non_Compliant += 1;
-            break;
-          case 3:
-            assessorCounts.Not_Applicable += 1;
-            break;
-          case 4:
-            assessorCounts.Not_Reviewed += 1;
-            break;
-        }
-      }
+    for (const item of record.ControlRecordItems || []) {
+      increment(counts, item.ComplianceStatusId);
+      increment(auditCounts, item.AuditControlStatusId);
+      increment(assessorCounts, item.AssessorControlStatusId);
     }
 
     const abbreviation = family?.Controls?.[0]?.ControlNumber?.number?.split("-")[0] ?? "N/A";
@@ -617,6 +562,7 @@ export default defineEventHandler(async (event) => {
     };
     sctmView.push(sctmEntry);
   }
+  perfTimer.stop("SCTM");
 
   perfTimer.globalSummaryPrint();
   const boundarySummary: BoundarySumary = {
@@ -700,28 +646,6 @@ export default defineEventHandler(async (event) => {
         targetSum[key] += addends[key];
       }
     }
-  }
-
-  function addCounts<T extends { [key: string]: number }>(count1: T, count2: T): T {
-    const result = {} as T;
-
-    (Object.keys(count1) as (keyof T)[]).forEach((key) => {
-      result[key] = (count1[key] + count2[key]) as T[keyof T];
-    });
-
-    return result;
-  }
-
-  function addCountsSafe<T extends { [key: string]: number }>(count1: T, count2: T): T {
-    const result = {} as T;
-
-    const allKeys = new Set([...Object.keys(count1), ...Object.keys(count2)]);
-
-    allKeys.forEach((key) => {
-      result[key as keyof T] = ((count1[key] || 0) + (count2[key] || 0)) as T[keyof T];
-    });
-
-    return result;
   }
 
   function addSingleCount<T extends { [key: string]: number }>(

@@ -39,11 +39,11 @@
                               @click="[setOpen(index)]"
                             >
                               <div
-                                class="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
+                                class="flex size-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
                               >
                                 <component
                                   :is="item.icon"
-                                  class="h-6 w-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
+                                  class="size-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
                                   aria-hidden="true"
                                 />
                               </div>
@@ -65,10 +65,10 @@
                                 class="group flex cursor-pointer items-center gap-x-2 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-800"
                               >
                                 <div
-                                  class="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
+                                  class="flex size-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
                                 >
                                   <FolderOpenIcon
-                                    class="h-6 w-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
+                                    class="size-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
                                     aria-hidden="true"
                                   />
                                 </div>
@@ -96,10 +96,10 @@
                                 class="group flex cursor-pointer items-center gap-x-2 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-800"
                               >
                                 <div
-                                  class="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
+                                  class="flex size-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
                                 >
                                   <ArchiveBoxArrowDownIcon
-                                    class="h-6 w-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
+                                    class="size-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
                                     aria-hidden="true"
                                   />
                                 </div>
@@ -153,10 +153,10 @@
                                 class="group flex cursor-pointer items-center gap-x-2 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-800"
                               >
                                 <div
-                                  class="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
+                                  class="flex size-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
                                 >
                                   <FolderOpenIcon
-                                    class="h-6 w-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
+                                    class="size-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
                                     aria-hidden="true"
                                   />
                                 </div>
@@ -175,7 +175,7 @@
                                   webkitdirectory
                                   multiple
                                   class="hidden"
-                                  @change="handleChecklistChangeFolder(false)"
+                                  @change="handleImportFolder"
                                 />
                               </label>
                             </div>
@@ -184,49 +184,17 @@
                                 class="group flex cursor-pointer items-center gap-x-2 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-800"
                               >
                                 <div
-                                  class="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
-                                >
-                                  <ArchiveBoxArrowDownIcon
-                                    class="h-6 w-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
-                                    aria-hidden="true"
-                                  />
-                                </div>
-                                <div
-                                  class="mr-4 items-center justify-center font-semibold text-gray-800 group-hover:text-indigo-600 dark:text-white"
-                                >
-                                  .Zip Folder
-
-                                  <!-- <p class="mt-1 text-gray-300">{{ item.description }}</p> -->
-                                </div>
-                                <input
-                                  id="uploadResultsZip"
-                                  ref="fileInputZip"
-                                  name="files[]"
-                                  type="file"
-                                  class="hidden"
-                                  accept=".zip"
-                                  @change="handleChecklistChangeFolder(true)"
-                                />
-                              </label>
-                            </div>
-                            <div class="cursor-pointer rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-800">
-                              <label
-                                class="group flex cursor-pointer items-center gap-x-2 rounded-2xl hover:bg-gray-200 dark:hover:bg-gray-800"
-                              >
-                                <div
-                                  class="flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
+                                  class="flex size-11 flex-none items-center justify-center rounded-2xl bg-white group-hover:bg-gray-200 dark:bg-gray-700 dark:group-hover:bg-gray-800"
                                 >
                                   <CursorArrowRippleIcon
-                                    class="h-6 w-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
+                                    class="size-6 text-gray-800 group-hover:text-indigo-600 dark:text-gray-200"
                                     aria-hidden="true"
                                   />
                                 </div>
                                 <div
                                   class="mr-4 items-center justify-center font-semibold text-gray-800 group-hover:text-indigo-600 dark:text-white"
                                 >
-                                  File Selector
-
-                                  <!-- <p class="mt-1 text-gray-300">{{ item.description }}</p> -->
+                                  Files or Zip
                                 </div>
                                 <input
                                   id="uploadResultsMultiple"
@@ -235,7 +203,7 @@
                                   type="file"
                                   multiple
                                   class="hidden"
-                                  @change="handleChecklistChange()"
+                                  @change="handleImportFiles"
                                 />
                               </label>
                             </div>
@@ -255,7 +223,7 @@
                   <Menu v-slot="{ open }" as="div" class="relative inline-block text-left">
                     <div>
                       <MenuButton :id="id" class="hover:text-gray-800 dark:hover:text-white">
-                        <Cog6ToothIcon class="h-7 w-7 self-center" aria-hidden="true" />
+                        <Cog6ToothIcon class="size-7 self-center" aria-hidden="true" />
                       </MenuButton>
                     </div>
                     <transition
@@ -271,20 +239,20 @@
                           static
                           class="absolute right-0 mt-2 w-max origin-top-right divide-y divide-gray-300 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none dark:divide-gray-400 dark:bg-gray-700"
                         >
-                          <div class="px-1 py-1">
+                          <div class="p-1">
                             <MenuItem v-slot="{ active }">
                               <button
                                 :class="[
                                   active
                                     ? 'bg-gray-200 text-indigo-500 dark:bg-gray-800'
                                     : 'text-black dark:text-white ',
-                                  'group flex w-full items-center rounded-md px-2 py-2 text-sm',
+                                  'group flex w-full items-center rounded-md p-2 text-sm',
                                 ]"
                                 @click="exportBoundary()"
                               >
                                 <ArrowUpTrayIcon
                                   :active="active"
-                                  class="mr-2 h-5 w-5 text-black group-hover:text-indigo-500 dark:text-white"
+                                  class="mr-2 size-5 text-black group-hover:text-indigo-500 dark:text-white"
                                   aria-hidden="true"
                                 />
                                 {{ boundaryAlias.alias }} Export
@@ -292,7 +260,7 @@
                             </MenuItem>
                           </div>
 
-                          <div class="px-1 py-1">
+                          <div class="p-1">
                             <MenuItem v-slot="{ active }">
                               <label
                                 :class="[
@@ -304,7 +272,7 @@
                               >
                                 <ArrowDownTrayIcon
                                   :active="active"
-                                  class="mr-2 h-5 w-5 text-black group-hover:text-indigo-500 dark:text-white"
+                                  class="mr-2 size-5 text-black group-hover:text-indigo-500 dark:text-white"
                                   aria-hidden="true"
                                 />
                                 {{ boundaryAlias.alias }} Import
@@ -334,7 +302,7 @@
               <div>
                 <div class="flex items-center gap-x-3">
                   <div class="flex-none rounded-full bg-green-400/10 p-1 text-green-400">
-                    <div class="h-2 w-2 rounded-full bg-current" />
+                    <div class="size-2 rounded-full bg-current" />
                   </div>
                   <h1 class="flex gap-x-3 text-base leading-7">
                     <span
@@ -345,7 +313,7 @@
                     <span class="text-gray-600">/</span>
                     <span
                       class="cursor-pointer font-semibold text-gray-800 hover:text-indigo-500 dark:text-white dark:hover:text-indigo-500"
-                      ><a @click="reloadNuxtApp()">{{ boundaryName }}</a></span
+                      ><a>{{ boundaryName }}</a></span
                     >
                   </h1>
                 </div>
@@ -365,7 +333,7 @@
                 </div>
                 <div class="mt-2 items-baseline gap-x-2">
                   <span class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">
-                    {{ summary.systemView.length }}
+                    {{ summary?.systemView.length }}
                   </span>
                 </div>
               </div>
@@ -374,8 +342,8 @@
                   <SummaryCounts
                     title="STIG Findings"
                     :items="hoverItems"
-                    :stats1="summary.totalCounts"
-                    :stats2="summary.uniqueCounts"
+                    :stats1="summary?.totalCounts"
+                    :stats2="summary?.uniqueCounts"
                   />
                 </div>
               </div>
@@ -384,8 +352,8 @@
                   <SummaryCounts
                     title="Vuln Findings"
                     :items="vulnHoverItems"
-                    :stats1="summary.vulnTotalCounts"
-                    :stats2="summary.vulnUniqueCounts"
+                    :stats1="summary?.vulnTotalCounts"
+                    :stats2="summary?.vulnUniqueCounts"
                   />
                 </div>
               </div>
@@ -393,7 +361,7 @@
                 <div class="text-sm font-medium leading-6 text-gray-600 dark:text-gray-400">NIST Version</div>
                 <div class="mt-2 items-baseline gap-x-2">
                   <span class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
-                    {{ policyDocument.title }}
+                    {{ policyDocument?.title }}
                   </span>
                 </div>
               </div>
@@ -402,7 +370,7 @@
                 <div class="text-sm font-medium leading-6 text-gray-600 dark:text-gray-400">Stig Baseline</div>
                 <div class="mt-2 items-baseline gap-x-2">
                   <span class="break-all text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
-                    {{ summary.boundaryInfo.stigLibrary }}
+                    {{ summary?.boundaryInfo.stigLibrary }}
                   </span>
                 </div>
               </div>
@@ -412,8 +380,8 @@
                   <ControlCounts
                     title="Control Status"
                     :items="sctmHoverItems"
-                    :stats1="summary.assessorCounts"
-                    :stats2="summary.auditCounts"
+                    :stats1="summary?.assessorCounts"
+                    :stats2="summary?.auditCounts"
                   />
                 </div>
               </div>
@@ -434,7 +402,7 @@
                         : ' hover:bg-black/[0.12] dark:hover:bg-white/[0.12] ',
                     ]"
                   >
-                    {{ currentAlias.find((item) => item.term === "Boundary")?.alias }} View
+                    {{ currentAlias?.find((item) => item.term === "Boundary")?.alias }} View
                   </button>
                 </Tab>
                 <Tab v-slot="{ selected }" as="template">
@@ -478,10 +446,10 @@
                 </Tab>
               </TabList>
               <TabPanels>
-                <TabPanel><BoundaryView :summary="summary" /></TabPanel>
-                <TabPanel><SystemView :summary="summary" :asset-view="assetView" /></TabPanel>
-                <TabPanel><VulnView :summary="summary" /></TabPanel>
-                <TabPanel><SctmView :summary="summary" @refresh-summary="() => refreshNuxtData('SummaryAPI')" /></TabPanel>
+                <TabPanel><BoundaryView :summary="summary || {}" /></TabPanel>
+                <TabPanel><SystemView :summary="summary || {}" :asset-view="assetView" /></TabPanel>
+                <TabPanel><VulnView :summary="summary || {}" /></TabPanel>
+                <TabPanel><SctmView :summary="summary || {}" @refresh-summary="() =>  refreshSummary" /></TabPanel>
               </TabPanels>
             </TabGroup>
           </div>
@@ -525,7 +493,7 @@
                             >
                               <span class="absolute -inset-2.5" />
                               <span class="sr-only">Close panel</span>
-                              <XMarkIcon class="h-6 w-6" aria-hidden="true" />
+                              <XMarkIcon class="size-6" aria-hidden="true" />
                             </button>
                           </div>
                         </div>
@@ -664,7 +632,7 @@
                                   <span class="truncate text-xs">{{ selectedRole.name }}</span>
                                 </span>
                                 <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                                  <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                  <ChevronUpDownIcon class="size-5 text-gray-400" aria-hidden="true" />
                                 </span>
                               </ListboxButton>
 
@@ -674,7 +642,7 @@
                                 leave-to-class="opacity-0"
                               >
                                 <ListboxOptions
-                                  class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                                  class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm"
                                 >
                                   <ListboxOption
                                     v-for="item in roles"
@@ -702,7 +670,7 @@
                                           'absolute inset-y-0 right-0 flex items-center pr-4',
                                         ]"
                                       >
-                                        <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                                        <CheckIcon class="size-5" aria-hidden="true" />
                                       </span>
                                     </li>
                                   </ListboxOption>
@@ -724,7 +692,7 @@
                                     aria-describedby="comments-description"
                                     name="comments"
                                     type="checkbox"
-                                    class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                    class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                                   />
                                 </div>
                                 <div class="ml-3 text-sm leading-6">
@@ -781,7 +749,7 @@
                         <!-- end of the new labels -->
                       </div>
                     </div>
-                    <div class="flex flex-shrink-0 justify-end px-4 py-4">
+                    <div class="flex shrink-0 justify-end p-4">
                       <button
                         type="button"
                         class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
@@ -806,7 +774,7 @@
     </TransitionRoot>
     <!--End-->
     <TransitionRoot as="template" :show="loading">
-      <Dialog as="div" class="relative z-10" @close="loading = false">
+      <Dialog as="div" class="relative z-10" >
         <TransitionChild
           as="template"
           enter="ease-out duration-300"
@@ -816,7 +784,7 @@
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
-          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          <div class="fixed inset-0 bg-gray-500/75 transition-opacity" />
         </TransitionChild>
         <div class="fixed inset-0 z-10 overflow-y-auto">
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
@@ -830,7 +798,7 @@
               leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
               <DialogPanel
-                class="relative transform overflow-hidden rounded-lg bg-gray-200 px-4 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-900 sm:my-8 sm:w-full sm:max-w-xl sm:p-6"
+                class="relative overflow-hidden rounded-lg bg-gray-200 px-4 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-900 sm:my-8 sm:w-full sm:max-w-xl sm:p-6"
               >
                 <div>
                   <div class="flex h-7 items-center">
@@ -839,7 +807,7 @@
                       class="rounded-md bg-gray-200 text-indigo-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-white dark:bg-gray-900 dark:text-indigo-200"
                       @click="loading = false"
                     >
-                      <XMarkIcon class="h-6 w-6" aria-hidden="true" />
+                      <XMarkIcon class="size-6" aria-hidden="true" />
                     </button>
                   </div>
                   <div class="text-center">
@@ -860,7 +828,7 @@
       </Dialog>
     </TransitionRoot>
     <TransitionRoot as="template" :show="userInputModule">
-      <Dialog as="div" class="relative z-10" @close="userInputModule = false">
+      <Dialog as="div" class="relative z-10">
         <TransitionChild
           as="template"
           enter="ease-out duration-300"
@@ -870,7 +838,7 @@
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
-          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          <div class="fixed inset-0 bg-gray-500/75 transition-opacity" />
         </TransitionChild>
         <div class="fixed inset-0 z-10 overflow-y-auto">
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
@@ -884,7 +852,7 @@
               leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
               <DialogPanel
-                class="relative h-max w-2/3 transform overflow-y-auto rounded-lg bg-gray-200 px-4 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-900"
+                class="relative h-max w-2/3 overflow-y-auto rounded-lg bg-gray-200 px-4 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-900"
               >
                 <div class="px-4 dark:bg-gray-900 sm:px-6 lg:px-8">
                   <div class="sm:flex sm:items-center">
@@ -916,9 +884,8 @@
                                   <p class="relative isolate mr-4 p-4 text-left font-semibold">
                                     {{ item.folder }}
                                   </p>
-
                                   <Combobox
-                                    v-if="item.folder.search('.nessus') == -1"
+                                    v-if="!isNessusGroup(item)"
                                     v-model="folderSystem[folder]"
                                     as="div"
                                     @update:model-value="[updateFolder(folder, folderSystem[folder]), (query = '')]"
@@ -926,7 +893,7 @@
                                     <div class="relative font-medium">
                                       <ComboboxInput
                                         class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-gray-700 dark:text-white sm:text-sm sm:leading-6"
-                                        :display-value="(system) => system?.name"
+                                        :display-value="(system: any) => system?.name ?? ''"
                                         @click.stop
                                         @change="query = $event.target.value"
                                         @blur="query = ''"
@@ -934,12 +901,12 @@
                                       <ComboboxButton
                                         class="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none"
                                       >
-                                        <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                        <ChevronUpDownIcon class="size-5 text-gray-400" aria-hidden="true" />
                                       </ComboboxButton>
 
                                       <ComboboxOptions
-                                        v-if="filteredSystems.length > 0"
-                                        class="absolute z-10 mt-1 max-h-28 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-700 sm:text-sm"
+                                        v-if="filteredSystems && filteredSystems.length > 0"
+                                        class="absolute z-10 mt-1 max-h-28 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-gray-700 sm:text-sm"
                                       >
                                         <ComboboxOption
                                           v-for="system in filteredSystems"
@@ -965,7 +932,7 @@
                                                 active ? 'text-white' : 'text-indigo-600',
                                               ]"
                                             >
-                                              <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                                              <CheckIcon class="size-5" aria-hidden="true" />
                                             </span>
                                           </li>
                                         </ComboboxOption>
@@ -993,7 +960,7 @@
                                         class="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900 dark:text-gray-300"
                                       >
                                         <Combobox
-                                          v-if="item.folder.search('.nessus') == -1"
+                                          v-if="!isNessusGroup(item)"
                                           v-model="selectedSystem[folder][index]"
                                           as="div"
                                           @update:model-value="[(folderSystem[folder] = null), (query = '')]"
@@ -1001,19 +968,19 @@
                                           <div class="relative">
                                             <ComboboxInput
                                               class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-gray-700 dark:text-white sm:text-sm sm:leading-6"
-                                              :display-value="(system) => system?.name"
+                                              :display-value="(system: any) => system?.name ?? ''"
                                               @change="query = $event.target.value"
                                               @blur="query = ''"
                                             />
                                             <ComboboxButton
                                               class="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none"
                                             >
-                                              <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                              <ChevronUpDownIcon class="size-5 text-gray-400" aria-hidden="true" />
                                             </ComboboxButton>
 
                                             <ComboboxOptions
-                                              v-if="filteredSystems.length > 0"
-                                              class="absolute z-10 mt-1 max-h-28 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-700 sm:text-sm"
+                                              v-if="filteredSystems && filteredSystems.length > 0"
+                                              class="absolute z-10 mt-1 max-h-28 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-gray-700 sm:text-sm"
                                             >
                                               <ComboboxOption
                                                 v-for="system in filteredSystems"
@@ -1041,7 +1008,7 @@
                                                       active ? 'text-white' : 'text-indigo-600',
                                                     ]"
                                                   >
-                                                    <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                                                    <CheckIcon class="size-5" aria-hidden="true" />
                                                   </span>
                                                 </li>
                                               </ComboboxOption>
@@ -1052,32 +1019,25 @@
                                           v-else
                                           v-model="selectedSystem[folder][index]"
                                           as="div"
-                                          @update:model-value="
-                                            [
-                                              updateSelection(selectedSystem[folder][index], folder, index),
-                                              (query = ''),
-                                            ]
-                                          "
+                                          @update:model-value="query = ''"
                                         >
                                           <div class="relative">
                                             <ComboboxInput
                                               class="w-full rounded-md border-0 bg-white py-1.5 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:bg-gray-700 dark:text-white sm:text-sm sm:leading-6"
-                                              :display-value="(system) => system?.name"
+                                              :display-value="(system: any) => system?.name ?? ''"
                                               @change="query = $event.target.value"
                                               @blur="query = ''"
-                                              @keyup.enter="
-                                                [updateSelection(selectedSystem[folder][index], folder, index)]
-                                              "
+                                              @keyup.enter="query = ''"
                                             />
                                             <ComboboxButton
                                               class="absolute inset-y-0 right-0 flex items-center rounded-r-md px-2 focus:outline-none"
                                             >
-                                              <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                              <ChevronUpDownIcon class="size-5 text-gray-400" aria-hidden="true" />
                                             </ComboboxButton>
 
                                             <ComboboxOptions
-                                              v-if="filteredSystems.length > 0"
-                                              class="absolute z-10 mt-1 max-h-28 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-700 sm:text-sm"
+                                              v-if="filteredSystems && filteredSystems.length > 0"
+                                              class="absolute z-10 mt-1 max-h-28 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none dark:bg-gray-700 sm:text-sm"
                                             >
                                               <ComboboxOption
                                                 v-for="system in nessusSystems"
@@ -1105,7 +1065,7 @@
                                                       active ? 'text-white' : 'text-indigo-600',
                                                     ]"
                                                   >
-                                                    <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                                                    <CheckIcon class="size-5" aria-hidden="true" />
                                                   </span>
                                                 </li>
                                               </ComboboxOption>
@@ -1132,22 +1092,22 @@
                 <div class="mt-16 text-center">
                   <button
                     type="button"
-                    class="w-sm inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                    @click="userInputModule = false"
+                    class="inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    @click="openBackConfirm = true"
                   >
                     Back to {{ boundaryAlias.alias }}
                   </button>
 
                   <button
                     type="submit"
-                    class="w-sm ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    class="ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     @click="saveAssignment()"
                   >
                     Save Assignment
                   </button>
                 </div>
                 <div v-if="saveError" class="mt-4">
-                  <p class="align-center animate-pulse text-center font-semibold text-red-500">
+                  <p class="animate-pulse items-center text-center font-semibold text-red-500">
                     Assign a System to every CKL import
                   </p>
                 </div>
@@ -1158,7 +1118,7 @@
       </Dialog>
     </TransitionRoot>
     <TransitionRoot as="template" :show="nessusWarning">
-      <Dialog as="div" class="relative z-10" @close="nessusWarning = false">
+      <Dialog as="div" class="relative z-10">
         <TransitionChild
           as="template"
           enter="ease-out duration-300"
@@ -1168,7 +1128,7 @@
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
-          <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+          <div class="fixed inset-0 bg-gray-500/75 transition-opacity" />
         </TransitionChild>
         <div class="fixed inset-0 z-10 content-center">
           <div class="flex items-center justify-center p-4 text-center">
@@ -1182,7 +1142,7 @@
               leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
               <DialogPanel
-                class="relative my-8 w-full max-w-xl transform rounded-lg bg-gray-200 p-6 text-left shadow-xl transition-all dark:bg-gray-900"
+                class="relative my-8 w-full max-w-xl rounded-lg bg-gray-200 p-6 text-left shadow-xl transition-all dark:bg-gray-900"
               >
                 <div>
                   <div class="flex h-7 items-center">
@@ -1191,7 +1151,7 @@
                       class="rounded-md bg-gray-200 text-indigo-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white dark:bg-gray-900 dark:text-indigo-200"
                       @click="nessusWarning = false"
                     >
-                      <XMarkIcon class="h-6 w-6" aria-hidden="true" />
+                      <XMarkIcon class="size-6" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -1228,7 +1188,7 @@
                 <div class="mt-16 content-center text-center">
                   <button
                     type="button"
-                    class="w-sm inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    class="inline-flex justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                     @click="nessusWarning = false"
                   >
                     Back to Boundary
@@ -1236,10 +1196,173 @@
 
                   <button
                     type="submit"
-                    class="w-sm ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                    @click="[(nessusWarning = false), proceedWithImport()]"
+                    class="ml-4 inline-flex justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    @click="proceedAfterNessusWarning()"
                   >
                     Proceed with Import
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+    <TransitionRoot appear :show="openBackConfirm" as="template">
+      <Dialog as="div" class="relative z-50" @close="cancelBack">
+        <TransitionChild
+          as="template"
+          enter="duration-300 ease-out"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="duration-200 ease-in"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild
+              as="template"
+              enter="duration-300 ease-out"
+              enter-from="opacity-0 scale-95"
+              enter-to="opacity-100 scale-100"
+              leave="duration-200 ease-in"
+              leave-from="opacity-100 scale-100"
+              leave-to="opacity-0 scale-95"
+            >
+              <DialogPanel class="w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl dark:bg-gray-800">
+                <DialogTitle as="h3" class="text-lg font-semibold text-gray-900 dark:text-white">
+                  Leave this page?
+                </DialogTitle>
+                <div class="mt-2">
+                  <p class="text-sm text-gray-600 dark:text-gray-200">
+                    Any changes you made will be lost.
+                  </p>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    class="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                    @click="cancelBack"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                    @click="confirmBack"
+                  >
+                    Leave
+                  </button>
+                </div>
+              </DialogPanel>
+            </TransitionChild>
+          </div>
+        </div>
+      </Dialog>
+    </TransitionRoot>
+    <TransitionRoot as="template" :show="showAutoMatches">
+      <Dialog as="div" class="relative z-10" @close="showAutoMatches = false">
+        <TransitionChild
+          as="template"
+          enter="ease-out duration-300"
+          enter-from="opacity-0"
+          enter-to="opacity-100"
+          leave="ease-in duration-200"
+          leave-from="opacity-100"
+          leave-to="opacity-0"
+        >
+          <div class="fixed inset-0 bg-gray-500/75 transition-opacity" />
+        </TransitionChild>
+
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+          <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <TransitionChild
+              as="template"
+              enter="ease-out duration-300"
+              enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              enter-to="opacity-100 translate-y-0 sm:scale-100"
+              leave="ease-in duration-200"
+              leave-from="opacity-100 translate-y-0 sm:scale-100"
+              leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            >
+              <DialogPanel
+                class="relative overflow-hidden rounded-lg bg-white px-6 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-900 sm:w-full sm:max-w-4xl"
+              >
+                <div class="mb-4 flex items-center justify-between">
+                  <DialogTitle class="text-lg font-semibold text-gray-900 dark:text-white">
+                    Auto-Matched Imports
+                  </DialogTitle>
+                  <button
+                    type="button"
+                    class="text-gray-500 hover:text-gray-700 dark:hover:text-white"
+                    @click="showAutoMatches = false"
+                  >
+                    <XMarkIcon class="size-6" />
+                  </button>
+                </div>
+
+                <p class="mb-4 text-sm text-gray-700 dark:text-gray-300">
+                  The following imports were automatically matched. Review them before continuing.
+                </p>
+
+                <div class="max-h-96 overflow-y-auto">
+                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                      <tr>
+                        <th class="px-2 py-1 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Type
+                        </th>
+                        <th class="px-2 py-1 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                          File
+                        </th>
+                        <th class="px-2 py-1 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Host
+                        </th>
+                        <th class="px-2 py-1 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                          System
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                      <tr v-for="(match, idx) in autoMatched" :key="idx">
+                        <td class="px-2 py-1 text-sm text-gray-600 dark:text-gray-300">
+                          {{ match.type }}
+                        </td>
+                        <td class="px-2 py-1 text-sm text-gray-600 dark:text-gray-300">
+                          {{ match.fileName }}
+                        </td>
+                        <td class="px-2 py-1 text-sm text-gray-600 dark:text-gray-300">
+                          {{ match.hostName || "-" }}
+                        </td>
+                        <td class="px-2 py-1 text-sm text-gray-600 dark:text-gray-300">
+                          {{ match.systemName || getSystemNameById(match.systemId) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    class="rounded-md bg-gray-500 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600"
+                    @click="showAutoMatches = false"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+                    @click="continueWithAutoMatches"
+                  >
+                    Continue Import
                   </button>
                 </div>
               </DialogPanel>
@@ -1252,16 +1375,16 @@
     <Export
       v-if="showExport"
       :open="showExport"
-      :boundary-id="boundaryId"
-      :boundary-name="boundaryName"
+      :boundary-id="Number(boundaryId)"
+      :boundary-name="boundaryName || ''"
       @show-export="showExport = false"
     />
     <QuickAdd
-      v-if="openWidget"
+      v-if="openWidget && summary?.boundaryInfo?.StigLibraryId !== undefined"
       :open-members="openWidget"
-      :boundary-id="boundaryId"
+      :boundary-id="Number(boundaryId)"
       :library-id="summary?.boundaryInfo.StigLibraryId"
-      @open-close="[(openWidget = false), refreshNuxtData('SummaryAPI')]"
+      @open-close="[(openWidget = false),  refreshSummary]"
     />
     <ErrorNotification
       v-if="showErrorNotification"
@@ -1325,17 +1448,12 @@ import {
   ArrowUpTrayIcon,
 } from "@heroicons/vue/24/outline";
 import inflection from "inflection";
-import { unZip } from "~/utils/zip";
-import { processNessus } from "~/utils/nessus";
-import { processChecklist } from "~/utils/checklist";
-import { processChecklistV3 } from "~/utils/checklistV3";
-import { storeToRefs } from "pinia";
 import { ref } from "vue";
 import { SystemRoles } from "~/types/system";
 import SummaryCounts from "~/components/SummaryCounts.vue";
 import { useQuickAddStore } from "~~/stores/QuickAdd";
-
 import type { TirAlias } from "~/db/models/tirAlias";
+import type { BoundarySumary, SystemEntry } from "~/types/boundarySummary";
 
 definePageMeta({
   middleware: ["member-access"],
@@ -1354,7 +1472,10 @@ const vTargetComment = ref("");
 const vSite = ref("");
 const vInstance = ref("");
 const vCheckbox = ref(false);
-const selectedRole = ref("");
+interface Role {
+  name: string;
+}
+const selectedRole = ref<Role>({ name: '' });
 const showErrorNotification = ref(false);
 const errorObject = ref();
 const open = ref(false);
@@ -1364,12 +1485,21 @@ const showExport = ref(false);
 const edit = ref(false);
 const loadingProgress = ref(0);
 const maxValues = ref([""]);
+const openBackConfirm = ref(false);
+const currentAnalysisId = ref<string | null>(null);
+const showAutoMatches = ref(false);
+const autoMatched = ref<any[]>([]);
+const pendingAssignments = ref<any[]>([]);
 
 const tabIndices = {
   BoundaryView: 0,
   SystemView: 1,
   VulnView: 2,
 } as const;
+
+const refreshSummary = async () => {
+  await refreshNuxtData('SummaryAPI');
+}
 
 const activeView = (route.query.activeView as keyof typeof tabIndices) || "BoundaryView";
 const activeTab = ref<number>(tabIndices[activeView]);
@@ -1401,7 +1531,7 @@ const sctmHoverItems = [
 ];
 // Boundary Summary
 const boundaryId = route.params.boundaryId;
-const { data: summary } = await useFetch("/api/boundaries/summary", {
+const { data: summary } = await useFetch<BoundarySumary>("/api/boundaries/summary", {
   method: "GET",
   query: { BoundaryId: boundaryId },
   key: "SummaryAPI",
@@ -1410,8 +1540,8 @@ const { data: summary } = await useFetch("/api/boundaries/summary", {
 // for the term alias
 const { data: currentAlias } = await useFetch<TirAlias[]>("/api/config/alias");
 // renders the current alias
-const assetView = currentAlias.value?.find((alias) => alias.term === "System");
-const boundaryAlias = currentAlias.value?.find((alias) => alias.term === "Boundary") || "Boundary";
+const assetView = currentAlias.value?.find((alias) => alias.term === "System") || {alias: "System"};
+const boundaryAlias = currentAlias.value?.find((alias) => alias.term === "Boundary") || {alias: "Boundary"};
 
 const tierName = summary.value?.boundaryInfo.Tier;
 const boundaryName = summary.value?.boundaryInfo.name;
@@ -1441,14 +1571,14 @@ async function addSystem() {
     showErrorNotification.value = true;
     setTimeout(() => (showErrorNotification.value = false), 6000);
   } finally {
-    refreshNuxtData("SummaryAPI");
+     refreshSummary();
   }
 }
 
 /// //// Quick Add
 // const libraryId = ref(summary.value.boundaryInfo.StigLibraryId);
 const openWidget = ref(false);
-function setOpen(index) {
+function setOpen(index: number) {
   if (index === 0) {
     systemName.value = "";
     vHost.value = "";
@@ -1459,7 +1589,7 @@ function setOpen(index) {
     vSite.value = "";
     vInstance.value = "";
     vCheckbox.value = false;
-    selectedRole.value = "";
+    selectedRole.value.name = "";
     open.value = true;
     openWidget.value = false;
   } else if (index === 1) {
@@ -1469,7 +1599,7 @@ function setOpen(index) {
   }
 }
 // CKL System Creation
-async function createSystem(isZip) {
+async function createSystem(isZip: any) {
   maxValues.value = ["Waiting to start", `Creating ${assetView.alias}...`, "Importing Data...", "Done!"];
   loading.value = true;
   loadingProgress.value = 0;
@@ -1480,8 +1610,8 @@ async function createSystem(isZip) {
   const nextSystemName = ref();
 
   if (isZip) {
-    const fileInputS = document.getElementById("uploadZip");
-    selectedFiles.value = fileInputS.files;
+    const fileInputS = document.getElementById("uploadZip") as HTMLInputElement; ;
+    selectedFiles.value = fileInputS?.files;
 
     folder.value = selectedFiles.value[0].name.split(".zip");
     systemName.value = folder.value[0];
@@ -1492,9 +1622,12 @@ async function createSystem(isZip) {
 
     try {
       formdata.append("SystemName", systemName.value);
-      formdata.append("BoundaryId", boundaryId);
+      formdata.append("BoundaryId", String(boundaryId));
       loadingProgress.value = 2;
-      await $fetch("/api/import/results", { method: "POST", body: formdata });
+      await $fetch("/api/import/results", { method: "POST", body: formdata, 
+      headers: {
+      'Content-Type': 'multipart/form-data',
+    }, });
       loadingProgress.value = 3;
     } catch (err) {
       errorObject.value = err;
@@ -1502,11 +1635,11 @@ async function createSystem(isZip) {
       setTimeout(() => (showErrorNotification.value = false), 6000);
     }
   } else {
-    const fileInputS = document.getElementById("uploadFolder");
-    selectedFiles.value = fileInputS.files;
+    const fileInputS = document.getElementById("uploadFolder") as HTMLInputElement;;
+    selectedFiles.value = fileInputS?.files;
 
     const formdata = new FormData();
-    formdata.append("BoundaryId", boundaryId);
+    formdata.append("BoundaryId", String(boundaryId));
 
     for (let i = 0; i < selectedFiles.value.length; i++) {
       if (i === 0) {
@@ -1566,7 +1699,7 @@ async function createSystem(isZip) {
     }
   }
 
-  refreshNuxtData("SummaryAPI");
+  refreshSummary();
   setTimeout(() => (loading.value = false), 2000);
 }
 
@@ -1596,524 +1729,260 @@ interface InputItem {
   file?: any;
 }
 
+interface Credentialed {
+  file: string;
+  name: string[];
+}
+
+
+const isNessusGroup = (item: InputItem): boolean => {
+  return item.files?.every((file) => file.itemType === "nessus") ?? false;
+};
+
 const needsInput = ref<InputItem[]>([]);
 
-const notCredentialed = ref([]);
+const notCredentialed = ref<Credentialed[]>([]);
 const userInputModule = ref(false);
 const nessusWarning = ref(false);
-
-async function handleChecklistChangeFolder(zip) {
-  await refreshNuxtData("SummaryAPI");
-  needsInput.value.length = 0;
-  notCredentialed.value.length = 0;
-  const formdata = new FormData();
-
-  const selectedFiles = ref();
-  const folder = ref();
-  const systemName = ref();
-  let nameMatch = false;
-  maxValues.value = ["Waiting to start", "Checking Imports", "Importing Data...", "Done!"];
-  loadingProgress.value = 0;
-  if (zip) {
-    loading.value = true;
-    loadingProgress.value = 1;
-    const fileInputS = document.getElementById("uploadResultsZip");
-    selectedFiles.value = fileInputS.files;
-
-    folder.value = selectedFiles.value[0].name.split(".zip");
-    systemName.value = folder.value[0];
-    const { data: SystemList } = await useFetch("/api/systems/list", {
-      key: "list",
-      method: "POST",
-      body: { boundary: boundaryId },
-    });
-    for (let i = 0; i < selectedFiles.value.length; i++) {
-      const unZipResults = await unZip(selectedFiles.value[i], SystemList.value);
-      loading.value = false;
-      if (unZipResults.nessus && !unZipResults.ckl && !unZipResults.cklb) {
-        for (let j = 0; j < unZipResults.results.length; j++) {
-          const nessusArray = [];
-
-          for (let k = 0; k < unZipResults.results[j].hostArray.length; k++) {
-            if (unZipResults.results[j].hostArray[k].systemMatch) {
-              // Import Nessus File
-              nessusArray.push({
-                SystemId: unZipResults.results[j].hostArray[k].systemId,
-                NessusHostName: unZipResults.results[j].hostArray[k].name,
-              });
-            } else if (unZipResults.results[j].hostArray[k].credentialed === "true") {
-              const folderLocation = needsInput.value.findIndex((o) => o.folder === unZipResults.files[j].name);
-              if (folderLocation !== -1) {
-                needsInput.value[folderLocation].files.push(unZipResults.results[j].hostArray[k]);
-              } else {
-                needsInput.value.push({
-                  folder: unZipResults.files[j].name,
-                  files: [unZipResults.results[j].hostArray[k]],
-                  file: selectedFiles.value[i],
-                });
-              }
-            } else if (unZipResults.results[j].hostArray[k].credentialed === "false") {
-              const folderLocation = notCredentialed.value.findIndex((o) => o.file === unZipResults.files[j].name);
-              if (folderLocation !== -1) {
-                notCredentialed.value[folderLocation].name.push(unZipResults.results[j].hostArray[k].name);
-              } else {
-                notCredentialed.value.push({
-                  file: unZipResults.files[j].name,
-                  name: [unZipResults.results[j].hostArray[k].name],
-                });
-              }
-            }
-          }
-          if (nessusArray.length > 0) {
-            formdata.append("files", selectedFiles.value[i]);
-            formdata.append("systemsMatchArray", JSON.stringify(nessusArray));
-            formdata.append("BoundaryId", boundaryId);
-            nameMatch = true;
-          }
-        }
-      } else if ((unZipResults.ckl || unZipResults.cklb) && !unZipResults.nessus) {
-        for (let j = 0; j < unZipResults.results.length; j++) {
-          if (unZipResults.results[j].systemMatch) {
-            // Import Ckl File
-            nameMatch = true;
-            formdata.append("files", selectedFiles.value[i]);
-            formdata.append("SystemName", unZipResults.results[j].systemName);
-            formdata.append("BoundaryId", boundaryId);
-          } else {
-            const folderLocation = needsInput.value.findIndex((o) => o.folder === systemName.value);
-            if (folderLocation !== -1) {
-              needsInput.value[folderLocation].files.push(selectedFiles.value[i]);
-            } else {
-              needsInput.value.push({ folder: systemName.value, files: [selectedFiles.value[i]] });
-            }
-          }
-        }
-      } else if (summary.value.systemView.findIndex((o) => o.name === systemName.value) !== -1) {
-        formdata.append("files", selectedFiles.value[i]);
-        formdata.append("SystemName", systemName.value);
-        formdata.append("BoundaryId", boundaryId);
-        nameMatch = true;
-      } else {
-        const folderLocation = needsInput.value.findIndex((o) => o.folder === systemName.value);
-        if (folderLocation !== -1) {
-          needsInput.value[folderLocation].files.push(selectedFiles.value[i]);
-        } else {
-          needsInput.value.push({ folder: systemName.value, files: [selectedFiles.value[i]] });
-        }
-      }
-    }
-  } else {
-    loading.value = true;
-    loadingProgress.value = 1;
-    const fileInputS = document.getElementById("uploadResultsFolder");
-    selectedFiles.value = fileInputS?.files;
-    const { data: SystemList } = await useFetch("/api/systems/list", {
-      key: "list",
-      method: "POST",
-      body: { boundary: boundaryId },
-    });
-    for (let i = 0; i < selectedFiles.value.length; i++) {
-      const nessusArray = [];
-      const name = selectedFiles.value[i].name;
-      const lastDot = name.lastIndexOf(".");
-      const ext = name.substring(lastDot + 1);
-
-      if (ext === "nessus") {
-        const reader = new FileReader();
-        reader.readAsText(selectedFiles.value[i]);
-        const result = await new Promise((resolve) => {
-          reader.onload = function () {
-            resolve(reader.result);
-          };
-        });
-
-        const nessusResult = await processNessus(result, SystemList.value);
-
-        for (let j = 0; j < nessusResult.hostArray.length; j++) {
-          if (nessusResult.hostArray[j].systemMatch) {
-            // Import Nessus File
-            nessusArray.push({
-              SystemId: nessusResult.hostArray[j].systemId,
-              NessusHostName: nessusResult.hostArray[j].name,
-            });
-          } else if (nessusResult.hostArray[j].credentialed === "true") {
-            const folderLocation = needsInput.value.findIndex((o) => o.folder === name);
-            if (folderLocation !== -1) {
-              needsInput.value[folderLocation].files.push(nessusResult.hostArray[j]);
-            } else {
-              needsInput.value.push({ folder: name, files: [nessusResult.hostArray[j]], file: selectedFiles.value[i] });
-            }
-          } else if (nessusResult.hostArray[j].credentialed === "false") {
-            const folderLocation = notCredentialed.value.findIndex((o) => o.file === name);
-            if (folderLocation !== -1) {
-              notCredentialed.value[folderLocation].name.push(nessusResult.hostArray[j].name);
-            } else {
-              notCredentialed.value.push({ file: name, name: [nessusResult.hostArray[j].name] });
-            }
-          }
-        }
-      } else if (ext === "ckl") {
-        // For CKL system match
-        const reader = new FileReader();
-        reader.readAsText(selectedFiles.value[i]);
-        const result = await new Promise((resolve) => {
-          reader.onload = function () {
-            resolve(reader.result);
-          };
-        });
-
-        const checklistResult = await processChecklist(result, SystemList.value);
-        if (checklistResult.systemMatch && checklistResult.systemId) {
-          nameMatch = true;
-          formdata.append("files", selectedFiles.value[i]);
-          formdata.append("SystemName", checklistResult.systemName);
-          formdata.append("BoundaryId", boundaryId);
-        } else {
-          const folderLocation = needsInput.value.findIndex((o) => o.folder === "Multiple Files");
-          if (folderLocation !== -1) {
-            needsInput.value[folderLocation].files.push(selectedFiles.value[i]);
-          } else {
-            needsInput.value.push({ folder: "Multiple Files", files: [selectedFiles.value[i]] });
-          }
-        }
-      } else if (ext === "cklb") {
-        // For CKL system match
-        const reader = new FileReader();
-        reader.readAsText(selectedFiles.value[i]);
-        const result = await new Promise((resolve) => {
-          reader.onload = function () {
-            resolve(reader.result);
-          };
-        });
-        const checklistResult = await processChecklistV3(result, SystemList.value);
-        if (checklistResult.systemMatch && checklistResult.systemId) {
-          nameMatch = true;
-          formdata.append("files", selectedFiles.value[i]);
-          formdata.append("SystemName", checklistResult.systemName);
-          formdata.append("BoundaryId", boundaryId);
-        } else {
-          const folderLocation = needsInput.value.findIndex((o) => o.folder === "Multiple Files");
-          if (folderLocation !== -1) {
-            needsInput.value[folderLocation].files.push(selectedFiles.value[i]);
-          } else {
-            needsInput.value.push({ folder: "Multiple Files", files: [selectedFiles.value[i]] });
-          }
-        }
-      } else {
-        folder.value = selectedFiles.value[i].webkitRelativePath.split("/");
-        if (folder.value.length === 3) {
-          systemName.value = folder.value[1];
-        } else {
-          systemName.value = folder.value[0];
-        }
-        if (summary.value?.systemView.findIndex((o) => o.name === systemName.value) !== -1) {
-          nameMatch = true;
-          formdata.append("files", selectedFiles.value[i]);
-          formdata.append("SystemName", systemName.value);
-          formdata.append("BoundaryId", boundaryId);
-        } else {
-          const folderLocation = needsInput.value.findIndex((o) => o.folder === systemName.value);
-          if (folderLocation !== -1) {
-            needsInput.value[folderLocation].files.push(selectedFiles.value[i]);
-          } else {
-            needsInput.value.push({ folder: systemName.value, files: [selectedFiles.value[i]] });
-          }
-        }
-      }
-      if (nessusArray.length > 0) {
-        formdata.append("files", selectedFiles.value[i]);
-        formdata.append("systemsMatchArray", JSON.stringify(nessusArray));
-        formdata.append("BoundaryId", boundaryId);
-        nameMatch = true;
-      }
-    }
-    loading.value = false;
-  }
-
-  if (nameMatch) {
-    loading.value = true;
-    await importResult(formdata);
-    loading.value = false;
-  }
-
-  if (notCredentialed.value.length > 0) {
-    nessusWarning.value = true;
-  } else if (needsInput.value.length !== 0) {
-    selectedSystem.value.length = 0;
-    selectedNessusSystems.value.length = 0;
-    folderSystem.value.length = 0;
-    for (let i = 0; i < needsInput.value.length; i++) {
-      selectedSystem.value.push([]);
-    }
-    userInputModule.value = true;
-  }
+const confirmBack = () => {
+  userInputModule.value = false
+  openBackConfirm.value = false
 }
 
-async function handleChecklistChange() {
-  maxValues.value = ["Waiting to start", "Checking Imports", "Importing Data...", "Done!"];
+const cancelBack = () => {
+  openBackConfirm.value = false
+}
+const getSystemNameById = (systemId: number | string) => {
+  const system = summary.value?.systemView?.find(
+    (system) => String(system.id) === String(systemId),
+  );
+
+  return system?.name ?? systemId;
+};
+
+async function handleImportFiles(){
+  const zipInput = document.getElementById("uploadResultsZip") as HTMLInputElement | null;
+  const multiInput = document.getElementById("uploadResultsMultiple") as HTMLInputElement | null;
+
+  const files = zipInput?.files?.length ? zipInput.files : multiInput?.files ?? null;
+  await analyzeImportFromFiles(files);
+}
+
+async function handleImportFolder(){
+  const input = document.getElementById("uploadResultsFolder") as HTMLInputElement | null;
+   await analyzeImportFromFiles(input?.files ?? null);
+}
+
+type AnalyzeImportResponse ={
+    analysisId: string;
+    filesDiscovered: number;
+    autoMatched: any[];
+    needsInput: any[];
+    notCredentialed: any[];
+    hasAutoImports: boolean;
+    hasNeedsInput: boolean;
+    hasNotCredentialed: boolean;
+  };
+async function analyzeImportFromFiles(fileList: FileList | null) {
+  if (!fileList || fileList.length === 0) {
+    return;
+  }
+
+  await  refreshSummary();
+  needsInput.value.length = 0;
+  notCredentialed.value.length = 0;
+  currentAnalysisId.value = null;
+  autoMatched.value = [];
+  pendingAssignments.value = [];
   loading.value = true;
-  loadingProgress.value = 1;
-  needsInput.value.length = 0;
-  notCredentialed.value.length = 0;
-  let importNessus = false;
-  let importCkl = false;
-  const fileInput = document.getElementById("uploadResultsMultiple");
-  const selectedFiles = fileInput?.files;
+  loadingProgress.value = 0;
   const formdata = new FormData();
-  const { data: SystemList } = await useFetch("/api/systems/list", {
-    key: "list",
+  maxValues.value = ["Uploading files", "Waiting for review", "Importing Data...", "Done!"];
+
+  formdata.append("BoundaryId", String(boundaryId));
+
+  for (const file of Array.from(fileList)) {
+    formdata.append("files", file);
+    formdata.append("relativePaths", file.webkitRelativePath || file.name);
+  }
+  try{
+    const result = await $fetch<AnalyzeImportResponse>("/api/import/analyze", {
+      method: "POST",
+      body: formdata,
+    });
+    loadingProgress.value = 1;
+    autoMatched.value = result.autoMatched ?? [];
+    currentAnalysisId.value = result.analysisId ?? null;
+    needsInput.value = result.needsInput ?? [];
+    notCredentialed.value = result.notCredentialed ?? [];
+    
+    if (notCredentialed.value.length > 0) {
+      nessusWarning.value = true;
+    } else if(needsInput.value.length > 0){
+      selectedSystem.value.length = 0;
+      folderSystem.value.length = 0;
+
+      for(let i = 0; i < needsInput.value.length; i++){
+        selectedSystem.value.push([]);
+      }
+      userInputModule.value = true;
+    }else if (autoMatched.value.length > 0) {
+      pendingAssignments.value = [];
+      showAutoMatches.value = true;
+    }
+  } catch (err){
+    errorObject.value = err;
+    showErrorNotification.value = true;
+    setTimeout(() => {
+      showErrorNotification.value = false;
+    }, 5000);
+  } finally{
+    loading.value = false;
+  }
+}
+
+async function commitImport(assignments: any[] = []){
+  if (!currentAnalysisId.value){
+    return
+  }
+  loadingProgress.value = 2;
+  await $fetch("/api/import/results/commit", {
     method: "POST",
-    body: { boundary: boundaryId },
+    body: {
+      analysisId: currentAnalysisId.value,
+      assignments,
+    },
   });
-  for (let i = 0; i < selectedFiles.length; i++) {
-    const nessusArray = [];
-    const cklArray = [];
-    const name = selectedFiles[i].name;
-    const lastDot = name.lastIndexOf(".");
-    const ext = name.substring(lastDot + 1);
+  loadingProgress.value = 3;
+  currentAnalysisId.value = null;
+  await  refreshSummary();
+}
 
-    if (ext === "nessus") {
-      const reader = new FileReader();
-      reader.readAsText(selectedFiles[i]);
-      const result = await new Promise((resolve) => {
-        reader.onload = function () {
-          resolve(reader.result);
-        };
-      });
+async function proceedAfterNessusWarning(){
+  nessusWarning.value = false;
 
-      const nessusResult = await processNessus(result, SystemList.value);
-
-      for (let j = 0; j < nessusResult.hostArray.length; j++) {
-        if (nessusResult.hostArray[j].systemMatch) {
-          // Import Nessus File
-          nessusArray.push({
-            SystemId: nessusResult.hostArray[j].systemId,
-            NessusHostName: nessusResult.hostArray[j].name,
-          });
-        } else if (nessusResult.hostArray[j].credentialed === "true") {
-          const folderLocation = needsInput.value.findIndex((o) => o.folder === name);
-          if (folderLocation !== -1) {
-            needsInput.value[folderLocation].files.push(nessusResult.hostArray[j]);
-          } else {
-            needsInput.value.push({ folder: name, files: [nessusResult.hostArray[j]], file: selectedFiles[i] });
-          }
-        } else if (nessusResult.hostArray[j].credentialed === "false") {
-          const folderLocation = notCredentialed.value.findIndex((o) => o.file === name);
-          if (folderLocation !== -1) {
-            notCredentialed.value[folderLocation].name.push(nessusResult.hostArray[j].name);
-          } else {
-            notCredentialed.value.push({ file: name, name: [nessusResult.hostArray[j].name] });
-          }
-        }
-      }
-      if (nessusArray.length > 0) {
-        importNessus = true;
-        formdata.append("files", selectedFiles[i]);
-        formdata.append("systemsMatchArray", JSON.stringify(nessusArray));
-        formdata.append("BoundaryId", boundaryId);
-      }
-    } else if (ext === "ckl") {
-      // For CKL system match
-      const reader = new FileReader();
-      reader.readAsText(selectedFiles[i]);
-      const result = await new Promise((resolve) => {
-        reader.onload = function () {
-          resolve(reader.result);
-        };
-      });
-
-      const checklistResult = await processChecklist(result, SystemList.value);
-      if (checklistResult.systemMatch && checklistResult.systemId) {
-        importCkl = true;
-        formdata.append("files", selectedFiles[i]);
-        formdata.append("SystemName", checklistResult.systemName);
-        formdata.append("BoundaryId", boundaryId);
-      } else {
-        const folderLocation = needsInput.value.findIndex((o) => o.folder === "Multiple Files");
-        if (folderLocation !== -1) {
-          needsInput.value[folderLocation].files.push(selectedFiles[i]);
-        } else {
-          needsInput.value.push({ folder: "Multiple Files", files: [selectedFiles[i]] });
-        }
-      }
-    } else if (ext === "cklb") {
-      // For CKL system match
-      const reader = new FileReader();
-      reader.readAsText(selectedFiles[i]);
-      const result = await new Promise((resolve) => {
-        reader.onload = function () {
-          resolve(reader.result);
-        };
-      });
-      const checklistResult = await processChecklistV3(result, SystemList.value);
-      if (checklistResult.systemMatch && checklistResult.systemId) {
-        importCkl = true;
-        formdata.append("files", selectedFiles[i]);
-        formdata.append("SystemName", checklistResult.systemName);
-        formdata.append("BoundaryId", boundaryId);
-      } else {
-        const folderLocation = needsInput.value.findIndex((o) => o.folder === "Multiple Files");
-        if (folderLocation !== -1) {
-          needsInput.value[folderLocation].files.push(selectedFiles[i]);
-        } else {
-          needsInput.value.push({ folder: "Multiple Files", files: [selectedFiles[i]] });
-        }
-      }
-    } else {
-      const folderLocation = needsInput.value.findIndex((o) => o.folder === "Multiple Files");
-      if (folderLocation !== -1) {
-        needsInput.value[folderLocation].files.push(selectedFiles[i]);
-      } else {
-        needsInput.value.push({ folder: "Multiple Files", files: [selectedFiles[i]] });
-      }
-    }
-  }
-  if (importNessus || importCkl) {
-    await importResult(formdata);
-  }
-  loading.value = false;
-
-  if (notCredentialed.value.length > 0) {
-    nessusWarning.value = true;
-  } else if (needsInput.value.length !== 0) {
+  if (needsInput.value.length > 0) {
     selectedSystem.value.length = 0;
-    selectedNessusSystems.value.length = 0;
     folderSystem.value.length = 0;
+
     for (let i = 0; i < needsInput.value.length; i++) {
       selectedSystem.value.push([]);
     }
+
     userInputModule.value = true;
+    return;
+  }
+
+  if (autoMatched.value.length > 0) {
+    pendingAssignments.value = [];
+    showAutoMatches.value = true;
+    return;
+  }
+
+  loading.value = true;
+  try {
+    await commitImport([]);
+  } finally {
+    loading.value = false;
   }
 }
-function proceedWithImport() {
-  if (needsInput.value.length !== 0) {
-    selectedSystem.value.length = 0;
-    selectedNessusSystems.value.length = 0;
-    folderSystem.value.length = 0;
-    for (let i = 0; i < needsInput.value.length; i++) {
-      selectedSystem.value.push([]);
-    }
-    userInputModule.value = true;
-  }
-}
+
 
 const saveError = ref(false);
 
-function saveAssignment() {
-  saveError.value = false;
+async function saveAssignment() {
+  if(!currentAnalysisId.value){
+    return
+  }
+  const assignments: any[] = [];
 
-  for (let i = 0; i < needsInput.value.length; i++) {
-    const name = needsInput.value[i].folder;
-    const lastDot = name.lastIndexOf(".");
-    const ext = name.substring(lastDot + 1);
-    for (let j = 0; j < needsInput.value[i].files.length; j++) {
-      if (selectedSystem.value[i][j] === undefined && ext !== "nessus") {
-        saveError.value = true;
+  for (let folderIndex = 0; folderIndex < needsInput.value.length; folderIndex++) {
+    const item = needsInput.value[folderIndex];
+    
+    for(let fileIndex = 0; fileIndex < (item.files?.length ?? 0); fileIndex++){
+      const selected = selectedSystem.value?.[folderIndex]?.[fileIndex];
+      const inputFile = item.files?.[fileIndex];
+
+      if(selected?.id){
+        assignments.push({
+          type: inputFile?.credentialed ? "nessus" : inputFile?.itemType, 
+          fileName: inputFile?.fileName ?? inputFile?.name ?? item.folder,
+          hostName: inputFile?.credentialed ? inputFile.name : undefined,
+          systemId: selected.id,
+        });
       }
     }
   }
-  if (!saveError.value) {
-    const formdata = new FormData();
+  pendingAssignments.value = assignments;
+  userInputModule.value = false;
+  nessusWarning.value = false;
 
-    for (let i = 0; i < needsInput.value.length; i++) {
-      const nessusArray = [];
-      for (let j = 0; j < needsInput.value[i].files.length; j++) {
-        const name = needsInput.value[i].folder;
-        const lastDot = name.lastIndexOf(".");
-        const ext = name.substring(lastDot + 1);
-        if (ext === "nessus" && selectedSystem.value[i][j] !== undefined) {
-          nessusArray.push({
-            SystemId: selectedSystem.value[i][j].id,
-            NessusHostName: needsInput.value[i].files[j].name,
-          });
-        } else if (ext !== "nessus") {
-          formdata.append("files", needsInput.value[i].files[j]);
-          formdata.append("SystemName", selectedSystem.value[i][j].name);
-          formdata.append("BoundaryId", boundaryId);
-        }
-      }
-      if (nessusArray.length > 0) {
-        // Import Nessus File
-        formdata.append("files", needsInput.value[i].file);
-        formdata.append("systemsMatchArray", JSON.stringify(nessusArray));
-        formdata.append("BoundaryId", boundaryId);
-      }
-    }
+  if (autoMatched.value.length > 0) {
+    showAutoMatches.value = true;
+    return;
+  }
 
-    // if (cklImport) {
-    importResult(formdata);
-    // }
-    // if(nessusImport){
-    //   await $fetch("/api/import/results", { method: "POST", body: formdata });
-    // }
+  loading.value = true;
+  try {
+    await commitImport(assignments);
+  } finally {
+    loading.value = false;
   }
 }
 
-async function importResult(formdata) {
+async function continueWithAutoMatches() {
+  showAutoMatches.value = false;
+  loading.value = true;
+
   try {
-    userInputModule.value = false;
-    loading.value = true;
-    loadingProgress.value = 2;
-    await $fetch("/api/import/results", { method: "POST", body: formdata });
-    loadingProgress.value = 3;
-    setTimeout(() => (loading.value = false), 2000);
-  } catch (err) {
-    loading.value = false;
-    errorObject.value = err;
-    showErrorNotification.value = true;
-    setTimeout(() => (showErrorNotification.value = false), 6000);
+    await commitImport(pendingAssignments.value);
+    pendingAssignments.value = [];
+    autoMatched.value = [];
   } finally {
-    refreshNuxtData("SummaryAPI");
+    loading.value = false;
   }
 }
 
 const query = ref("");
-const selectedSystem = ref([]);
-const folderSystem = ref([]);
+
+const selectedSystem = ref<(SystemEntry | null)[][]>([]);
+const folderSystem = ref<(SystemEntry | null)[]>([]);
 
 const filteredSystems = computed(() =>
   query.value === ""
-    ? summary.value.systemView
-    : summary.value.systemView.filter((system) => {
+    ? summary?.value?.systemView
+    : summary?.value?.systemView.filter((system) => {
         return system.name.toLowerCase().includes(query.value.toLowerCase());
       }),
 );
 
-const selectedNessusSystems = ref([]);
+const nessusSystems = computed<SystemEntry[]>(() => {
+  const systems = summary.value?.systemView ?? [];
 
-const nessusSystems = computed(() =>
-  query.value === ""
-    ? summary.value.systemView.filter((system) => !selectedNessusSystems.value.includes(system))
-    : summary.value.systemView
-        .filter((system) => !selectedNessusSystems.value.includes(system))
-        .filter((system) => {
-          return system.name.toLowerCase().includes(query.value.toLowerCase());
-        }),
-);
-function updateSelection(system, folder, index) {
-  const matchIndex = selectedNessusSystems.value.findIndex(
-    (selectedSystem) => selectedSystem?.x === folder && selectedSystem?.y === index,
-  );
-  if (matchIndex !== -1) {
-    system.x = folder;
-    system.y = index;
-    selectedNessusSystems.value[matchIndex] = system;
-  } else {
-    system.x = folder;
-    system.y = index;
-    selectedNessusSystems.value.push(system);
+  const selectedIds = selectedSystem.value
+    .flat()
+    .filter((system): system is SystemEntry => system !== null)
+    .map((system) => system.id);
+
+  return systems
+    .filter((system) => !selectedIds.includes(system.id))
+    .filter((system) =>
+      query.value === ""
+        ? true
+        : system.name.toLowerCase().includes(query.value.toLowerCase()),
+    );
+});
+
+
+function updateFolder(folder: number, system: SystemEntry | null) {
+  const files = needsInput.value[folder]?.files ?? [];
+
+  if (!selectedSystem.value[folder]) {
+    selectedSystem.value[folder] = [];
   }
-}
 
-function updateFolder(folder, system) {
-  if (selectedSystem.value[folder].length === 0) {
-    for (let i = 0; i < needsInput.value[folder].files.length; i++) {
-      selectedSystem.value[folder].push(system);
-    }
-  } else {
-    for (let i = 0; i < needsInput.value[folder].files.length; i++) {
-      selectedSystem.value[folder][i] = system;
-    }
+  for (let i = 0; i < files.length; i++) {
+    selectedSystem.value[folder][i] = system;
   }
 }
 
@@ -2122,7 +1991,7 @@ async function exportBoundary() {
     loadingNotification.value = true;
     loadingMsg.value = "Exporting";
     const queryParams = new URLSearchParams();
-    queryParams.append("boundaryId", boundaryId);
+    queryParams.append("boundaryId", String(boundaryId));
     await fetch(`/api/boundaries/export?${queryParams}`, {
       method: "GET",
     })
@@ -2149,12 +2018,13 @@ async function exportBoundary() {
 }
 
 async function importBoundary() {
-  const fileInput = document.getElementById("importFileBoundary");
-
-  const selectedFiles = fileInput.files;
+  const fileInput = document.getElementById("importFileBoundary") as HTMLInputElement;
+  const selectedFiles = fileInput?.files;
+  const file = selectedFiles?.[0];
+  if (!file) return;
 
   const formdata = new FormData();
-  formdata.append("files", selectedFiles[0]);
+  formdata.append("files", file);
   try {
     loadingNotification.value = true;
     loadingMsg.value = "Importing";
