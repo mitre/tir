@@ -20,3 +20,10 @@ ci, chore, style. For a breaking change, add a "BREAKING CHANGE:" footer.
 ## Related
 
 <!-- closes #..., relates to #..., discussion or ADR links -->
+
+<!--
+Breaking change? Uncomment the line below and describe what breaks.
+Leave this commented out if nothing breaks.
+
+BREAKING CHANGE: what breaks and how to migrate
+-->
