@@ -38,9 +38,15 @@ npm install
 
 ```ini
 SQLITE=true
-SECRET_KEY= //Required
+SECRET_KEY= //Required: Server-side secret used to hash user passwords (see note below)
 INIT_PASSWORD= //Required:  Initial Password for initial TIR admin Account
 ```
+
+> **SECRET_KEY** is a server-side secret (a "pepper") used as the HMAC key when
+> hashing user passwords. Set it to any long, random string and keep it private.
+> It must stay constant for the life of the deployment: changing it invalidates
+> every existing password hash, so all users (including the admin account) would
+> be unable to log in until their passwords are reset.
 
 #### `.env` for Postgres config
 
