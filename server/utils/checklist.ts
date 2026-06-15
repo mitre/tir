@@ -35,12 +35,9 @@ export async function importChecklistV3(
 
   try {
     for (const stigFromCkl of cklbData.stigs) {
-      let cklStigId = stigFromCkl.stig_id;
-      const stigMatchingCkl = await Stig.findOne({
-        where: {
-          stigid: stigFromCkl.stig_id,
-        },
-      });
+      const cklStigId = stigFromCkl.stig_id;
+      const stigLibraryId = system?.dataValues.Boundary.StigLibraryId;
+      const stigMatchingCkl = await findStigByStigId(cklStigId, stigLibraryId);
 
       if (!stigMatchingCkl) {
         throw createError({
