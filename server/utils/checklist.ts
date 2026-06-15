@@ -42,7 +42,7 @@ export async function importChecklistV3(
       if (!stigMatchingCkl) {
         throw createError({
           statusCode: 415,
-          statusMessage: `No STIG matching id "${stigMatchingCkl}" found in system's assigned Library`,
+          statusMessage: `No STIG matching id "${cklStigId}" found in system's assigned Library`,
         });
       }
 
