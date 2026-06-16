@@ -36,7 +36,13 @@ export async function importChecklistV3(
   try {
     for (const stigFromCkl of cklbData.stigs) {
       const cklStigId = stigFromCkl.stig_id;
-      const stigLibraryId = system?.dataValues.Boundary.StigLibraryId;
+      const stigLibraryId = system?.Boundary?.StigLibraryId;
+      if (!stigLibraryId) {
+        throw createError({
+          statusCode: 500,
+          statusMessage: "System does not have an assigned boundary STIG library",
+        });
+      }
       const stigMatchingCkl = await findStigByStigId(cklStigId, stigLibraryId);
 
       if (!stigMatchingCkl) {
