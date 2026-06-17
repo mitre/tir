@@ -1,7 +1,6 @@
 name: 🔧 Chore
 description: Internal work, refactor, or maintenance
-type: Task
-labels: ["chore"]
+type: Chore
 body:
   - type: textarea
     id: goal
