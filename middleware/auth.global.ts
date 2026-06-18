@@ -1,22 +1,18 @@
-export default defineNuxtRouteMiddleware(async (to, from) => {
+export default defineNuxtRouteMiddleware(async (to) => {
+  const publicPaths = ["/", "/login"];
+  if (publicPaths.includes(to.path)) return;
+
+  let user: any;
   try {
-    const publicPaths = ["/", "/login"];
-
-    if (!publicPaths.includes(to.path)) {
-      const { data: user } = await useFetch("/api/auth/currentUser");
-
-      if (user.value?.statusCode !== 401) {
-        if (to.fullPath.startsWith("/administration")) {
-          if (!user.value?.UserRole?.name?.toUpperCase().includes("ADMIN")) {
-            return abortNavigation("Insufficient permissions.");
-          }
-        }
-      } else {
-        return navigateTo("/");
-      }
-    }
-  } catch (error) {
-    logger.error({ service: "auth", message: `[auth.global]: ${error}` });
+    const fetchWithCookies = useRequestFetch();
+    user = await fetchWithCookies("/api/auth/currentUser");
+  } catch {
     return navigateTo("/");
+  }
+
+  if (to.fullPath.startsWith("/administration")) {
+    if (!user?.UserRole?.name?.toUpperCase().includes("ADMIN")) {
+      return abortNavigation("Insufficient permissions.");
+    }
   }
 });

@@ -1,131 +1,132 @@
 <template>
-  <dl class="mb-6 space-y-6 divide-y divide-gray-100 border-b border-t border-gray-200 pb-6 pt-6 text-sm leading-6">
-    <!-- Local Auth -->
-    <dd class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
-      <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
-        <div class="text-lg font-medium">Local Auth</div>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Enable built-in username/password authentication.</p>
-      </div>
+  <div>
+    <dl class="mb-6 space-y-6 divide-y divide-gray-100 border-t border-gray-200 pb-6 pt-6 text-sm leading-6">
+      <!-- Default Login Tab -->
+      <dd
+        v-if="authConfig"
+        class="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto"
+      >
+        <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
+          <div class="text-lg font-medium">Default Login Tab</div>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Choose the tab shown when users open the login page. Only Local and LDAP providers appear as tabs; OAuth and
+            OIDC providers are always visible as buttons so they cannot be set as the default.
+          </p>
+        </div>
+        <div class="flex flex-1 flex-wrap gap-4 text-gray-800 dark:text-white">
+          <label
+            :class="[
+              'flex items-center gap-2',
+              authConfig.local.enable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+            ]"
+          >
+            <input
+              v-model="authConfig.defaultLoginProvider"
+              type="radio"
+              value="local"
+              :disabled="!authConfig.local.enable"
+              class="text-indigo-600"
+            />
+            <span class="text-sm">Local</span>
+          </label>
+          <label
+            v-for="p in authConfig.ldap"
+            :key="p.id"
+            :class="['flex items-center gap-2', p.enable ? 'cursor-pointer' : 'cursor-not-allowed opacity-50']"
+          >
+            <input
+              v-model="authConfig.defaultLoginProvider"
+              type="radio"
+              :value="`ldap:${p.id}`"
+              :disabled="!p.enable"
+              class="text-indigo-600"
+            />
+            <span class="text-sm">{{ p.label }}</span>
+          </label>
+        </div>
+      </dd>
 
-      <div v-if="authConfig" class="flex-1 space-y-4 text-gray-800 dark:text-white">
-        <!-- Enabled -->
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Enabled</label>
-          <UISlideSwitch v-model="authConfig.local.enable" class="ml-auto" />
-        </div>
+      <!-- Local Auth -->
+      <AuthLocalProvider
+        v-if="authConfig"
+        v-model:local="authConfig.local"
+      />
 
-        <!-- Password rules -->
-        <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Min Length</label>
-          <input v-model.number="authConfig.local.passwordLength" type="number" min="1" class="input-field" />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Uppercase Letters</label>
-          <input v-model.number="authConfig.local.upperCount" type="number" min="0" class="input-field" />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Lowercase Letters</label>
-          <input v-model.number="authConfig.local.lowerCount" type="number" min="0" class="input-field" />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Numbers</label>
-          <input v-model.number="authConfig.local.numberCount" type="number" min="0" class="input-field" />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-48 text-left text-sm font-medium">Special Characters</label>
-          <input v-model.number="authConfig.local.specialCount" type="number" min="0" class="input-field" />
-        </div>
-      </div>
-    </dd>
+      <!-- Dynamic provider sections -->
+      <template v-if="authConfig">
+        <AuthLDAPProvider
+          v-for="(provider, idx) in authConfig.ldap"
+          :key="provider.id"
+          v-model:secret="providerSecrets[provider.id]"
+          :provider="provider"
+          @remove="removeLDAP(idx)"
+        />
+        <AuthOIDCProvider
+          v-for="(provider, idx) in authConfig.oidc"
+          :key="provider.id"
+          v-model:secret="providerSecrets[provider.id]"
+          :provider="provider"
+          @remove="removeOIDC(idx)"
+        />
+        <AuthOAuthProvider
+          v-for="(provider, idx) in authConfig.oauth"
+          :key="provider.id"
+          v-model:secret="providerSecrets[provider.id]"
+          :provider="provider"
+          @remove="removeOAuth(idx)"
+        />
+      </template>
 
-    <!-- LDAP Auth -->
-    <dd class="mt-1 flex justify-between gap-x-6 pt-6 sm:mt-0 sm:flex-auto">
-      <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
-        <div class="text-lg font-medium">LDAP Auth</div>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Enable LDAP authentication for enterprise directory login.
-        </p>
-      </div>
-      <div v-if="authConfig" class="flex-1 space-y-4 text-gray-800 dark:text-white">
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Enabled</label>
-          <UISlideSwitch v-model="authConfig.ldap.enable" class="ml-auto" />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">LDAP URL</label>
-          <input v-model="authConfig.ldap.url" type="text" class="input-field" />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Bind DN</label>
-          <input v-model="authConfig.ldap.bindDn" type="text" class="input-field" />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Password</label>
-          <input
-            v-model="ldapPassword"
-            type="password"
-            :placeholder="authConfig.ldap.passwordSet ? '•••••• (set)' : ''"
-            class="input-field"
-          />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Base DN</label>
-          <input v-model="authConfig.ldap.baseDn" type="text" class="input-field" />
-        </div>
-      </div>
-    </dd>
+      <!-- Add Provider button -->
+      <dd class="flex justify-end pt-6">
+        <div class="relative inline-block text-left">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 rounded border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            @click="showProviderMenu = !showProviderMenu"
+          >
+            <span class="text-lg leading-none">+</span> Add Provider
+          </button>
 
-    <!-- OIDC Auth -->
-    <dd class="mt-1 flex justify-between gap-x-6 pt-6 sm:mt-0 sm:flex-auto">
-      <div class="text-gray-800 dark:text-white sm:w-48 sm:flex-none sm:pr-6">
-        <div class="text-lg font-medium">OIDC Auth</div>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Enable single sign-on using OpenID Connect (OIDC).</p>
-      </div>
-      <div v-if="authConfig" class="flex-1 space-y-4 text-gray-800 dark:text-white">
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Enabled</label>
-          <UISlideSwitch v-model="authConfig.oidc.enable" class="ml-auto" />
+          <div
+            v-if="showProviderMenu"
+            class="absolute left-0 z-10 mt-1 w-64 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
+          >
+            <div class="py-1">
+              <button
+                type="button"
+                class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                @click="addLDAP"
+              >
+                LDAP
+              </button>
+              <button
+                type="button"
+                class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                @click="addOIDC"
+              >
+                OIDC
+              </button>
+              <button
+                type="button"
+                class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                @click="addOAuth"
+              >
+                OAuth 2.0
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">OIDC URL</label>
-          <input v-model="authConfig.oidc.url" type="text" class="input-field" />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Client ID</label>
-          <input v-model="authConfig.oidc.clientId" type="text" class="input-field" />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Secret</label>
-          <input
-            v-model="oidcSecret"
-            type="password"
-            :placeholder="authConfig.oidc.secretSet ? '•••••• (set)' : ''"
-            class="input-field"
-          />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Callback URL</label>
-          <input v-model="authConfig.oidc.callback" type="text" class="input-field" />
-        </div>
-        <div class="flex items-center gap-4">
-          <label class="w-24 text-left text-sm font-medium">Group Mappings</label>
-          <input
-            v-model="authConfig.oidc.groupMappings"
-            type="text"
-            class="input-field"
-            placeholder="admin:1,users:2"
-          />
-        </div>
-      </div>
-    </dd>
+      </dd>
+    </dl>
 
-    <!-- Save button -->
-    <div class="flex justify-end pt-6">
-      <button type="button" class="text-sm font-semibold text-indigo-600 hover:bg-indigo-500" @click="saveAuthConfig">
-        Save
-      </button>
-    </div>
-  </dl>
+    <UISaveBar
+      :dirty="dirty"
+      :saving="saving"
+      @save="saveAuthConfig"
+      @discard="discardChanges"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -134,48 +135,190 @@ import type { AuthConfig } from "~/types/auth";
 definePageMeta({ layout: "admin" });
 
 const authConfig = ref<AuthConfig>();
-const oidcSecret = ref<string>("");
-const ldapPassword = ref<string>("");
+const providerSecrets = ref<Record<string, string>>({});
+const showProviderMenu = ref(false);
+const dirty = ref(false);
+const saving = ref(false);
+
+let cleanSnapshot = "";
+
+function takeSnapshot() {
+  cleanSnapshot = JSON.stringify(authConfig.value);
+  providerSecrets.value = {};
+  dirty.value = false;
+}
+
+function defaultProviderEnabled(): boolean {
+  const cfg = authConfig.value;
+  if (!cfg || !cfg.defaultLoginProvider) return true;
+  if (cfg.defaultLoginProvider === "local") return cfg.local.enable;
+  if (cfg.defaultLoginProvider.startsWith("ldap:")) {
+    const id = cfg.defaultLoginProvider.slice("ldap:".length);
+    return Boolean(cfg.ldap.find((p) => p.id === id)?.enable);
+  }
+  return false;
+}
+
+function firstEnabledProvider(): string {
+  const cfg = authConfig.value;
+  if (!cfg) return "";
+  if (cfg.local.enable) return "local";
+  const ldap = cfg.ldap.find((p) => p.enable);
+  return ldap ? `ldap:${ldap.id}` : "";
+}
+
+function normalizeDefaultProvider() {
+  if (!authConfig.value || defaultProviderEnabled()) return;
+  authConfig.value.defaultLoginProvider = firstEnabledProvider();
+}
+
+watch(
+  [authConfig, providerSecrets],
+  () => {
+    if (!authConfig.value) return;
+    normalizeDefaultProvider();
+    const hasSecrets = Object.values(providerSecrets.value).some(Boolean);
+    dirty.value = hasSecrets || JSON.stringify(authConfig.value) !== cleanSnapshot;
+  },
+  { deep: true },
+);
 
 onMounted(async () => {
-  const config: AuthConfig = await $fetch("/api/config/authLoad");
+  authConfig.value = await $fetch<AuthConfig>("/api/config/authLoad");
+  normalizeDefaultProvider();
+  takeSnapshot();
 
-  authConfig.value = config;
+  document.addEventListener("click", (e) => {
+    if (!(e.target as Element).closest(".relative")) {
+      showProviderMenu.value = false;
+    }
+  });
 });
+
+function nextId(prefix: string, existing: string[]): string {
+  let i = 1;
+  while (existing.includes(`${prefix}-${i}`)) i++;
+  return `${prefix}-${i}`;
+}
+
+function callbackUrl(): string {
+  if (globalThis.window === undefined) return "";
+  return `${globalThis.location.origin}/api/auth/callback`;
+}
+
+function addLDAP() {
+  if (!authConfig.value) return;
+  showProviderMenu.value = false;
+  const id = nextId(
+    "ldap",
+    authConfig.value.ldap.map((p) => p.id),
+  );
+  authConfig.value.ldap.push({
+    id,
+    label: "LDAP",
+    template: "openldap",
+    enable: false,
+    url: "ldap://",
+    bindDn: "",
+    passwordSet: false,
+    baseDn: "",
+    ssl: false,
+    sslInsecure: false,
+    sslCa: "",
+    groupAttribute: "memberOf",
+    groupMappings: "",
+  });
+}
+
+function removeLDAP(idx: number) {
+  authConfig.value?.ldap.splice(idx, 1);
+}
+
+function addOIDC() {
+  if (!authConfig.value) return;
+  showProviderMenu.value = false;
+  const id = nextId(
+    "oidc",
+    authConfig.value.oidc.map((p) => p.id),
+  );
+  authConfig.value.oidc.push({
+    id,
+    label: "OIDC",
+    enable: false,
+    url: "",
+    clientId: "",
+    secretSet: false,
+    callback: callbackUrl(),
+    groupMappings: "",
+    groupClaimType: "claim",
+    groupClaimPath: "groups",
+    sslInsecure: false,
+  });
+}
+
+function removeOIDC(idx: number) {
+  authConfig.value?.oidc.splice(idx, 1);
+}
+
+function addOAuth() {
+  if (!authConfig.value) return;
+  showProviderMenu.value = false;
+  const id = nextId(
+    "oauth",
+    authConfig.value.oauth.map((p) => p.id),
+  );
+  authConfig.value.oauth.push({
+    id,
+    label: "OAuth 2.0",
+    providerType: "github",
+    enable: false,
+    baseUrl: "",
+    clientId: "",
+    secretSet: false,
+    callback: callbackUrl(),
+    groupMappings: "",
+    authorizationUrl: "",
+    tokenUrl: "",
+    userInfoUrl: "",
+    groupClaimPath: "",
+  });
+}
+
+function removeOAuth(idx: number) {
+  authConfig.value?.oauth.splice(idx, 1);
+}
 
 async function saveAuthConfig() {
   if (!authConfig.value) return;
+  saving.value = true;
+  try {
+    const body = {
+      defaultLoginProvider: authConfig.value.defaultLoginProvider,
+      local: authConfig.value.local,
+      ldap: authConfig.value.ldap.map((p) => ({
+        ...p,
+        ...(providerSecrets.value[p.id] ? { password: providerSecrets.value[p.id] } : {}),
+      })),
+      oidc: authConfig.value.oidc.map((p) => ({
+        ...p,
+        ...(providerSecrets.value[p.id] ? { secret: providerSecrets.value[p.id] } : {}),
+      })),
+      oauth: authConfig.value.oauth.map((p) => ({
+        ...p,
+        ...(providerSecrets.value[p.id] ? { secret: providerSecrets.value[p.id] } : {}),
+      })),
+    };
+    await $fetch("/api/config/authSave", { method: "POST", body });
+    authConfig.value = await $fetch<AuthConfig>("/api/config/authLoad");
+    takeSnapshot();
+  } finally {
+    saving.value = false;
+  }
+}
 
-  const body: any = {
-    local: authConfig.value.local,
-    ldap: {
-      ...authConfig.value.ldap,
-      ...(ldapPassword.value ? { password: ldapPassword.value } : {}),
-    },
-    oidc: {
-      ...authConfig.value.oidc,
-      ...(oidcSecret.value ? { secret: oidcSecret.value } : {}),
-    },
-  };
-
-  await $fetch("/api/config/authSave", {
-    method: "POST",
-    body,
-  });
-
-  oidcSecret.value = "";
-  ldapPassword.value = "";
-
-  const updatedConfig = await $fetch("/api/config/authLoad");
-  authConfig.value = updatedConfig;
+async function discardChanges() {
+  authConfig.value = await $fetch<AuthConfig>("/api/config/authLoad");
+  normalizeDefaultProvider();
+  takeSnapshot();
 }
 </script>
-
-<style scoped lang="postcss">
-.input-field {
-  @apply flex-1 rounded border px-2 py-1 text-sm 
-    placeholder-gray-400 
-    dark:bg-gray-800 dark:text-white 
-    dark:placeholder-gray-500;
-}
-</style>
