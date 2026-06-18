@@ -4,15 +4,19 @@
     class="relative"
   >
     <!-- Trigger -->
-    <button
+    <UTooltip
       v-if="asIcon"
-      type="button"
-      title="Remove provider"
-      class="inline-flex items-center justify-center rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-red-400"
-      @click="open = !open"
+      text="Remove provider"
     >
-      <TrashIcon class="h-4 w-4" />
-    </button>
+      <button
+        type="button"
+        aria-label="Remove provider"
+        class="inline-flex items-center justify-center rounded-md p-1.5 text-gray-500 transition hover:bg-gray-100 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-red-400"
+        @click="open = !open"
+      >
+        <TrashIcon class="h-4 w-4" />
+      </button>
+    </UTooltip>
     <button
       v-else
       type="button"
