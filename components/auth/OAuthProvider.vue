@@ -152,18 +152,19 @@
               type="text"
               class="flex-1"
             />
-            <button
-              type="button"
-              class="shrink-0 rounded border border-gray-300 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
-              title="Fill with this server's callback URL"
-              @click="provider.callback = callbackUrl()"
-            >
-              <UIcon
-                name="i-heroicons-arrow-path"
-                class="h-3 w-3"
-              />
-              Fill
-            </button>
+            <UTooltip text="Fill with this server's callback URL">
+              <button
+                type="button"
+                class="shrink-0 rounded border border-gray-300 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
+                @click="provider.callback = callbackUrl()"
+              >
+                <UIcon
+                  name="i-heroicons-arrow-path"
+                  class="h-3 w-3"
+                />
+                Fill
+              </button>
+            </UTooltip>
           </div>
           <p class="text-xs text-gray-400">
             The default value usually works as-is. Register this URL as an allowed callback/redirect URL with your
@@ -220,15 +221,28 @@
         >
           {{ connectionTest?.loading ? "Testing…" : "Test Connection" }}
         </button>
-        <button
-          type="button"
-          :disabled="loginTest?.loading"
-          class="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-          title="Requires saved config — opens a popup to run the full OAuth login flow without affecting your current session"
-          @click="testLogin"
+        <UTooltip
+          :ui="{
+            width: 'max-w-none'
+          }"
         >
-          {{ loginTest?.loading ? "Waiting…" : "Test Login" }}
-        </button>
+          <span class="inline-flex">
+            <button
+              type="button"
+              :disabled="loginTest?.loading"
+              class="rounded border border-gray-300 px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              @click="testLogin"
+            >
+              {{ loginTest?.loading ? "Waiting…" : "Test Login" }}
+            </button>
+          </span>
+
+          <template #text>
+            <span class="whitespace-nowrap">
+              Requires saved config — opens a popup to run the full OAuth login flow without affecting your current session
+            </span>
+          </template>
+        </UTooltip>
       </div>
 
       <AuthConnectionTestResult :result="connectionTest" />
