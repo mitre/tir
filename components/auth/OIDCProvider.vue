@@ -98,7 +98,7 @@
               type="text"
               class="flex-1"
             />
-            <UTooltip text="Fill with this server's callback URL">
+            <UITooltip text="Fill with this server's callback URL">
               <button
                 type="button"
                 class="shrink-0 rounded border border-gray-300 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
@@ -110,7 +110,7 @@
                 />
                 Fill
               </button>
-            </UTooltip>
+            </UITooltip>
           </div>
           <p class="text-xs text-gray-400">
             The default value usually works as-is. Register this URL as an allowed callback/redirect URL with your
@@ -204,7 +204,7 @@
         >
           {{ connectionTest?.loading ? "Testing…" : "Test Connection" }}
         </button>
-        <UTooltip
+        <UITooltip
           :ui="{
             width: 'max-w-none',
           }"
@@ -225,7 +225,7 @@
               Requires saved config — opens a popup to run the full OIDC login flow without affecting your current session
             </span>
           </template>
-        </UTooltip>
+        </UITooltip>
       </div>
 
       <AuthConnectionTestResult :result="connectionTest" />

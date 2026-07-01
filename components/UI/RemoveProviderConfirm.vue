@@ -4,7 +4,7 @@
     class="relative"
   >
     <!-- Trigger -->
-    <UTooltip
+    <UITooltip
       v-if="asIcon"
       text="Remove provider"
     >
@@ -16,7 +16,7 @@
       >
         <TrashIcon class="h-4 w-4" />
       </button>
-    </UTooltip>
+    </UITooltip>
     <button
       v-else
       type="button"
