@@ -36,7 +36,13 @@ export async function runImportJob(uid: string, zipArchive: string, originalFile
     );
     reporter.status("Processing started...");
 
-    const results = await processLibrary(zipArchive, config.temp_folder, originalFilename, reporter);
+    const results = await processLibrary(
+      zipArchive,
+      config.temp_folder,
+      uid,
+      originalFilename,
+      reporter,
+    );
 
     reporter.status("Processing Completed!");
     reporter.complete();
@@ -53,21 +59,37 @@ export async function runImportJob(uid: string, zipArchive: string, originalFile
       { where: { uid } },
     );
 
+    const importedBy = job?.createdBy
+      ? await User.findByPk(job.createdBy, { attributes: ["id", "email", "firstName", "lastName"] })
+      : null;
+    const userLabel = importedBy
+      ? `${importedBy.firstName} ${importedBy.lastName} <${importedBy.email}> (id ${importedBy.id})`
+      : "unknown user";
+
     logger.info({
       service: "Library",
-      message: `Uploaded STIG Library:${originalFilename}`,
+      event: "library.imported",
+      message: `STIG Library imported: ${results.classification} ${results.libraryDate} (id ${job?.stigLibraryId}) from ${originalFilename} by ${userLabel}`,
+      userId: job?.createdBy ?? null,
+      userEmail: importedBy?.email ?? null,
+      libraryId: job?.stigLibraryId ?? null,
+      classification: results.classification,
+      libraryDate: results.libraryDate,
+      filename: originalFilename,
     });
 
     await notifyLibraryAvailable(job?.createdBy ?? null, originalFilename);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     reporter.error(`Error occurred during processing: ${message}`);
-    logger.error(`Failed STIG Library Processing:${originalFilename}`);
+    logger.error(`Failed STIG Library Processing: ${originalFilename} - ${message}`, {
+      stack: error instanceof Error ? error.stack : undefined,
+    });
   } finally {
     try {
       fs.rmSync(`${zipArchive}.json`, { force: true });
     } catch {
-      // tus metadata sidecar may already be gone
+      // best-effort cleanup, don't fail the import on it
     }
   }
 }

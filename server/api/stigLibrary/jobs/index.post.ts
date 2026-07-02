@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { DateTime } from "luxon";
-import { parseLibraryName } from "~/server/utils/stigLibrary";
 import { ImportJob } from "~/db/models";
 
 export default defineEventHandler(async (event) => {
@@ -12,11 +11,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "filename is required." });
   }
 
-  const parsed = parseLibraryName(filename);
-  if (parsed.error) {
+  if (!String(filename).toLowerCase().endsWith(".zip")) {
     throw createError({
       statusCode: 400,
-      statusMessage: parsed.errorMessage || "The file doesn't appear to be a STIG Library.",
+      statusMessage: "File must be a .zip STIG Library compilation.",
     });
   }
 

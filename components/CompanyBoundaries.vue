@@ -579,7 +579,7 @@
                                     class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6"
                                   >
                                     <span class="inline-flex w-full truncate">
-                                      <span class="truncate text-xs">{{ base.filename }}</span>
+                                      <span class="truncate text-xs">{{ libraryLabel(base) }}</span>
                                       <!-- <span class="ml-2 truncate text-gray-500">{{ base.date }}</span> -->
                                     </span>
                                     <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -611,7 +611,7 @@
                                           <div class="flex">
                                             <span
                                               :class="[selected ? 'font-semibold' : 'font-normal', 'truncate text-xs']"
-                                              >{{ file.filename }}</span
+                                              >{{ libraryLabel(file) }}</span
                                             >
                                             <!-- <span :class="[active ? 'text-indigo-200' : 'text-gray-500', 'ml-2 truncate']">{{ file.date }}</span> -->
                                           </div>
@@ -641,7 +641,7 @@
                                     class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6"
                                   >
                                     <span class="inline-flex w-full truncate">
-                                      <span class="truncate text-xs">{{ editBase.filename }}</span>
+                                      <span class="truncate text-xs">{{ libraryLabel(editBase) }}</span>
                                       <!-- <span class="ml-2 truncate text-gray-500">{{ base.date }}</span> -->
                                     </span>
                                     <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -673,7 +673,7 @@
                                           <div class="flex">
                                             <span
                                               :class="[selected ? 'font-semibold' : 'font-normal', 'truncate text-xs']"
-                                              >{{ file.filename }}</span
+                                              >{{ libraryLabel(file) }}</span
                                             >
                                             <!-- <span :class="[active ? 'text-indigo-200' : 'text-gray-500', 'ml-2 truncate']">{{ file.date }}</span> -->
                                           </div>
@@ -1038,9 +1038,9 @@
                           </DialogTitle>
                           <div class="mt-4 rounded-lg bg-gray-100/5 p-4">
                             <p class="text-md flex justify-center font-semibold text-gray-600 dark:text-white">
-                              {{ originalStigLibrary.filename }}
+                              {{ libraryLabel(originalStigLibrary) }}
                               <ArrowLongRightIcon class="mx-4 h-7 w-7 text-gray-600 dark:text-white" />
-                              {{ editBase.filename }}
+                              {{ libraryLabel(editBase) }}
                             </p>
                           </div>
                         </div>
@@ -1124,6 +1124,7 @@ import {
 } from "@heroicons/vue/24/outline";
 import { storeToRefs } from "pinia";
 import inflection from "inflection";
+import { DateTime } from "luxon";
 import { useBreadcrumbStore } from "~~/stores/Breadcrumb";
 import { useAliasStore } from "~/stores/AliasStorage";
 const aliasStore = useAliasStore();
@@ -1428,6 +1429,12 @@ const { data: stigLibrary } = await useFetch("/api/stigLibrary", { key: "stigLib
 const { data: classLibrary } = await useFetch("/api/boundaries/listClassification");
 // RMF Version API
 const { data: rmfLibrary } = await useFetch("/api/boundaries/listRMFVersions");
+
+function libraryLabel(lib) {
+  if (!lib || !lib.libraryDate) return lib?.classification || "";
+  const date = DateTime.fromISO(lib.libraryDate).toLocaleString(DateTime.DATE_MED);
+  return [lib.classification, date].filter(Boolean).join(" - ");
+}
 
 const sortedStigLibrary = ref({});
 if (stigLibrary.value === null) {

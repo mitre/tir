@@ -1,10 +1,11 @@
-import { parseLibraryName } from "../../utils/stigLibrary";
-
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
   await userCheck(event, undefined, undefined, undefined);
-  console.log(body.filename);
-  const results = parseLibraryName(body.filename);
-  console.log(results);
-  return results;
+  const body = await readBody(event);
+  const filename = typeof body?.filename === "string" ? body.filename : "";
+  const isZip = filename.toLowerCase().endsWith(".zip");
+
+  return {
+    error: !isZip,
+    message: isZip ? "" : "File must be a .zip STIG Library compilation.",
+  };
 });

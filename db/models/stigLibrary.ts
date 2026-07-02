@@ -21,8 +21,8 @@ export class StigLibrary extends Model<
   declare hash: string;
   declare classification: string;
   declare libraryDate: string;
-  declare version: number;
-  declare importedDate: string;
+  declare version: CreationOptional<number | null>;
+  declare importedDate: CreationOptional<string | null>;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
 
@@ -47,12 +47,11 @@ StigLibrary.init(
       allowNull: false,
     },
     filename: {
-      type: DataTypes.STRING,
-      unique: true,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     hash: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       unique: true,
       allowNull: false,
     },
@@ -62,7 +61,7 @@ StigLibrary.init(
       allowNull: true,
     },
     libraryDate: {
-      type: DataTypes.STRING(29),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     version: {
@@ -70,15 +69,15 @@ StigLibrary.init(
       allowNull: true,
     },
     importedDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: true, // not set until import is complete
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },
