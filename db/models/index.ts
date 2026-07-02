@@ -73,6 +73,7 @@ import { ControlRecordItem } from "./controlRecordItem";
 import { ControlRecord } from "./controlRecord";
 import { ControlStatement } from "./controlStatement";
 import { ControlEnhancementStatement } from "./controlEnhancementStatement";
+import { ImportJob } from "./importJob";
 
 User.belongsTo(UserRole);
 UserRole.hasOne(User);
@@ -675,4 +676,5 @@ export {
   EnhancementWithdrawn,
   ControlStatement,
   ControlEnhancementStatement,
+  ImportJob,
 };
