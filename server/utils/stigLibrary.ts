@@ -123,12 +123,12 @@ export const processLibrary = async (
     classification: libraryNameAttributes.classification,
     libraryDate: libraryNameAttributes.date,
     version: libraryNameAttributes.version,
-    importedDate: DateTime.now().toISODate(),
   });
 
   try {
     await newLibrary.save();
     streamer.status(`STIG Library Saved: ${newLibrary.dataValues.id}`);
+    streamer.saved(newLibrary.dataValues.id);
   } catch (error) {
     if (error instanceof UniqueConstraintError) {
       error.errors.forEach((element) => {
@@ -192,6 +192,10 @@ export const processLibrary = async (
     }
   }
   streamer.progress(100);
+
+  newStigLibrary.importedDate = DateTime.now().toISO();
+  await newStigLibrary.save();
+
   return processLibraryResults;
 };
 
