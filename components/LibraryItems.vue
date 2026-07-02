@@ -83,6 +83,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from "vue";
+import { Duration } from "luxon";
 import { useUploadStream } from "~/composables/useUploadStream";
 import type { ProgressMessage } from "~/types/progress";
 
@@ -99,9 +100,7 @@ interface ImportJobView {
   stigLibraryId: number | null;
 }
 
-// STIG import progress is tracked only while this page is mounted. The server is
-// authoritative (ImportJob row + SSE replay), so state is rebuilt on mount and the
-// live connections are torn down on unmount; an interrupted upload is just restarted.
+// client progress state is ephemeral - the server (ImportJob + SSE replay) is authoritative
 const jobs = reactive<Record<string, ImportJobView>>({});
 const sources = new Map<string, EventSource>();
 let activeUpload: { abort: () => void } | null = null;
@@ -130,7 +129,6 @@ function applyMessage(jobId: string, msg: ProgressMessage) {
       upsert(jobId, { message: msg.value });
       break;
     case "saved":
-      // The library row now exists; move the bar onto its row and refresh the list.
       upsert(jobId, { stigLibraryId: msg.value });
       refreshData();
       break;
@@ -171,6 +169,14 @@ function subscribe(jobId: string, filename = "") {
   };
 }
 
+function formatEta(seconds: number): string {
+  if (!isFinite(seconds) || seconds <= 0) return "";
+  if (seconds < 1) return "<1s";
+  return Duration.fromObject({ seconds: Math.round(seconds) })
+    .rescale()
+    .toHuman({ unitDisplay: "short" });
+}
+
 async function startStigUpload(file: File) {
   const { jobId } = await $fetch<{ jobId: string }>("/api/stigLibrary/jobs", {
     method: "POST",
@@ -188,6 +194,8 @@ async function startStigUpload(file: File) {
   subscribe(jobId, file.name);
 
   const tus = await import("tus-js-client");
+  let startTime: number | null = null;
+  let startSent = 0;
   const upload = new tus.Upload(file, {
     endpoint: "/api/uploads",
     retryDelays: [0, 1000, 3000, 5000, 10000, 20000],
@@ -197,7 +205,17 @@ async function startStigUpload(file: File) {
     onProgress: (sent, total) => {
       if (!total || jobs[jobId]?.phase !== "uploading") return;
       const percent = Math.floor((sent / total) * 100);
-      upsert(jobId, { percent, message: `Uploading ${percent}%` });
+      if (startTime === null) {
+        startTime = Date.now();
+        startSent = sent;
+      }
+      const elapsed = (Date.now() - startTime) / 1000;
+      const rate = elapsed > 0 ? (sent - startSent) / elapsed : 0;
+      const eta = rate > 0 ? formatEta((total - sent) / rate) : "";
+      upsert(jobId, {
+        percent,
+        message: eta ? `Uploading ${percent}% - ~${eta} left` : `Uploading ${percent}%`,
+      });
     },
     onSuccess: () => {
       if (jobs[jobId]?.phase === "uploading") {
@@ -235,12 +253,10 @@ async function resumeActive() {
     }
     if (added > 0) refreshData();
   } catch {
-    // best-effort reattach; ignore when unauthenticated or none active
+    // best-effort reattach, fine to ignore
   }
 }
 
-// The upload-area bar tracks the job that has no library row yet; once it has a
-// stigLibraryId the bar moves onto that library's row instead.
 const pendingStigJob = computed(
   () =>
     Object.values(jobs).find(
@@ -251,7 +267,6 @@ const uploadingStig = computed(() => !!pendingStigJob.value);
 const barProgressStig = computed(() => pendingStigJob.value?.percent ?? 0);
 const messageLoadStig = computed(() => pendingStigJob.value?.message ?? "");
 
-// libraryId -> job, for rows that should show an inline import bar.
 const jobsByLibrary = computed<Record<number, ImportJobView>>(() => {
   const map: Record<number, ImportJobView> = {};
   for (const job of Object.values(jobs)) {
@@ -291,14 +306,16 @@ async function handleStigChange() {
   });
 
   if (data.value?.error) {
-    notificationStore.addNotification({ type: "error", message: "Invalid STIG filename" });
+    notificationStore.addNotification({
+      type: "error",
+      message: data.value.message || "Invalid STIG file",
+    });
     return;
   }
 
   await startStigUpload(selectedFile);
 }
 
-// Reattach to any in-flight imports when the page opens; tear down on leave.
 onMounted(() => resumeActive());
 onBeforeUnmount(() => {
   sources.forEach((es) => es.close());

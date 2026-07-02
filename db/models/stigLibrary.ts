@@ -21,8 +21,8 @@ export class StigLibrary extends Model<
   declare hash: string;
   declare classification: string;
   declare libraryDate: string;
-  declare version: number;
-  declare importedDate: string;
+  declare version: CreationOptional<number | null>;
+  declare importedDate: CreationOptional<string | null>;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
 
@@ -48,7 +48,6 @@ StigLibrary.init(
     },
     filename: {
       type: DataTypes.TEXT,
-      unique: true,
       allowNull: false,
     },
     hash: {

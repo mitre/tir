@@ -2,7 +2,6 @@ import type { H3Event } from "h3";
 import { DateTime } from "luxon";
 import { Server, MemoryLocker } from "@tus/server";
 import { FileStore } from "@tus/file-store";
-import { parseLibraryName } from "./stigLibrary";
 import { runImportJob } from "./runImportJob";
 import { ImportJob } from "~/db/models";
 
@@ -31,9 +30,8 @@ function getTusServer(): Server {
       if (!filename) {
         uploadError(400, "Missing filename metadata.");
       }
-      const parsed = parseLibraryName(filename);
-      if (parsed.error) {
-        uploadError(400, parsed.errorMessage || "The file doesn't appear to be a STIG Library.");
+      if (!filename.toLowerCase().endsWith(".zip")) {
+        uploadError(400, "File must be a .zip STIG Library compilation.");
       }
       return Promise.resolve({});
     },
