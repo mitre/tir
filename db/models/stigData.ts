@@ -106,8 +106,9 @@ StigData.init(
     },
     severity: {
       type: DataTypes.ENUM,
-      values: ["high", "medium", "low"],
+      values: ["unknown", "info", "low", "medium", "high"],
       allowNull: true,
+      defaultValue: "unknown",
     },
     weight: {
       type: DataTypes.STRING,
