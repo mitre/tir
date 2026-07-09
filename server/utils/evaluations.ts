@@ -22,13 +22,6 @@ export type EvalSummaryOverride = {
   systemId: number;
   systemName: string;
   stigDatumId: number;
-  // System: {
-  //   id: number;
-  //   name: string;
-  // };
-  // StigData: {
-  //   id: number;
-  // };
 };
 
 export type EvalSummaryMilestone = {
@@ -44,12 +37,12 @@ export type EvalSummaryEvaluationItem = {
   Milestone_Changes: string;
   Poam_Comments: string;
   Mitigations: string;
-  Severity: string;
-  Relevance_of_Threat: string;
-  Likelihood: string;
-  Impact: string;
+  Severity: string | null;
+  Relevance_of_Threat: string | null;
+  Likelihood: string | null;
+  Impact: string | null;
   Impact_Description: string;
-  Residual_Risk_Level: string;
+  Residual_Risk_Level: string | null;
   Recommendations: string;
   lastUpdate: string;
   creationDate: string;
@@ -145,6 +138,7 @@ export async function createEvaluation(
       StigId: stigId,
       comment: "TIR",
       classification: "U",
+      customname: "",
     });
 
     const stigChecks = await StigData.findAll({
@@ -157,15 +151,29 @@ export async function createEvaluation(
     });
 
     for (const check of stigChecks) {
-      await EvaluationItem.create({
-        // status: "Not_Reviewed",
+      await EvaluationItem.build({
         EvaluationId: newEvaluation.dataValues.id,
         StigDatumId: check.dataValues.id,
+        Office_Org: '',
+        Resources_Required: '',
+        Scheduled_Completion_Date:'',
+        Milestone_Changes: '',
+        Poam_Comments: '',
+        Mitigations: '',
+        Severity: null,
+        Relevance_of_Threat: null,
+        Likelihood: null,
+        Impact: null,
+        Impact_Description: '',
+        Residual_Risk_Level: null,
+        Recommendations: ''
       });
     }
     logger.info({
       service: "Boundary",
-      message: `Creating Evaluation for ${stigChecks[0].Stigs[0].stigid} ID:${stigId} on BoundaryId: ${boundaryId}`,
+      message: `Creating Evaluation for ${
+        stigChecks[0]?.Stigs?.[0]?.stigid ?? "Unknown"
+      } ID:${stigId} on BoundaryId: ${boundaryId}`,
     });
   }
 
@@ -247,7 +255,10 @@ export async function getEvaluationSummary(
               {
                 model: Evaluation,
                 attributes: [],
-                where: { BoundaryId: boundaryId },
+                where: {
+                  BoundaryId: boundaryId,
+                  StigId: stigId,
+                },
                 required: true,
               },
             ],
@@ -354,10 +365,10 @@ export async function getEvaluationSummary(
                 statusOverride: assessmentItem.statusOverride,
                 statusOverrideJustification: assessmentItem.statusOverrideJustification,
                 Assessment: {
-                  id: assessmentItem.Assessment?.id!,
+                  id: assessmentItem.Assessment?.id ?? 0,
                   System: {
-                    id: assessmentItem.Assessment?.System?.id,
-                    name: assessmentItem.Assessment?.System?.name!,
+                    id: assessmentItem.Assessment?.System?.id ?? 0,
+                    name: assessmentItem.Assessment?.System?.name ?? "null",
                   },
                 },
               });
@@ -371,7 +382,7 @@ export async function getEvaluationSummary(
 
               const newFindingCount: SystemFindingCounts = {
                 findings: count,
-                systemName: assessmentItem.Assessment?.System?.name!,
+                systemName: assessmentItem.Assessment?.System?.name ?? "",
               };
 
               systemFindingCounts.push(newFindingCount);
@@ -386,13 +397,6 @@ export async function getEvaluationSummary(
                 systemId: override.System.id,
                 systemName: override.System.name,
                 stigDatumId: override.StigDatumId,
-                // System: {
-                //   id: override.System.id,
-                //   name: override.System.name,
-                // },
-                // StigData: {
-                //   id: override.StigData.id,
-                // },
               };
               overrides.push(newOverride);
 
