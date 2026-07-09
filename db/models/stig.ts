@@ -10,7 +10,7 @@ import {
   type BelongsToManyAddAssociationMixin,
   type BelongsToManyRemoveAssociationMixin,
 } from "sequelize";
-import type { StigData } from ".";
+import type { StigData, Evaluation } from ".";
 
 export class Stig extends Model<InferAttributes<Stig>, InferCreationAttributes<Stig>> {
   declare id: CreationOptional<number>;
@@ -54,6 +54,7 @@ export class Stig extends Model<InferAttributes<Stig>, InferCreationAttributes<S
   declare creationDate: CreationOptional<string>;
 
   declare StigData?: NonAttribute<StigData[]>;
+  declare Evaluations?: NonAttribute<Evaluation[]>;
 
   declare addStigData: BelongsToManyAddAssociationMixin<StigData, number>;
   declare removeStigData: BelongsToManyRemoveAssociationMixin<StigData, number>;
@@ -61,6 +62,7 @@ export class Stig extends Model<InferAttributes<Stig>, InferCreationAttributes<S
 
   declare static associations: {
     StigData: Association<Stig, StigData>;
+    Evaluations: Association<Stig, Evaluation>;
   };
 }
 
