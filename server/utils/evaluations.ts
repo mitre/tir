@@ -151,7 +151,7 @@ export async function createEvaluation(
     });
 
     for (const check of stigChecks) {
-      await EvaluationItem.build({
+      await EvaluationItem.create({
         EvaluationId: newEvaluation.dataValues.id,
         StigDatumId: check.dataValues.id,
         Office_Org: '',
