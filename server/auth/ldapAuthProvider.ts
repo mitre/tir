@@ -3,7 +3,7 @@ import { H3Event, H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
 import { SessionService } from "./sessionService";
 import { User } from "~/db/models/user";
-
+import { UserConfig } from "~/db/models";
 const sessionService = new SessionService();
 
 export class LDAPAuthProvider extends AuthProvider {
@@ -64,6 +64,12 @@ export class LDAPAuthProvider extends AuthProvider {
           creationMethod: "ldap",
           password: null,
           salt: null,
+        });
+
+        await UserConfig.create({
+          UserId: user.id,
+          ThemeId: null,
+          TimezoneId: 1,
         });
 
         logger.info({

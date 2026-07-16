@@ -73,6 +73,7 @@ import { ControlRecordItem } from "./controlRecordItem";
 import { ControlRecord } from "./controlRecord";
 import { ControlStatement } from "./controlStatement";
 import { ControlEnhancementStatement } from "./controlEnhancementStatement";
+import { UserConfig } from "./userConfig";
 
 User.belongsTo(UserRole);
 UserRole.hasOne(User);
@@ -616,6 +617,53 @@ ControlRevision.hasMany(ControlRecord, { onDelete: "CASCADE", onUpdate: "CASCADE
 
 ControlFamily.hasMany(Control);
 
+export interface UserConfigInterface extends UserConfig {
+  addFavoriteTier: BelongsToManyAddAssociationMixin<Tier, number>;
+  removeFavoriteTier: BelongsToManyRemoveAssociationMixin<Tier, number>;
+
+  addFavoriteBoundary: BelongsToManyAddAssociationMixin<Boundary, number>;
+  removeFavoriteBoundary: BelongsToManyRemoveAssociationMixin<Boundary, number>;
+}
+
+export const UserConfig_Tier = sequelize.define(
+  "UserConfig_Tier",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
+
+export const UserConfig_Boundary = sequelize.define(
+  "UserConfig_Boundary",
+  {},
+  { timestamps: false, noIsoTimestamps: true },
+);
+
+User.hasOne(UserConfig);
+UserConfig.belongsTo(User);
+
+Theme.hasMany(UserConfig);
+UserConfig.belongsTo(Theme);
+
+Timezone.hasMany(UserConfig);
+UserConfig.belongsTo(Timezone);
+
+UserConfig.belongsToMany(Tier, {
+  through: UserConfig_Tier,
+  as: "FavoriteTiers",
+});
+
+Tier.belongsToMany(UserConfig, {
+  through: UserConfig_Tier,
+});
+
+UserConfig.belongsToMany(Boundary, {
+  through: UserConfig_Boundary,
+  as: "FavoriteBoundaries",
+});
+
+Boundary.belongsToMany(UserConfig, {
+  through: UserConfig_Boundary,
+});
+
 export {
   User,
   Boundary,
@@ -675,4 +723,5 @@ export {
   EnhancementWithdrawn,
   ControlStatement,
   ControlEnhancementStatement,
+  UserConfig,
 };

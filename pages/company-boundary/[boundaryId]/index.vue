@@ -350,11 +350,19 @@
                   </h1>
                 </div>
               </div>
-              <div
-                class="order-first flex-none rounded-full bg-indigo-400/10 px-2 py-1 text-xs font-medium text-indigo-400 ring-1 ring-inset ring-indigo-400/30 sm:order-none"
+              <button
+                type="button"
+                :class="[
+                  isFavorite
+                    ? 'bg-yellow-400/10 text-yellow-500 ring-yellow-400/30'
+                    : 'bg-gray-400/10 text-gray-500 ring-gray-400/30 dark:text-gray-400',
+                  'order-first flex items-center gap-x-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset sm:order-none',
+                ]"
+                @click="toggleFavorite"
               >
-                Production
-              </div>
+                <StarIcon :class="[isFavorite ? 'fill-current' : '', 'h-4 w-4']" />
+                {{ isFavorite ? "Favorited" : "Favorite" }}
+              </button>
             </div>
 
             <!-- Stats -->
@@ -481,7 +489,9 @@
                 <TabPanel><BoundaryView :summary="summary" /></TabPanel>
                 <TabPanel><SystemView :summary="summary" :asset-view="assetView" /></TabPanel>
                 <TabPanel><VulnView :summary="summary" /></TabPanel>
-                <TabPanel><SctmView :summary="summary" @refresh-summary="() => refreshNuxtData('SummaryAPI')" /></TabPanel>
+                <TabPanel
+                  ><SctmView :summary="summary" @refresh-summary="() => refreshNuxtData('SummaryAPI')"
+                /></TabPanel>
               </TabPanels>
             </TabGroup>
           </div>
@@ -1323,6 +1333,7 @@ import {
   Cog6ToothIcon,
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
+  StarIcon
 } from "@heroicons/vue/24/outline";
 import inflection from "inflection";
 import { unZip } from "~/utils/zip";
@@ -1339,6 +1350,10 @@ import type { TirAlias } from "~/db/models/tirAlias";
 
 definePageMeta({
   middleware: ["member-access"],
+});
+
+onMounted(async () => {
+  await loadFavorites();
 });
 const id = useId();
 // const storeID = useIdStorageStore();
@@ -1378,6 +1393,36 @@ const roles = Object.keys(SystemRoles).map((key) => ({
   id: key,
   name: SystemRoles[key as keyof typeof SystemRoles],
 }));
+
+const userConfig = ref();
+
+const loadFavorites = async () => {
+  userConfig.value = await $fetch("/api/userConfig/list");
+};
+
+const isFavorite = computed(() => {
+  if (!userConfig.value) {
+    return false;
+  }
+
+  return userConfig.value.FavoriteBoundaries.some(
+    (boundary: { id: number; }) => boundary.id === Number(boundaryId),
+  );
+});
+
+const toggleFavorite = async () => {
+  const method = isFavorite.value ? "DELETE" : "POST";
+
+  await $fetch(
+    `/api/userConfig/favorites/boundaries/${boundaryId}`,
+    {
+      method,
+    },
+  );
+
+  await loadFavorites();
+};
+
 
 const hoverItems = [
   { name: "NotAFinding", text: "Not a Finding", color: "green" },

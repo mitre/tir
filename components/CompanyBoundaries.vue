@@ -199,6 +199,22 @@
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-white">
                       {{ formatDate(item.lastUpdate) }}
                     </td>
+                    <td class="whitespace-nowrap px-2 py-4">
+                      <button
+                        type="button"
+                        @click.stop="toggleFavorite(item)"
+                        class="text-gray-400 hover:text-yellow-400"
+                      >
+                        <StarIcon
+                          v-if="isFavorite(item)"
+                          class="h-5 w-5 fill-yellow-400 text-yellow-400"
+                        />
+                        <StarIcon
+                          v-else
+                          class="h-5 w-5"
+                        />
+                      </button>
+                    </td>
                     <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm sm:pr-0">
                       <Menu as="div" class="relative ml-auto">
                         <MenuButton
@@ -1098,6 +1114,7 @@ import {
   HomeIcon,
   CheckIcon,
   ChevronUpDownIcon,
+  StarIcon,
 } from "@heroicons/vue/20/solid";
 import {
   Dialog,
@@ -1127,7 +1144,7 @@ import inflection from "inflection";
 import { useBreadcrumbStore } from "~~/stores/Breadcrumb";
 import { useAliasStore } from "~/stores/AliasStorage";
 const aliasStore = useAliasStore();
-
+const route = useRoute();
 const showErrorNotification = ref(false);
 const errorObject = ref();
 const errorName = ref("");
@@ -1156,6 +1173,37 @@ const companyDetails = {
 
 const boundaryTerm = aliasStore.BoundaryAlias;
 const companyTerm = aliasStore.CompanyAlias;
+const userConfig = ref();
+
+const loadFavorites = async () => {
+  userConfig.value = await $fetch("/api/userConfig/list");
+};
+
+onMounted(async () => {
+  await loadFavorites();
+
+  const favoriteTierId = route.query.favoriteTierId;
+
+  if (favoriteTierId) {
+    await loadFavoriteTier(Number(favoriteTierId));
+  }
+});
+
+const isFavorite = (item) => {
+  if (!userConfig.value) {
+    return false;
+  }
+
+  if (item.type === "Company") {
+    return userConfig.value.FavoriteTiers.some(
+      (tier) => tier.id === item.id,
+    );
+  }
+
+  return userConfig.value.FavoriteBoundaries.some(
+    (boundary) => boundary.id === item.id,
+  );
+};
 
 const { data: currentUser } = await useFetch("/api/auth/currentUser");
 const { data: companyList } = await useFetch("/api/tiers/list", {
@@ -1181,6 +1229,32 @@ for (let i = 0; i < boundaryList.value.length; i++) {
   boundaryList.value[i].type = "Boundary";
   tierList.value.push(boundaryList.value[i]);
 }
+
+const toggleFavorite = async (item) => {
+  if (isFavorite(item)) {
+    if (item.type === "Company") {
+      await $fetch(`/api/userConfig/favorites/tiers/${item.id}`, {
+        method: "DELETE",
+      });
+    } else {
+      await $fetch(`/api/userConfig/favorites/boundaries/${item.id}`, {
+        method: "DELETE",
+      });
+    }
+  } else {
+    if (item.type === "Company") {
+      await $fetch(`/api/userConfig/favorites/tiers/${item.id}`, {
+        method: "POST",
+      });
+    } else {
+      await $fetch(`/api/userConfig/favorites/boundaries/${item.id}`, {
+        method: "POST",
+      });
+    }
+  }
+
+  await loadFavorites();
+};
 
 const { data: get } = await useFetch("/api/tiers/get", {
   method: "POST",
@@ -1225,6 +1299,50 @@ async function checkTier(id, companyName, parentId) {
     uniqueCompany(id, companyName, parentId);
 
     tierId.value = id;
+  } catch (error) {
+    errorObject.value = error;
+    showErrorNotification.value = true;
+    setTimeout(() => (showErrorNotification.value = false), 6000);
+  }
+}
+
+async function loadFavoriteTier(id) {
+  try {
+    const breadcrumbPages = [];
+    let currentTierId = id;
+
+    while (currentTierId !== null) {
+      const tier = await $fetch("/api/tiers/get", {
+        method: "POST",
+        body: {
+          id: currentTierId,
+        },
+      });
+
+      if (!tier?.length) {
+        break;
+      }
+
+      const company = tier[0];
+
+      breadcrumbPages.unshift({
+        name: company.name,
+        tierId: company.id,
+        parentId: company.parentId,
+      });
+
+      currentTierId = company.parentId;
+    }
+
+    pages.value.length = 0;
+
+    for (const page of breadcrumbPages) {
+      addBreadcrumb(page);
+    }
+
+    tierId.value = id;
+
+    await updateList(id);
   } catch (error) {
     errorObject.value = error;
     showErrorNotification.value = true;
@@ -1578,4 +1696,5 @@ async function removeBoundary(boundaryId) {
     loading.value = false;
   }
 }
+
 </script>

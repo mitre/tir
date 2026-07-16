@@ -427,22 +427,18 @@ const tokenName = ref("");
 let showPopup = ref(false);
 let myTokenName = ref("");
 const expirationDate = ref("");
-const confirmTimeZone = ref(timeZones.at(currentUser.value.TimezoneId - 1));
+const confirmTimeZone = ref(timeZones.at(currentUser.value.UserConfig.TimezoneId - 1));
 /// Change User Theme Preference
 async function setTheme(ThemeId) {
-  try {
-    const { error } = await useFetch("/api/users/edit", {
-      method: "PUT",
-      body: {
-        id: currentUser.value.id,
-        ThemeId,
-      },
-    });
-    if (error.value != null) {
-      console.log("Error Setting Theme");
-    }
-  } finally {
-    // location.reload()
+  const { error } = await useFetch("/api/userConfig/edit", {
+    method: "PUT",
+    body: {
+      ThemeId,
+    },
+  });
+
+  if (error.value) {
+    console.log("Error Setting Theme");
   }
 }
 async function setTimeZone() {

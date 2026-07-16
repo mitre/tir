@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { User, Timezone, UserRole } from "../../../db/models";
+import { User, UserConfig, Timezone, UserRole } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -18,7 +18,6 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Email required.",
     });
   }
-  // check if user exist
   const userExist = await User.findOne({ where: { email } });
   if (userExist) {
     logger.error(`Sorry, this email is taken ${body.email}`);
@@ -28,15 +27,17 @@ export default defineEventHandler(async (event) => {
     });
   }
   const userRole = await UserRole.findByPk(UserRoleId);
-  let newUser: User | null = null;
 
-  // Find the timezone with the specified name
   let timezone;
 
   if (TimezoneName) {
-    timezone = await Timezone.findOne({ where: { name: TimezoneName } });
+    timezone = await Timezone.findOne({
+      where: { name: TimezoneName },
+    });
   } else {
-    timezone = await Timezone.findOne({ where: { name: "Etc/UTC" } });
+    timezone = await Timezone.findOne({
+      where: { name: "Etc/UTC" },
+    });
   }
 
   if (!timezone) {
@@ -68,25 +69,42 @@ export default defineEventHandler(async (event) => {
 
   const SECRET_KEY = config.secret_key as string;
   const salt = generateSalt();
-
   const password = hashPassword(body.password, salt, SECRET_KEY);
+  const now = DateTime.now().toISO();
 
-  await User.create({
-    firstName,
-    lastName,
-    email,
-    UserRoleId,
-    TimezoneId: timezone.id,
-    salt,
-    password,
-    passwordChangedAt: DateTime.now().toISO(),
-    creationMethod: "local",
-  });
+  const transaction = await sequelize.transaction();
 
-  logger.info({
-    service: "auth",
-    message: `User ${email} Successfully Created with Role: ${userRole?.name}`,
-  });
+  try {
+    const newUser = await User.create({
+      firstName,
+      lastName,
+      email,
+      UserRoleId,
+      TimezoneId: timezone.id, 
+      salt,
+      password,
+      passwordChangedAt: now,
+      creationMethod: "local",
+    });
 
-  return newUser;
+    await UserConfig.create({
+      UserId: newUser.id,
+      ThemeId: null,
+      TimezoneId: timezone.id,
+      lastUpdate: now,
+      creationDate: now,
+    });
+
+    await transaction.commit();
+
+    logger.info({
+      service: "auth",
+      message: `User ${email} Successfully Created with Role: ${userRole?.name}`,
+    });
+
+    return newUser;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 });

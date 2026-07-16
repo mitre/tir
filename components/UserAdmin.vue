@@ -90,7 +90,7 @@
                                       (newLastName = person.lastName),
                                       (newEmail = person.email),
                                       (newRoleId = person.UserRoleId),
-                                      (editTimezoneName = timeZones.at(person.TimezoneId - 1)),
+                                      (editTimezoneName = timeZones.at(person.UserConfig.TimezoneId - 1)),
                                       (newRoleName = person.UserRole.name),
                                       (selected = person.UserRole),
                                     ]

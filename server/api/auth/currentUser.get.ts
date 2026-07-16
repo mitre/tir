@@ -1,6 +1,6 @@
 import { defineEventHandler, H3Error } from "h3";
 import { SessionService } from "../../auth/sessionService";
-import { User, UserRole, Theme } from "../../../db/models";
+import { User, UserRole, UserConfig,  Theme } from "../../../db/models";
 
 const sessionService = new SessionService();
 
@@ -17,15 +17,21 @@ export default defineEventHandler(async (event) => {
     }
 
     const user = await User.findByPk(session.UserId, {
-      attributes: ["id", "firstName", "lastName", "email", "TimezoneId", "ThemeId"],
+      attributes: ["id", "firstName", "lastName", "email"],
       include: [
         {
           model: UserRole,
           attributes: ["id", "name"],
         },
         {
-          model: Theme,
-          attributes: ["id", "name"],
+          model: UserConfig,
+          attributes: ["ThemeId", "TimezoneId"],
+          include: [
+            {
+              model: Theme,
+              attributes: ["id", "name"],
+            },
+          ],
         },
       ],
     });
