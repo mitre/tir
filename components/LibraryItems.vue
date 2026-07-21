@@ -132,17 +132,22 @@ function applyMessage(jobId: string, msg: ProgressMessage) {
       upsert(jobId, { stigLibraryId: msg.value });
       refreshData();
       break;
-    case "complete":
-      upsert(jobId, { phase: "done", percent: 100, message: "Processing complete!" });
+    case "complete": {
+      const failed = msg.failed ?? 0;
+      upsert(jobId, { phase: "done", percent: 100, message: msg.value || "Processing complete!" });
       closeSource(jobId);
       refreshData();
       alertsStore.refresh();
       notificationStore.addNotification({
-        type: "success",
-        message: `Completed import of ${filename || "STIG library"}`,
+        type: failed > 0 ? "error" : "success",
+        message:
+          failed > 0
+            ? `Import of ${filename || "STIG library"} finished with failures: ${msg.value}`
+            : `Completed import of ${filename || "STIG library"}`,
       });
-      setTimeout(() => dismiss(jobId), 6000);
+      setTimeout(() => dismiss(jobId), failed > 0 ? 30000 : 6000);
       break;
+    }
     case "error":
       upsert(jobId, { phase: "error", message: msg.value });
       closeSource(jobId);

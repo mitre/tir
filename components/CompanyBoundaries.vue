@@ -1526,7 +1526,7 @@ const { data: rmfLibrary } = await useFetch("/api/boundaries/listRMFVersions");
 function libraryLabel(lib) {
   if (!lib || !lib.libraryDate) return lib?.classification || "";
   const date = DateTime.fromISO(lib.libraryDate).toLocaleString(DateTime.DATE_MED);
-  return [lib.classification, date].filter(Boolean).join(" - ");
+  return [lib.classification, date, lib.revisionLabel].filter(Boolean).join(" - ");
 }
 
 const sortedStigLibrary = ref({});

@@ -14,6 +14,7 @@ import {
 } from "../../db/models";
 import { hashFile } from "./hash";
 import { createBlankAssessment } from "./assessments";
+import { recomputeAndSummarize, type RevisionSummary } from "./libraryRevisions";
 
 import type { ProgressStreamer } from "~/server/utils/progressBar";
 
@@ -28,6 +29,8 @@ export type ProcessLibraryResults = {
   classification: Classification;
   libraryDate: string;
   skippedPackages: string[];
+  failedStigs: string[];
+  revision: RevisionSummary | null;
 };
 
 export const migrateBoundary = async (
@@ -203,7 +206,9 @@ export const processLibrary = async (
   originalName: string,
   streamer: ProgressStreamer,
 ): Promise<ProcessLibraryResults> => {
-  const outputDirPath = path.join(baseOutputPath, jobUid);
+  // "-work" keeps this clear of the uploaded zip itself: tus stores it at
+  // baseOutputPath/<jobUid>, because uploads are named after the job.
+  const outputDirPath = path.join(baseOutputPath, `${jobUid}-work`);
   if (!fs.existsSync(outputDirPath)) {
     fs.mkdirSync(outputDirPath, { recursive: true });
   }
@@ -223,14 +228,7 @@ export const processLibrary = async (
   const classification = highestClassification(importedPackages.map((pkg) => pkg.classification));
   const libraryDate = deriveLibraryDate(xmlFiles);
 
-  const existing = await StigLibrary.findOne({ where: { classification, libraryDate } });
-  if (existing) {
-    throw new Error(
-      `A ${classification} STIG Library dated ${libraryDate} already exists (id ${existing.id}). Delete it before re-importing.`,
-    );
-  }
-
-  const newLibrary = await StigLibrary.build({
+  const newLibrary = StigLibrary.build({
     filename: originalName,
     hash,
     classification,
@@ -246,9 +244,11 @@ export const processLibrary = async (
       error.errors.forEach((element) => {
         logger.error(`[ERROR] ${originalName} ${element.message}`);
       });
-      throw new Error("This STIG Library appears to already exist (duplicate detected).", {
-        cause: error,
-      });
+      const existing = await StigLibrary.findOne({ where: { hash } });
+      throw new Error(
+        `This exact file was already imported as library ${existing?.id} (${existing?.filename}).`,
+        { cause: error },
+      );
     }
     logger.error("Error saving Library Entry.", { cause: error });
     throw new Error("Error saving Library Entry.");
@@ -270,6 +270,8 @@ export const processLibrary = async (
     classification,
     libraryDate,
     skippedPackages,
+    failedStigs: [],
+    revision: null,
   };
 
   streamer.status(`Extracted ${xmlFiles.length} XML files.`);
@@ -279,7 +281,10 @@ export const processLibrary = async (
     try {
       const parseResults = await parseXmlStig(xmlFile, newStigLibrary);
 
-      if (parseResults.newStig) {
+      if (parseResults.errorCheckCount > 0) {
+        processLibraryResults.failedStigs.push(path.basename(xmlFile));
+        streamer.status(`Failed to import ${path.basename(xmlFile)} - see the server log.`);
+      } else if (parseResults.newStig) {
         processLibraryResults.newStigCount++;
       } else if (parseResults.newCheckCount === 0 && parseResults.updatedCheckCount === 0) {
         processLibraryResults.unchangedStigCount++;
@@ -291,12 +296,41 @@ export const processLibrary = async (
       streamer.progress(Math.round(((i + 1) / xmlFiles.length) * 100));
     } catch {
       logger.error(`Error Parsing STIG: ${path.basename(xmlFile)}`);
+      processLibraryResults.failedStigs.push(path.basename(xmlFile));
+      streamer.status(`Failed to import ${path.basename(xmlFile)} - see the server log.`);
     }
   }
   streamer.progress(100);
+  if (processLibraryResults.failedStigs.length > 0) {
+    streamer.status(
+      `${processLibraryResults.failedStigs.length} STIG(s) failed to import: ${processLibraryResults.failedStigs.join(", ")}`,
+    );
+  }
 
   newStigLibrary.importedDate = DateTime.now().toISO();
   await newStigLibrary.save();
+
+  const revision = await recomputeAndSummarize(newStigLibrary);
+  processLibraryResults.revision = revision;
+  if (revision && revision.groupSize > 1) {
+    streamer.status(
+      `Same-date group (${classification} ${libraryDate}) now holds ${revision.groupSize} libraries; ` +
+        `this one is "${revision.label ?? "unlabelled"}".`,
+    );
+    if (revision.diff) {
+      const { againstLibraryId, changed, added, removed } = revision.diff;
+      if (changed.length + added.length + removed.length === 0) {
+        streamer.status(
+          `Identical benchmark set to library ${againstLibraryId} - likely a duplicate upload; delete one.`,
+        );
+      } else {
+        streamer.status(
+          `Differs from library ${againstLibraryId}: ` +
+            `${changed.length} updated, ${added.length} added, ${removed.length} removed.`,
+        );
+      }
+    }
+  }
 
   return processLibraryResults;
 };

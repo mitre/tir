@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { DateTime } from "luxon";
-import { removeStaleAndFindBlockingJob, withInProcessImportClaim } from "~/server/utils/importLock";
+import {
+  libraryDeletionInProgress,
+  removeStaleAndFindBlockingJob,
+  withInProcessImportClaim,
+} from "~/server/utils/importLock";
 import { ImportJob } from "~/db/models";
 
 export default defineEventHandler(async (event) => {
@@ -21,9 +25,12 @@ export default defineEventHandler(async (event) => {
 
   const uid = randomUUID();
 
-  const blocking = await withInProcessImportClaim(async () => {
+  const blockedBy = await withInProcessImportClaim(async () => {
+    const deletion = libraryDeletionInProgress();
+    if (deletion) return `${deletion} is in progress`;
+
     const active = await removeStaleAndFindBlockingJob();
-    if (active) return active;
+    if (active) return `an import is already in progress (${active.filename})`;
 
     const now = DateTime.now().toISO();
     await ImportJob.create({
@@ -38,10 +45,10 @@ export default defineEventHandler(async (event) => {
     return null;
   });
 
-  if (blocking) {
+  if (blockedBy) {
     throw createError({
       statusCode: 409,
-      statusMessage: `An import is already in progress (${blocking.filename}). Wait for it to finish before starting another.`,
+      statusMessage: `Cannot start the import: ${blockedBy}. Wait for it to finish.`,
     });
   }
 

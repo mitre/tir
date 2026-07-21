@@ -38,7 +38,7 @@ export function createProgressStreamer(res: any) {
     progress: (value: number) => write({ type: "progress", value }),
     saved: (value: number) => write({ type: "saved", value }),
     error: (value: string) => write({ type: "error", value }),
-    complete: () => write({ type: "complete" }),
+    complete: (value?: string, failed?: number) => write({ type: "complete", value, failed }),
     raw: write,
     finish,
   };

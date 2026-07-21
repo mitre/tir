@@ -61,8 +61,8 @@ export function createJobReporter(uid: string): ProgressStreamer {
       emit({ type: "error", value });
       persist({ status: "error", error: value }).catch(() => {});
     },
-    complete: () => {
-      emit({ type: "complete" });
+    complete: (value?: string, failed?: number) => {
+      emit({ type: "complete", value, failed });
     },
     raw: emit,
     finish: () => {},
