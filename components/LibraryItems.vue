@@ -178,10 +178,19 @@ function formatEta(seconds: number): string {
 }
 
 async function startStigUpload(file: File) {
-  const { jobId } = await $fetch<{ jobId: string }>("/api/stigLibrary/jobs", {
-    method: "POST",
-    body: { filename: file.name },
-  });
+  let jobId: string;
+  try {
+    ({ jobId } = await $fetch<{ jobId: string }>("/api/stigLibrary/jobs", {
+      method: "POST",
+      body: { filename: file.name },
+    }));
+  } catch (error) {
+    const message =
+      (error as { data?: { statusMessage?: string } })?.data?.statusMessage ||
+      "Unable to start the import.";
+    notificationStore.addNotification({ type: "error", message });
+    return;
+  }
 
   upsert(jobId, {
     jobId,

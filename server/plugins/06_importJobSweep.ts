@@ -1,6 +1,7 @@
 import { Op } from "sequelize";
 import { DateTime } from "luxon";
 import { waitForSignal } from "../utils/startupSync";
+import { ACTIVE_STATUSES } from "../utils/importLock";
 import { ImportJob } from "~/db/models";
 
 export default defineNitroPlugin(async () => {
@@ -12,7 +13,7 @@ export default defineNitroPlugin(async () => {
         error: "Import interrupted by a server restart.",
         lastUpdate: DateTime.now().toISO(),
       },
-      { where: { status: { [Op.in]: ["queued", "uploading", "processing"] } } },
+      { where: { status: { [Op.in]: ACTIVE_STATUSES } } },
     );
     if (count > 0) {
       logger.warning({
