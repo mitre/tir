@@ -44,15 +44,20 @@ export async function runImportJob(uid: string, zipArchive: string, originalFile
       reporter,
     );
 
-    reporter.status("Processing Completed!");
-    reporter.complete();
+    const failedCount = results.failedStigs.length;
+    const completionMessage =
+      failedCount > 0
+        ? `Processing completed - ${failedCount} STIG(s) failed to import: ${results.failedStigs.join(", ")}`
+        : "Processing Completed!";
+    reporter.status(completionMessage);
+    reporter.complete(completionMessage, failedCount);
 
     const job = await ImportJob.findOne({ where: { uid } });
     await ImportJob.update(
       {
         status: "done",
         percent: 100,
-        message: "Processing Completed!",
+        message: completionMessage,
         result: JSON.stringify(results),
         lastUpdate: DateTime.now().toISO(),
       },

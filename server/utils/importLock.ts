@@ -69,3 +69,24 @@ export function withInProcessImportClaim<T>(fn: () => Promise<T>): Promise<T> {
   );
   return run;
 }
+
+let activeDeletion: string | null = null;
+
+export function libraryDeletionInProgress(): string | null {
+  return activeDeletion;
+}
+
+/** Returns null and holds the lock until endLibraryDeletion, or the reason it must wait. */
+export function beginLibraryDeletion(description: string): Promise<string | null> {
+  return withInProcessImportClaim(async () => {
+    if (activeDeletion) return `${activeDeletion} is in progress`;
+    const importJob = await removeStaleAndFindBlockingJob();
+    if (importJob) return `an import is in progress (${importJob.filename})`;
+    activeDeletion = description;
+    return null;
+  });
+}
+
+export function endLibraryDeletion(): void {
+  activeDeletion = null;
+}

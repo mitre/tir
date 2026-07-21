@@ -3,6 +3,9 @@ import {
   type BelongsToManyAddAssociationMixin,
   type BelongsToManyRemoveAssociationMixin,
   type BelongsToManyHasAssociationMixin,
+  type InferAttributes,
+  type InferCreationAttributes,
+  Model,
 } from "sequelize";
 
 import { DataTypes } from "sequelize";
@@ -146,9 +149,17 @@ export const MilestoneDates_User = sequelize.define(
 Milestone.belongsToMany(User, { through: MilestoneDates_User });
 User.belongsToMany(Milestone, { through: MilestoneDates_User });
 
-export const Stig_StigData = sequelize.define(
+export interface StigStigDataRow
+  extends Model<InferAttributes<StigStigDataRow>, InferCreationAttributes<StigStigDataRow>> {
+  StigId: number;
+  StigDatumId: number;
+}
+export const Stig_StigData = sequelize.define<StigStigDataRow>(
   "Stig_StigData",
-  {},
+  {
+    StigId: { type: DataTypes.INTEGER, primaryKey: true },
+    StigDatumId: { type: DataTypes.INTEGER, primaryKey: true },
+  },
   { timestamps: false, noIsoTimestamps: true },
 );
 StigData.belongsToMany(Stig, { through: Stig_StigData });
@@ -159,7 +170,7 @@ Boundary.belongsTo(StigLibrary, { onDelete: "RESTRICT", onUpdate: "CASCADE" });
 System.belongsTo(Boundary, { onDelete: "CASCADE", onUpdate: "CASCADE" });
 Boundary.hasMany(System, { onDelete: "CASCADE", onUpdate: "CASCADE" });
 
-const Stig_System = sequelize.define(
+export const Stig_System = sequelize.define(
   "Stig_System",
   {},
   { timestamps: false, noIsoTimestamps: true },
@@ -177,7 +188,7 @@ export interface SystemWithStigs extends System {
   Stigs: Stig[];
 }
 
-const StigData_StigResponsibility = sequelize.define(
+export const StigData_StigResponsibility = sequelize.define(
   "StigData_StigResponsibility",
   {},
   { timestamps: false, noIsoTimestamps: true },
@@ -185,9 +196,17 @@ const StigData_StigResponsibility = sequelize.define(
 StigResponsibility.belongsToMany(StigData, { through: StigData_StigResponsibility });
 StigData.belongsToMany(StigResponsibility, { through: StigData_StigResponsibility });
 
-const StigLibrary_Stig = sequelize.define(
+export interface StigLibraryStigRow
+  extends Model<InferAttributes<StigLibraryStigRow>, InferCreationAttributes<StigLibraryStigRow>> {
+  StigLibraryId: number;
+  StigId: number;
+}
+export const StigLibrary_Stig = sequelize.define<StigLibraryStigRow>(
   "StigLibrary_Stig",
-  {},
+  {
+    StigLibraryId: { type: DataTypes.INTEGER, primaryKey: true },
+    StigId: { type: DataTypes.INTEGER, primaryKey: true },
+  },
   { timestamps: false, noIsoTimestamps: true },
 );
 Stig.belongsToMany(StigLibrary, { through: StigLibrary_Stig });
@@ -197,7 +216,7 @@ export interface StigLibraryWithStigs extends StigLibrary {
   Stigs: Stig[];
 }
 
-const StigData_StigReference = sequelize.define(
+export const StigData_StigReference = sequelize.define(
   "StigData_StigReference",
   {},
   { timestamps: false, noIsoTimestamps: true },

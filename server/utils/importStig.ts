@@ -2,7 +2,7 @@ import * as fs from "fs";
 import { readFileSync } from "fs";
 import path from "path";
 import { parseStringPromise } from "xml2js";
-import { Transaction, UniqueConstraintError } from "sequelize";
+import { UniqueConstraintError } from "sequelize";
 import { Stig, StigIdent, StigLibrary, StigReference, StigResponsibility } from "../../db/models";
 
 export type ParseStigResults = {
@@ -89,7 +89,7 @@ export async function parseXmlStig(
       );
     }
 
-    stigImportTransaction.commit();
+    await stigImportTransaction.commit();
 
     perfTimer.globalSummaryPrint();
     fs.rm(xmlFilePath, (err) => {
@@ -98,10 +98,9 @@ export async function parseXmlStig(
       }
     });
 
-    return { error: false, new: true };
+    return parseResults;
   } catch (error) {
-    const returnStatus = { error: true, new: true };
-    stigImportTransaction.rollback();
+    await stigImportTransaction.rollback();
 
     if (error instanceof UniqueConstraintError) {
       error.errors.forEach((element) => {
@@ -116,10 +115,11 @@ export async function parseXmlStig(
         });
 
         if (stig) {
-          returnStatus.new = false;
+          parseResults.newStig = false;
         }
       }
     } else {
+      parseResults.errorCheckCount++;
       const message = error instanceof Error ? error.message : String(error);
       logger.error(`Failed to import STIG: ${newStig.dataValues.filename} - ${message}`, {
         stack: error instanceof Error ? error.stack : undefined,
@@ -138,7 +138,7 @@ export async function parseXmlStig(
       }
     });
 
-    return returnStatus;
+    return parseResults;
   }
 }
 

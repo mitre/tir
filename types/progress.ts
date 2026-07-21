@@ -3,4 +3,4 @@ export type ProgressMessage =
   | { type: "progress"; value: number }
   | { type: "saved"; value: number }
   | { type: "error"; value: string }
-  | { type: "complete" };
+  | { type: "complete"; value?: string; failed?: number };

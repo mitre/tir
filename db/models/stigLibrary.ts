@@ -19,6 +19,8 @@ export class StigLibrary extends Model<
   declare id: CreationOptional<number>;
   declare filename: string;
   declare hash: string;
+  declare revisionLabel: CreationOptional<string | null>;
+  declare labelSource: CreationOptional<string>;
   declare classification: string;
   declare libraryDate: string;
   declare version: CreationOptional<number | null>;
@@ -54,6 +56,15 @@ StigLibrary.init(
       type: DataTypes.TEXT,
       unique: true,
       allowNull: false,
+    },
+    revisionLabel: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    labelSource: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+      defaultValue: "auto",
     },
     classification: {
       type: DataTypes.ENUM,
