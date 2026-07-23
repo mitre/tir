@@ -1,4 +1,4 @@
-import { Boundary, Tier, UserConfig } from "../../db/models";
+import { Boundary, Tier, User } from "../../db/models";
 
 type FavoriteType = "tier" | "boundary";
 type FavoriteAction = "add" | "remove";
@@ -11,16 +11,12 @@ export async function updateUserFavorite(
 ) {
   const checkResult = await userCheck(event);
 
-  const userConfig = await UserConfig.findOne({
-    where: {
-      UserId: checkResult.user.id,
-    },
-  });
+  const user = await User.findByPk(checkResult.user.id);
 
-  if (!userConfig) {
+  if (!user) {
     throw createError({
       statusCode: 404,
-      statusMessage: "User configuration not found.",
+      statusMessage: "User not found.",
     });
   }
 
@@ -42,9 +38,9 @@ export async function updateUserFavorite(
     }
 
     if (action === "add") {
-      await userConfig.addFavoriteTier(tier);
+      await user.addFavoriteTier(tier);
     } else {
-      await userConfig.removeFavoriteTier(tier);
+      await user.removeFavoriteTier(tier);
     }
   } else {
     const boundary = await Boundary.findByPk(id);
@@ -57,9 +53,9 @@ export async function updateUserFavorite(
     }
 
     if (action === "add") {
-      await userConfig.addFavoriteBoundary(boundary);
+      await user.addFavoriteBoundary(boundary);
     } else {
-      await userConfig.removeFavoriteBoundary(boundary);
+      await user.removeFavoriteBoundary(boundary);
     }
   }
 

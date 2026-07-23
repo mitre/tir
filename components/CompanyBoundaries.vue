@@ -1173,10 +1173,10 @@ const companyDetails = {
 
 const boundaryTerm = aliasStore.BoundaryAlias;
 const companyTerm = aliasStore.CompanyAlias;
-const userConfig = ref();
+const favorites = ref();
 
 const loadFavorites = async () => {
-  userConfig.value = await $fetch("/api/userConfig/list");
+  favorites.value = await $fetch("/api/favorites/list");
 };
 
 onMounted(async () => {
@@ -1190,17 +1190,17 @@ onMounted(async () => {
 });
 
 const isFavorite = (item) => {
-  if (!userConfig.value) {
+  if (!favorites.value) {
     return false;
   }
 
   if (item.type === "Company") {
-    return userConfig.value.FavoriteTiers.some(
+    return favorites.value.FavoriteTiers.some(
       (tier) => tier.id === item.id,
     );
   }
 
-  return userConfig.value.FavoriteBoundaries.some(
+  return favorites.value.FavoriteBoundaries.some(
     (boundary) => boundary.id === item.id,
   );
 };
@@ -1233,21 +1233,21 @@ for (let i = 0; i < boundaryList.value.length; i++) {
 const toggleFavorite = async (item) => {
   if (isFavorite(item)) {
     if (item.type === "Company") {
-      await $fetch(`/api/userConfig/favorites/tiers/${item.id}`, {
+      await $fetch(`/api/favorites/tiers/${item.id}`, {
         method: "DELETE",
       });
     } else {
-      await $fetch(`/api/userConfig/favorites/boundaries/${item.id}`, {
+      await $fetch(`/api/favorites/boundaries/${item.id}`, {
         method: "DELETE",
       });
     }
   } else {
     if (item.type === "Company") {
-      await $fetch(`/api/userConfig/favorites/tiers/${item.id}`, {
+      await $fetch(`/api/favorites/tiers/${item.id}`, {
         method: "POST",
       });
     } else {
-      await $fetch(`/api/userConfig/favorites/boundaries/${item.id}`, {
+      await $fetch(`/api/favorites/boundaries/${item.id}`, {
         method: "POST",
       });
     }

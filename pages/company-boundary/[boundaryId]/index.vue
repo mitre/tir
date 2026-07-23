@@ -1394,18 +1394,18 @@ const roles = Object.keys(SystemRoles).map((key) => ({
   name: SystemRoles[key as keyof typeof SystemRoles],
 }));
 
-const userConfig = ref();
+const favorites = ref();
 
 const loadFavorites = async () => {
-  userConfig.value = await $fetch("/api/userConfig/list");
+  favorites.value = await $fetch("/api/favorites/list");
 };
 
 const isFavorite = computed(() => {
-  if (!userConfig.value) {
+  if (!favorites.value) {
     return false;
   }
 
-  return userConfig.value.FavoriteBoundaries.some(
+  return favorites.value.FavoriteBoundaries.some(
     (boundary: { id: number; }) => boundary.id === Number(boundaryId),
   );
 });
@@ -1414,7 +1414,7 @@ const toggleFavorite = async () => {
   const method = isFavorite.value ? "DELETE" : "POST";
 
   await $fetch(
-    `/api/userConfig/favorites/boundaries/${boundaryId}`,
+    `/api/favorites/boundaries/${boundaryId}`,
     {
       method,
     },

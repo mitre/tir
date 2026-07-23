@@ -336,8 +336,8 @@ const isDataReady = computed(() => !!currentUser.value && !userError.value && na
 watch(
   currentUser,
   (newUser) => {
-    if (newUser?.UserConfig?.Theme) {
-      colorMode.preference = newUser.UserConfig.Theme.name.toLowerCase();
+    if (newUser?.Theme) {
+      colorMode.preference = newUser.Theme.name.toLowerCase();
     } else {
       colorMode.preference = "system";
     }

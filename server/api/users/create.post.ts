@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { User, UserConfig, Timezone, UserRole } from "../../../db/models";
+import { Timezone, User, UserRole } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -18,7 +18,9 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Email required.",
     });
   }
-  const userExist = await User.findOne({ where: { email } });
+  const userExist = await User.findOne({
+    where: { email },
+  });
   if (userExist) {
     logger.error(`Sorry, this email is taken ${body.email}`);
     throw createError({
@@ -75,25 +77,22 @@ export default defineEventHandler(async (event) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const newUser = await User.create({
-      firstName,
-      lastName,
-      email,
-      UserRoleId,
-      TimezoneId: timezone.id, 
-      salt,
-      password,
-      passwordChangedAt: now,
-      creationMethod: "local",
-    });
-
-    await UserConfig.create({
-      UserId: newUser.id,
-      ThemeId: null,
-      TimezoneId: timezone.id,
-      lastUpdate: now,
-      creationDate: now,
-    });
+    const newUser = await User.create(
+      {
+        firstName,
+        lastName,
+        email,
+        UserRoleId,
+        TimezoneId: timezone.id,
+        salt,
+        password,
+        passwordChangedAt: now,
+        creationMethod: "local",
+      },
+      {
+        transaction,
+      },
+    );
 
     await transaction.commit();
 

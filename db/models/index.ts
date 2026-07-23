@@ -73,7 +73,6 @@ import { ControlRecordItem } from "./controlRecordItem";
 import { ControlRecord } from "./controlRecord";
 import { ControlStatement } from "./controlStatement";
 import { ControlEnhancementStatement } from "./controlEnhancementStatement";
-import { UserConfig } from "./userConfig";
 
 User.belongsTo(UserRole);
 UserRole.hasOne(User);
@@ -617,7 +616,7 @@ ControlRevision.hasMany(ControlRecord, { onDelete: "CASCADE", onUpdate: "CASCADE
 
 ControlFamily.hasMany(Control);
 
-export interface UserConfigInterface extends UserConfig {
+export interface UserInterface extends User {
   addFavoriteTier: BelongsToManyAddAssociationMixin<Tier, number>;
   removeFavoriteTier: BelongsToManyRemoveAssociationMixin<Tier, number>;
 
@@ -625,43 +624,52 @@ export interface UserConfigInterface extends UserConfig {
   removeFavoriteBoundary: BelongsToManyRemoveAssociationMixin<Boundary, number>;
 }
 
-export const UserConfig_Tier = sequelize.define(
-  "UserConfig_Tier",
+export const User_FavoriteTier = sequelize.define(
+  "User_FavoriteTier",
   {},
-  { timestamps: false, noIsoTimestamps: true },
+  {
+    tableName: "User_FavoriteTiers",
+    timestamps: false,
+    noIsoTimestamps: true,
+  },
 );
 
-export const UserConfig_Boundary = sequelize.define(
-  "UserConfig_Boundary",
+export const User_FavoriteBoundary = sequelize.define(
+  "User_FavoriteBoundary",
   {},
-  { timestamps: false, noIsoTimestamps: true },
+  {
+    tableName: "User_FavoriteBoundaries",
+    timestamps: false,
+    noIsoTimestamps: true,
+  },
 );
 
-User.hasOne(UserConfig);
-UserConfig.belongsTo(User);
-
-Theme.hasMany(UserConfig);
-UserConfig.belongsTo(Theme);
-
-Timezone.hasMany(UserConfig);
-UserConfig.belongsTo(Timezone);
-
-UserConfig.belongsToMany(Tier, {
-  through: UserConfig_Tier,
+User.belongsToMany(Tier, {
+  through: User_FavoriteTier,
   as: "FavoriteTiers",
+  foreignKey: "UserId",
+  otherKey: "TierId",
 });
 
-Tier.belongsToMany(UserConfig, {
-  through: UserConfig_Tier,
+Tier.belongsToMany(User, {
+  through: User_FavoriteTier,
+  as: "FavoritedByUsers",
+  foreignKey: "TierId",
+  otherKey: "UserId",
 });
 
-UserConfig.belongsToMany(Boundary, {
-  through: UserConfig_Boundary,
+User.belongsToMany(Boundary, {
+  through: User_FavoriteBoundary,
   as: "FavoriteBoundaries",
+  foreignKey: "UserId",
+  otherKey: "BoundaryId",
 });
 
-Boundary.belongsToMany(UserConfig, {
-  through: UserConfig_Boundary,
+Boundary.belongsToMany(User, {
+  through: User_FavoriteBoundary,
+  as: "FavoritedByUsers",
+  foreignKey: "BoundaryId",
+  otherKey: "UserId",
 });
 
 export {
@@ -723,5 +731,4 @@ export {
   EnhancementWithdrawn,
   ControlStatement,
   ControlEnhancementStatement,
-  UserConfig,
 };

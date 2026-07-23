@@ -4,7 +4,6 @@ import { AuthProvider } from "./authProvider";
 import { SessionService } from "./sessionService";
 import { GroupScopeProcessor, GroupRoleMapping } from "./groupScopeProcessor";
 import { User } from "~/db/models/user";
-import { UserRole, UserConfig } from "~/db/models";
 import { AuthEvent } from "~/types/auth";
 
 const sessionService = new SessionService();
@@ -139,12 +138,6 @@ export class OIDCAuthProvider extends AuthProvider {
         UserRoleId: userRoleId!,
         TimezoneId: 1,
         creationMethod: "oidc",
-      });
-
-      await UserConfig.create({
-        UserId: user.id,
-        ThemeId: null,
-        TimezoneId: 1,
       });
 
       logger.info({

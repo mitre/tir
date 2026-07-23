@@ -1,4 +1,4 @@
-import { User, UserConfig, Timezone } from "../../../db/models";
+import { User, Timezone } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -11,14 +11,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = await User.findByPk(body.id, { attributes: { exclude: ["password", "salt"] } });
-  const userConfig = await UserConfig.findOne({
-      where: {
-        UserId: body.id,
-      },
-    });
-  
 
-  if (!user || !userConfig) {
+  if (!user ) {
     throw createError({
       statusCode: 404,
       statusMessage: "User not found.",
@@ -61,8 +55,8 @@ export default defineEventHandler(async (event) => {
     delete body.UserRoleId;
   }
 
-  if (body.ThemeId &&  userConfig.ThemeId !== body.ThemeId) {
-     userConfig.ThemeId = body.ThemeId;
+  if (body.ThemeId &&  user.ThemeId !== body.ThemeId) {
+     user.ThemeId = body.ThemeId;
   } else {
     delete body.ThemeId;
   }
@@ -73,8 +67,8 @@ export default defineEventHandler(async (event) => {
       if (!timezone) {
         console.error(`Timezone with name ${body.timezone} not found.`);
         return;
-      } else if (timezone.id !==  userConfig.TimezoneId) {
-         userConfig.TimezoneId = timezone.id;
+      } else if (timezone.id !==  user.TimezoneId) {
+         user.TimezoneId = timezone.id;
       } else {
         delete body.timezone;
       }
@@ -84,7 +78,6 @@ export default defineEventHandler(async (event) => {
   }
 
   user.save();
-  userConfig.save();
 
   const attributes = Object.keys(body).filter((key) => key !== "id");
   const attributesString = attributes.join(", ");

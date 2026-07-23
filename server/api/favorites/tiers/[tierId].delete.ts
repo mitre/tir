@@ -1,4 +1,4 @@
-import { updateUserFavorite } from "../../../../utils/userConfigFavorites";
+import { updateUserFavorite } from "../../../utils/userFavorites";
 
 export default defineEventHandler(async (event) => {
   const tierId = Number(getRouterParam(event, "tierId"));

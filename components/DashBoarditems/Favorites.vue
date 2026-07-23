@@ -40,7 +40,7 @@ import { ref } from "vue";
 import { StarIcon } from "@heroicons/vue/24/solid";
 import { useAliasStore } from "~/stores/AliasStorage";
 const aliasStore = useAliasStore();
-const { data: config, error } = await useFetch("/api/userConfig/list");
+const { data: config, error } = await useFetch("/api/favorites/list");
 const boundaryTerm = aliasStore.BoundaryAlias;
 const companyTerm = aliasStore.CompanyAlias;
 
@@ -67,11 +67,11 @@ if (config.value) {
 
 const removeFavorite = async (favorite) => {
   if (favorite.type === "Company") {
-    await $fetch(`/api/userConfig/favorites/tiers/${favorite.id}`, {
+    await $fetch(`/api/favorites/tiers/${favorite.id}`, {
       method: "DELETE",
     });
   } else {
-    await $fetch(`/api/userConfig/favorites/boundaries/${favorite.id}`, {
+    await $fetch(`/api/favorites/boundaries/${favorite.id}`, {
       method: "DELETE",
     });
   }
