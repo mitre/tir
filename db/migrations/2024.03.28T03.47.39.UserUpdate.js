@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize";
-import { sequelize } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   const upMigration = await sequelize.transaction();
   await sequelize.getQueryInterface().addColumn(
     "Users",
@@ -70,7 +69,7 @@ export const up = async () => {
   );
   await upMigration.commit();
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   const downMigration = await sequelize.transaction();
   if (sequelize.getDialect() !== "sqlite") {
     await sequelize

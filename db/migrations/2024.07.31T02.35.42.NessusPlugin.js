@@ -1,5 +1,4 @@
 import { DataTypes } from "sequelize";
-import { sequelize } from "../umzug.js";
 
 const NessusPluginTypes = {
   Combined: "combined",
@@ -8,7 +7,7 @@ const NessusPluginTypes = {
   Summary: "summary",
 };
 
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("NessusPlugins", {
     id: {
       type: DataTypes.INTEGER,
@@ -108,7 +107,7 @@ export const up = async () => {
   });
 };
 
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("Cve_NessusPlugins");
   await sequelize.getQueryInterface().dropTable("NessusPlugins");
 };

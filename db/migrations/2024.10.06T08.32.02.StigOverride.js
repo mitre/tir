@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   const schemaPrefix = sequelize.getDialect() === "postgres" ? "public." : "";
   await sequelize.getQueryInterface().createTable("StigOverrides", {
     id: {
@@ -59,6 +58,6 @@ export const up = async () => {
     FROM ${schemaPrefix}"Overrides"
     `);
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("StigOverrides");
 };

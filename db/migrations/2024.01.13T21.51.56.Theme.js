@@ -1,9 +1,8 @@
 import * as dotenv from "dotenv";
 import { DataTypes } from "sequelize";
 
-import { sequelize } from "../umzug.js";
 dotenv.config();
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("Themes", {
     id: {
       type: DataTypes.INTEGER,
@@ -33,7 +32,7 @@ export const up = async () => {
     onDelete: "SET NULL",
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   if (sequelize.getDialect() !== "sqlite") {
     await sequelize.getQueryInterface().removeColumn("Users", "ThemeId");
   } else {

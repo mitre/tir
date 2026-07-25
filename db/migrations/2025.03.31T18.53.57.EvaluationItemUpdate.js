@@ -1,6 +1,5 @@
-import { sequelize } from "../umzug.js";
 
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   const queryInterface = sequelize.getQueryInterface();
   const dialect = sequelize.getDialect();
   const transaction = await sequelize.transaction();
@@ -119,7 +118,7 @@ export const up = async () => {
   }
 };
 
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   const queryInterface = sequelize.getQueryInterface();
   const dialect = sequelize.getDialect();
   const transaction = await sequelize.transaction();

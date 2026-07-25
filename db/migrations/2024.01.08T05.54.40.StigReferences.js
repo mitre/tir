@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   if (sequelize.getDialect() === "sqlite") {
     await sequelize.query(
       `CREATE TABLE 'StigData_backup' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'vuln_num' TEXT NOT NULL, 'group_title' TEXT NOT NULL, 'description' TEXT NOT NULL, 'rule_id' TEXT NOT NULL UNIQUE, 'severity' TEXT, 'weight' TEXT NOT NULL, 'rule_ver' TEXT NOT NULL, 'rule_title' TEXT NOT NULL, 'vuln_discuss' TEXT NOT NULL, 'false_positives' TEXT, 'false_negatives' TEXT, 'documentable' TEXT NOT NULL, 'mitigations' TEXT, 'security_override_guidance' TEXT, 'potential_impact' TEXT, 'third_party_tools' TEXT, 'mitigation_control' TEXT, 'responsibility' TEXT, 'ia_controls' TEXT, 'check__system' TEXT NOT NULL, 'check_check_content' TEXT NOT NULL, 'check_check_content_ref__name' TEXT NOT NULL, 'check_check_content_ref__href' TEXT NOT NULL, 'fix__id' TEXT NOT NULL, 'fixtext' TEXT NOT NULL, 'fixtext__fixref' TEXT NOT NULL, 'lastUpdate' TEXT NOT NULL, 'creationDate' TEXT NOT NULL);`,
@@ -83,7 +82,7 @@ export const up = async () => {
     },
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   if (sequelize.getDialect() !== "sqlite") {
     await sequelize.getQueryInterface().addColumn("StigData", "reference__dc_identifier", {
       type: DataTypes.TEXT,

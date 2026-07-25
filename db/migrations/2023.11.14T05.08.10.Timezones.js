@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("Timezones", {
     id: {
       type: DataTypes.INTEGER,
@@ -28,7 +27,7 @@ export const up = async () => {
     onDelete: "SET NULL",
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   if (sequelize.getDialect() !== "sqlite") {
     await sequelize.getQueryInterface().removeColumn("Users", "TimezoneId");
   } else {

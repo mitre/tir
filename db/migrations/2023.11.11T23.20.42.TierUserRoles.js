@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("TierRoles", {
     id: {
       type: DataTypes.INTEGER,
@@ -56,7 +55,7 @@ export const up = async () => {
     },
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("TierRoles");
   await sequelize.getQueryInterface().dropTable("Tier_Users");
 };

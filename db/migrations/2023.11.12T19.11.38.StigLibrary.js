@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("StigLibraries", {
     id: {
       type: DataTypes.INTEGER,
@@ -78,7 +77,7 @@ export const up = async () => {
     },
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   if (sequelize.getDialect() !== "sqlite") {
     await sequelize.getQueryInterface().removeColumn("Boundaries", "StigLibraryId");
     await sequelize.getQueryInterface().changeColumn("Boundaries", "TierId", {
