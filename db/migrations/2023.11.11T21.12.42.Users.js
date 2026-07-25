@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
+import { sequelize } from "../umzug.js";
 export const up = async () => {
   await sequelize.getQueryInterface().createTable("Users", {
     id: {
@@ -9,20 +9,20 @@ export const up = async () => {
       autoIncrement: true,
     },
     firstName: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastName: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     email: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
     },
     password: {
-      type: DataTypes.STRING(128),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     UserRoleId: {
@@ -35,11 +35,11 @@ export const up = async () => {
       onDelete: "SET NULL",
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });

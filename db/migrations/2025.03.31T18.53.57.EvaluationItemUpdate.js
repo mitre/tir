@@ -129,21 +129,21 @@ export const down = async () => {
       await sequelize.query(
         `CREATE TABLE IF NOT EXISTS 'EvaluationItems_backup' (
           'id' INTEGER PRIMARY KEY AUTOINCREMENT,
-          'Office_Org' VARCHAR(256),
-          'Resources_Required' VARCHAR(256),
+          'Office_Org' TEXT,
+          'Resources_Required' TEXT,
           'Scheduled_Completion_Date' DATETIME,
-          'Milestone_Changes' VARCHAR(256),
-          'Poam_Comments' VARCHAR(1024),
-          'Mitigations' VARCHAR(256),
+          'Milestone_Changes' TEXT,
+          'Poam_Comments' TEXT,
+          'Mitigations' TEXT,
           'Severity' TEXT,
           'Relevance_of_Threat' TEXT,
           'Likelihood' TEXT,
           'Impact' TEXT,
-          'Impact_Description' VARCHAR(256),
+          'Impact_Description' TEXT,
           'Residual_Risk_Level' TEXT,
-          'Recommendations' VARCHAR(256),
-          'lastUpdate' VARCHAR(29) NOT NULL,
-          'creationDate' VARCHAR(29) NOT NULL,
+          'Recommendations' TEXT,
+          'lastUpdate' TEXT NOT NULL,
+          'creationDate' TEXT NOT NULL,
           'EvaluationId' INTEGER REFERENCES 'Evaluations' ('id') ON DELETE CASCADE ON UPDATE CASCADE,
           'StigDatumId' INTEGER REFERENCES 'StigData' ('id') ON DELETE RESTRICT ON UPDATE CASCADE
         );`,
@@ -166,21 +166,21 @@ export const down = async () => {
       await sequelize.query(
         `CREATE TABLE IF NOT EXISTS 'EvaluationItems' (
           'id' INTEGER PRIMARY KEY AUTOINCREMENT,
-          'Office_Org' VARCHAR(256),
-          'Resources_Required' VARCHAR(256),
+          'Office_Org' TEXT,
+          'Resources_Required' TEXT,
           'Scheduled_Completion_Date' DATETIME,
-          'Milestone_Changes' VARCHAR(256),
-          'Poam_Comments' VARCHAR(1024),
-          'Mitigations' VARCHAR(256),
+          'Milestone_Changes' TEXT,
+          'Poam_Comments' TEXT,
+          'Mitigations' TEXT,
           'Severity' TEXT,
           'Relevance_of_Threat' TEXT,
           'Likelihood' TEXT,
           'Impact' TEXT,
-          'Impact_Description' VARCHAR(256),
+          'Impact_Description' TEXT,
           'Residual_Risk_Level' TEXT,
-          'Recommendations' VARCHAR(256),
-          'lastUpdate' VARCHAR(29) NOT NULL,
-          'creationDate' VARCHAR(29) NOT NULL,
+          'Recommendations' TEXT,
+          'lastUpdate' TEXT NOT NULL,
+          'creationDate' TEXT NOT NULL,
           'EvaluationId' INTEGER REFERENCES 'Evaluations' ('id') ON DELETE CASCADE ON UPDATE CASCADE,
           'StigDatumId' INTEGER REFERENCES 'StigData' ('id') ON DELETE RESTRICT ON UPDATE CASCADE
         );`,
@@ -204,28 +204,28 @@ export const down = async () => {
         "EvaluationItems",
         "Scheduled_Completion_Date",
         {
-          type: "VARCHAR(29)",
+          type: "TEXT",
         },
         { transaction },
       );
 
-      const varcharCols = {
-        Office_Org: 256,
-        Resources_Required: 256,
-        Milestone_Changes: 256,
-        Poam_Comments: 1024,
-        Mitigations: 256,
-        Impact_Description: 256,
-        Recommendations: 256,
-        lastUpdate: 29,
-        creationDate: 29,
-      };
+      const textCols = [
+        "Office_Org",
+        "Resources_Required",
+        "Milestone_Changes",
+        "Poam_Comments",
+        "Mitigations",
+        "Impact_Description",
+        "Recommendations",
+        "lastUpdate",
+        "creationDate",
+      ];
 
-      for (const [col, len] of Object.entries(varcharCols)) {
+      for (const col of textCols) {
         await queryInterface.changeColumn(
           "EvaluationItems",
           col,
-          { type: `VARCHAR(${len})` },
+          { type: "TEXT" },
           { transaction },
         );
       }

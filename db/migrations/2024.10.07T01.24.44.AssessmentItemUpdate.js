@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
+import { sequelize } from "../umzug.js";
 
 export const up = async () => {
   const transaction = await sequelize.transaction();
@@ -54,7 +54,7 @@ export const up = async () => {
       "AssessmentItems",
       "statusOverride",
       {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       { transaction },
@@ -63,7 +63,7 @@ export const up = async () => {
       "AssessmentItems",
       "statusOverrideJustification",
       {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true,
       },
       { transaction },

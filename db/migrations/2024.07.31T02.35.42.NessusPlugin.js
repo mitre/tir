@@ -21,22 +21,22 @@ export const up = async () => {
       allowNull: false,
     },
     pluginPublicationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     pluginModificationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     pluginName: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     fname: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     scriptVersion: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     severity: {
@@ -62,7 +62,7 @@ export const up = async () => {
       allowNull: false,
     },
     synopsis: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     NessusPluginFamilyId: {
@@ -76,11 +76,11 @@ export const up = async () => {
       onUpdate: "CASCADE",
     },
     lastUpdate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });

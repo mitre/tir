@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
+import { sequelize } from "../umzug.js";
 export const up = async () => {
   await sequelize.getQueryInterface().createTable("Tiers", {
     id: {
@@ -10,7 +10,7 @@ export const up = async () => {
       allowNull: false,
     },
     name: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
     },
@@ -37,11 +37,11 @@ export const up = async () => {
       onDelete: "SET NULL",
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });

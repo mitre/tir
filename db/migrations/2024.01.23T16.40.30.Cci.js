@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
+import { sequelize } from "../umzug.js";
 export const up = async () => {
   await sequelize.getQueryInterface().createTable("CciLists", {
     id: {
@@ -10,11 +10,11 @@ export const up = async () => {
       autoIncrement: true,
     },
     version: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     publishdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     importComplete: {
@@ -22,11 +22,11 @@ export const up = async () => {
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
@@ -38,7 +38,7 @@ export const up = async () => {
       autoIncrement: true,
     },
     cciId: {
-      type: DataTypes.STRING(10),
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
     },
@@ -47,15 +47,15 @@ export const up = async () => {
       allowNull: false,
     },
     publishdate: {
-      type: DataTypes.STRING(25),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     contributor: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     definition: {
-      type: DataTypes.STRING(1024),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     typePolicy: {
@@ -67,11 +67,11 @@ export const up = async () => {
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     CciListId: {
@@ -93,21 +93,21 @@ export const up = async () => {
       autoIncrement: true,
     },
     title: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: "TitleVersion",
     },
     version: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: "TitleVersion",
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
@@ -122,23 +122,23 @@ export const up = async () => {
       autoIncrement: true,
     },
     creator: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     location: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     index: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     PolicyDocumentId: {
@@ -195,14 +195,14 @@ export const down = async () => {
     await sequelize.getQueryInterface().removeColumn("Boundaries", "PolicyDocumentId");
   } else {
     await sequelize.query(
-      `CREATE TABLE 'Boundaries_backup' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'name' VARCHAR(255) NOT NULL UNIQUE, 'lastUpdate' VARCHAR(29) NOT NULL, 'creationDate' VARCHAR(29) NOT NULL, 'ownerId' INTEGER REFERENCES 'Users' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'TierId' INTEGER NOT NULL REFERENCES 'Tiers' ('id') ON DELETE CASCADE ON UPDATE CASCADE, 'StigLibraryId' INTEGER REFERENCES 'StigLibraries' ('id') ON DELETE RESTRICT ON UPDATE CASCADE);`,
+      `CREATE TABLE 'Boundaries_backup' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'name' TEXT NOT NULL UNIQUE, 'lastUpdate' TEXT NOT NULL, 'creationDate' TEXT NOT NULL, 'ownerId' INTEGER REFERENCES 'Users' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'TierId' INTEGER NOT NULL REFERENCES 'Tiers' ('id') ON DELETE CASCADE ON UPDATE CASCADE, 'StigLibraryId' INTEGER REFERENCES 'StigLibraries' ('id') ON DELETE RESTRICT ON UPDATE CASCADE);`,
     );
     await sequelize.query(
       "INSERT INTO `Boundaries_backup` SELECT `id`, `name`, `lastUpdate`, `creationDate`, `ownerId`, `TierId`, `StigLibraryId` FROM `Boundaries`;",
     );
     await sequelize.query("DROP TABLE `Boundaries`;");
     await sequelize.query(
-      `CREATE TABLE 'Boundaries' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'name' VARCHAR(255) NOT NULL UNIQUE, 'lastUpdate' VARCHAR(29) NOT NULL, 'creationDate' VARCHAR(29) NOT NULL, 'ownerId' INTEGER REFERENCES 'Users' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'TierId' INTEGER NOT NULL REFERENCES 'Tiers' ('id') ON DELETE CASCADE ON UPDATE CASCADE, 'StigLibraryId' INTEGER REFERENCES 'StigLibraries' ('id') ON DELETE RESTRICT ON UPDATE CASCADE);`,
+      `CREATE TABLE 'Boundaries' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'name' TEXT NOT NULL UNIQUE, 'lastUpdate' TEXT NOT NULL, 'creationDate' TEXT NOT NULL, 'ownerId' INTEGER REFERENCES 'Users' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'TierId' INTEGER NOT NULL REFERENCES 'Tiers' ('id') ON DELETE CASCADE ON UPDATE CASCADE, 'StigLibraryId' INTEGER REFERENCES 'StigLibraries' ('id') ON DELETE RESTRICT ON UPDATE CASCADE);`,
     );
     await sequelize.query(
       "INSERT INTO `Boundaries` SELECT `id`, `name`, `lastUpdate`, `creationDate`, `ownerId`, `TierId`, `StigLibraryId` FROM `Boundaries_backup`;",

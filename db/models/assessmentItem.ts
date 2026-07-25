@@ -67,14 +67,14 @@ AssessmentItem.init(
       allowNull: true,
     },
     severityOverrideJustification: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     statusOverride: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     statusOverrideJustification: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     current: {
@@ -89,11 +89,11 @@ AssessmentItem.init(
       },
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

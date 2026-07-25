@@ -47,12 +47,12 @@ StigLibrary.init(
       allowNull: false,
     },
     filename: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       unique: true,
       allowNull: false,
     },
     hash: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       unique: true,
       allowNull: false,
     },
@@ -62,7 +62,7 @@ StigLibrary.init(
       allowNull: true,
     },
     libraryDate: {
-      type: DataTypes.STRING(29),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     version: {
@@ -70,15 +70,15 @@ StigLibrary.init(
       allowNull: true,
     },
     importedDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: true, // not set until import is complete
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

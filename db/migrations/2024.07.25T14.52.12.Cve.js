@@ -10,7 +10,7 @@ export const up = async () => {
       autoIncrement: true,
     },
     cveId: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     cvss3AttackComplexity: {
@@ -46,7 +46,7 @@ export const up = async () => {
       values: ["NONE", "REQUIRED"],
     },
     cvss3Version: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     // cvss3BaseSeverity: {
     //   type: DataTypes.ENUM,
@@ -58,7 +58,7 @@ export const up = async () => {
     //   type: DataTypes.INTEGER,
     // },
     // cvss3_vector: {
-    //   type: DataTypes.STRING,
+    //   type: DataTypes.TEXT,
     // },
     // cvssV3_impactScore: {
     //   type: DataTypes.INTEGER,
@@ -67,14 +67,14 @@ export const up = async () => {
     //   type: DataTypes.INTEGER,
     // },
     // cvss_vector: {
-    //   type: DataTypes.STRING,
+    //   type: DataTypes.TEXT,
     // },
     lastUpdate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });

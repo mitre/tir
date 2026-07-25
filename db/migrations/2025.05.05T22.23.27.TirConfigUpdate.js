@@ -58,7 +58,7 @@ export const down = async () => {
         "TirConfigs",
         "value",
         {
-          type: DataTypes.STRING,
+          type: DataTypes.TEXT,
           allowNull: false,
         },
         { transaction: downMigration },

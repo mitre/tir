@@ -1,20 +1,20 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
+import { sequelize } from "../umzug.js";
 export const up = async () => {
   await sequelize.getQueryInterface().createTable("Timezones", {
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
     },
-    name: DataTypes.STRING(64),
-    abbreviation: DataTypes.STRING(5),
+    name: DataTypes.TEXT,
+    abbreviation: DataTypes.TEXT,
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
@@ -33,14 +33,14 @@ export const down = async () => {
     await sequelize.getQueryInterface().removeColumn("Users", "TimezoneId");
   } else {
     await sequelize.query(
-      "CREATE TABLE `Users_backup` (`creationDate` VARCHAR(29) NOT NULL, `email` VARCHAR(255) NOT NULL UNIQUE, `firstName` VARCHAR(255) NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `lastName` VARCHAR(255) NOT NULL, `lastUpdate` VARCHAR(29) NOT NULL, `password` VARCHAR(128), `UserRoleId` INTEGER REFERENCES `UserRoles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE);",
+      "CREATE TABLE `Users_backup` (`creationDate` TEXT NOT NULL, `email` TEXT NOT NULL UNIQUE, `firstName` TEXT NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `lastName` TEXT NOT NULL, `lastUpdate` TEXT NOT NULL, `password` TEXT, `UserRoleId` INTEGER REFERENCES `UserRoles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE);",
     );
     await sequelize.query(
       "INSERT INTO `Users_backup` SELECT `creationDate`, `email`, `firstname` , `id`, `lastName`, `lastUpdate`, `password`, `UserRoleId` FROM `Users`;",
     );
     await sequelize.query("DROP TABLE `Users`;");
     await sequelize.query(
-      "CREATE TABLE `Users` (`creationDate` VARCHAR(29) NOT NULL, `email` VARCHAR(255) NOT NULL UNIQUE, `firstName` VARCHAR(255) NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `lastName` VARCHAR(255) NOT NULL, `lastUpdate` VARCHAR(29) NOT NULL, `password` VARCHAR(128), `UserRoleId` INTEGER REFERENCES `UserRoles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE);",
+      "CREATE TABLE `Users` (`creationDate` TEXT NOT NULL, `email` TEXT NOT NULL UNIQUE, `firstName` TEXT NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `lastName` TEXT NOT NULL, `lastUpdate` TEXT NOT NULL, `password` TEXT, `UserRoleId` INTEGER REFERENCES `UserRoles` (`id`) ON DELETE SET NULL ON UPDATE CASCADE);",
     );
     await sequelize.query(
       "INSERT INTO `Users` SELECT `creationDate`, `email`, `firstname` , `id`, `lastName`, `lastUpdate`, `password`, `UserRoleId` FROM `Users_backup`;",
