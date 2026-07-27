@@ -1,4 +1,4 @@
-import { UserRole } from "../../../db/models";
+import { UserRole} from "../../../db/models";
 import { User } from "../../../db/models/user";
 
 export default defineEventHandler(async (event) => {
