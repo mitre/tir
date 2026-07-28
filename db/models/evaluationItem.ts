@@ -53,22 +53,22 @@ EvaluationItem.init(
       autoIncrement: true,
     },
     Office_Org: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     Resources_Required: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     Scheduled_Completion_Date: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
     },
     Milestone_Changes: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     Poam_Comments: {
-      type: DataTypes.STRING(1024),
+      type: DataTypes.TEXT,
     },
     Mitigations: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     Severity: {
       type: DataTypes.ENUM,
@@ -91,7 +91,7 @@ EvaluationItem.init(
       allowNull: true,
     },
     Impact_Description: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     Residual_Risk_Level: {
       type: DataTypes.ENUM,
@@ -99,14 +99,14 @@ EvaluationItem.init(
       allowNull: true,
     },
     Recommendations: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

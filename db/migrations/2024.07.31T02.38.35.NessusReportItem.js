@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("NessusReportItems", {
     id: {
       type: DataTypes.INTEGER,
@@ -14,37 +13,37 @@ export const up = async () => {
       allowNull: false,
     },
     ageOfVuln: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     cisaKnownExploited: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     agent: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     alwaysRun: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     assetCategories: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     assetInventory: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     assetInventoryCategory: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     bid: {
       type: DataTypes.INTEGER,
     },
     cvss3TemporalVector: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     cvss3TemporalScore: {
       type: DataTypes.DECIMAL(3, 1),
     },
     cvssTemporalVector: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     cvssTemporalScore: {
       type: DataTypes.DECIMAL(3, 1),
@@ -53,10 +52,10 @@ export const up = async () => {
       type: DataTypes.INTEGER,
     },
     canvasPackage: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     ceaId: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     pluginOutput: {
       type: DataTypes.TEXT,
@@ -65,7 +64,7 @@ export const up = async () => {
       type: DataTypes.INTEGER,
     },
     severityOverrideJustification: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     statusOverride: {
       type: DataTypes.ENUM,
@@ -73,7 +72,7 @@ export const up = async () => {
       values: ["Not_Reviewed", "Open", "NotAFinding", "Not_Applicable"],
     },
     statusOverrideJustification: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     NessusPluginId: {
       type: DataTypes.INTEGER,
@@ -117,15 +116,15 @@ export const up = async () => {
       },
     },
     lastUpdate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("NessusReportItems");
 };

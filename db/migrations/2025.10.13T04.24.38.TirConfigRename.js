@@ -1,4 +1,3 @@
-import { sequelize } from "../umzug.js";
 
 const RENAMES = [
   { from: "auth_enable_local", to: "authLocalEnable" },
@@ -40,7 +39,7 @@ const RENAMES = [
   { from: "notification_timeout", to: "notificationTimeout" },
 ];
 
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   const upMigration = await sequelize.transaction();
 
   try {
@@ -56,7 +55,7 @@ export const up = async () => {
   }
 };
 
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   const downMigration = await sequelize.transaction();
 
   try {

@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
 
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("NotificationCategories", {
     id: {
       type: DataTypes.INTEGER,
@@ -11,15 +10,15 @@ export const up = async () => {
       autoIncrement: true,
     },
     category: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
@@ -42,22 +41,22 @@ export const up = async () => {
       onDelete: "CASCADE",
     },
     message: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
 
     dueDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     daysLeft: {
       type: DataTypes.INTEGER,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
@@ -89,7 +88,7 @@ export const up = async () => {
   });
 };
 
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("TirNotifications_Users");
   await sequelize.getQueryInterface().dropTable("TirNotifications");
   await sequelize.getQueryInterface().dropTable("NotificationCategories");

@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
-import { sequelize } from "../umzug.js";
 
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("Cves", {
     id: {
       type: DataTypes.INTEGER,
@@ -10,7 +9,7 @@ export const up = async () => {
       autoIncrement: true,
     },
     cveId: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     cvss3AttackComplexity: {
@@ -46,7 +45,7 @@ export const up = async () => {
       values: ["NONE", "REQUIRED"],
     },
     cvss3Version: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     // cvss3BaseSeverity: {
     //   type: DataTypes.ENUM,
@@ -58,7 +57,7 @@ export const up = async () => {
     //   type: DataTypes.INTEGER,
     // },
     // cvss3_vector: {
-    //   type: DataTypes.STRING,
+    //   type: DataTypes.TEXT,
     // },
     // cvssV3_impactScore: {
     //   type: DataTypes.INTEGER,
@@ -67,14 +66,14 @@ export const up = async () => {
     //   type: DataTypes.INTEGER,
     // },
     // cvss_vector: {
-    //   type: DataTypes.STRING,
+    //   type: DataTypes.TEXT,
     // },
     lastUpdate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
@@ -102,7 +101,7 @@ export const up = async () => {
   });
 };
 
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("Cve_Systems");
   await sequelize.getQueryInterface().dropTable("Cves");
   if (sequelize.getDialect() === "postgres") {

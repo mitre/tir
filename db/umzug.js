@@ -134,4 +134,3 @@ export const seeder = new Umzug({
   },
 });
 
-export const DATETIME_LENGTH = 29;

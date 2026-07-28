@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   if (sequelize.getDialect() === "postgres") {
     await sequelize.getQueryInterface().removeColumn("EvaluationItems", "status");
     await sequelize.getQueryInterface().removeColumn("EvaluationItems", "finding_details");
@@ -12,14 +11,14 @@ export const up = async () => {
     await sequelize.query('DROP TYPE IF EXISTS public."enum_EvaluationItems_status";');
   } else {
     await sequelize.query(
-      `CREATE TABLE IF NOT EXISTS 'EvaluationItems_backup' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'Office_Org' VARCHAR(256), 'Resources_Required' VARCHAR(256), 'Scheduled_Completion_Date' DATETIME, 'Milestone_Changes' VARCHAR(256), 'Poam_Comments' VARCHAR(1024), 'Mitigations' VARCHAR(256), 'Severity' TEXT, 'Relevance_of_Threat' TEXT, 'Likelihood' TEXT, 'Impact' TEXT, 'Impact_Description' VARCHAR(256), 'Residual_Risk_Level' TEXT, 'Recommendations' VARCHAR(256), 'lastUpdate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'creationDate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'EvaluationId' INTEGER REFERENCES 'Evaluations' ('id') ON DELETE CASCADE ON UPDATE CASCADE, 'StigDatumId' INTEGER REFERENCES 'StigData' ('id') ON DELETE RESTRICT ON UPDATE CASCADE);`,
+      `CREATE TABLE IF NOT EXISTS 'EvaluationItems_backup' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'Office_Org' TEXT, 'Resources_Required' TEXT, 'Scheduled_Completion_Date' DATETIME, 'Milestone_Changes' TEXT, 'Poam_Comments' TEXT, 'Mitigations' TEXT, 'Severity' TEXT, 'Relevance_of_Threat' TEXT, 'Likelihood' TEXT, 'Impact' TEXT, 'Impact_Description' TEXT, 'Residual_Risk_Level' TEXT, 'Recommendations' TEXT, 'lastUpdate' TEXT NOT NULL, 'creationDate' TEXT NOT NULL, 'EvaluationId' INTEGER REFERENCES 'Evaluations' ('id') ON DELETE CASCADE ON UPDATE CASCADE, 'StigDatumId' INTEGER REFERENCES 'StigData' ('id') ON DELETE RESTRICT ON UPDATE CASCADE);`,
     );
     await sequelize.query(
       "INSERT INTO `EvaluationItems_backup` SELECT `id`, `Office_Org`, `Resources_Required`, `Scheduled_Completion_Date`, `Milestone_Changes`, `Poam_Comments`, `Mitigations`, `Severity`, `Relevance_of_Threat`, `Likelihood`, `Impact`, `Impact_Description`, `Residual_Risk_Level`, `Recommendations`, `lastUpdate`, `creationDate`, `EvaluationId`, `StigDatumId` FROM `EvaluationItems`;",
     );
     await sequelize.query("DROP TABLE `EvaluationItems`;");
     await sequelize.query(
-      `CREATE TABLE IF NOT EXISTS 'EvaluationItems' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'Office_Org' VARCHAR(256), 'Resources_Required' VARCHAR(256), 'Scheduled_Completion_Date' DATETIME, 'Milestone_Changes' VARCHAR(256), 'Poam_Comments' VARCHAR(1024), 'Mitigations' VARCHAR(256), 'Severity' TEXT, 'Relevance_of_Threat' TEXT, 'Likelihood' TEXT, 'Impact' TEXT, 'Impact_Description' VARCHAR(256), 'Residual_Risk_Level' TEXT, 'Recommendations' VARCHAR(256), 'lastUpdate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'creationDate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'EvaluationId' INTEGER REFERENCES 'Evaluations' ('id') ON DELETE CASCADE ON UPDATE CASCADE, 'StigDatumId' INTEGER REFERENCES 'StigData' ('id') ON DELETE RESTRICT ON UPDATE CASCADE);`,
+      `CREATE TABLE IF NOT EXISTS 'EvaluationItems' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'Office_Org' TEXT, 'Resources_Required' TEXT, 'Scheduled_Completion_Date' DATETIME, 'Milestone_Changes' TEXT, 'Poam_Comments' TEXT, 'Mitigations' TEXT, 'Severity' TEXT, 'Relevance_of_Threat' TEXT, 'Likelihood' TEXT, 'Impact' TEXT, 'Impact_Description' TEXT, 'Residual_Risk_Level' TEXT, 'Recommendations' TEXT, 'lastUpdate' TEXT NOT NULL, 'creationDate' TEXT NOT NULL, 'EvaluationId' INTEGER REFERENCES 'Evaluations' ('id') ON DELETE CASCADE ON UPDATE CASCADE, 'StigDatumId' INTEGER REFERENCES 'StigData' ('id') ON DELETE RESTRICT ON UPDATE CASCADE);`,
     );
     await sequelize.query(
       "INSERT INTO `EvaluationItems` SELECT `id`, `Office_Org`, `Resources_Required`, `Scheduled_Completion_Date`, `Milestone_Changes`, `Poam_Comments`, `Mitigations`, `Severity`, `Relevance_of_Threat`, `Likelihood`, `Impact`, `Impact_Description`, `Residual_Risk_Level`, `Recommendations`, `lastUpdate`, `creationDate`, `EvaluationId`, `StigDatumId` FROM `EvaluationItems_backup`;",
@@ -27,17 +26,17 @@ export const up = async () => {
     await sequelize.query("DROP TABLE `EvaluationItems_backup`;");
   }
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().addColumn("EvaluationItems", "status", {
     type: DataTypes.ENUM,
     values: ["Not_Reviewed", "Open", "NotAFinding", "Not_Applicable", "Not_Set"],
     allowNull: false,
   });
   await sequelize.getQueryInterface().addColumn("EvaluationItems", "finding_details", {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
   });
   await sequelize.getQueryInterface().addColumn("EvaluationItems", "comments", {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
   });
   await sequelize.getQueryInterface().addColumn("EvaluationItems", "severity_override", {
     type: DataTypes.ENUM,
@@ -45,6 +44,6 @@ export const down = async () => {
     allowNull: true,
   });
   await sequelize.getQueryInterface().addColumn("EvaluationItems", "severity_justification", {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
   });
 };

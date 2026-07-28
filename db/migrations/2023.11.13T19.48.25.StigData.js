@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize";
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("StigData", {
     id: {
       type: DataTypes.INTEGER,
@@ -8,19 +7,19 @@ export const up = async () => {
       primaryKey: true,
     },
     vuln_num: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     group_title: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     description: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     rule_id: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
     },
@@ -30,11 +29,11 @@ export const up = async () => {
       allowNull: true,
     },
     weight: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     rule_ver: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     rule_title: {
@@ -46,19 +45,19 @@ export const up = async () => {
       allowNull: false,
     },
     false_positives: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     false_negatives: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     documentable: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     mitigations: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     security_override_guidance: {
@@ -66,27 +65,27 @@ export const up = async () => {
       allowNull: true,
     },
     potential_impact: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     third_party_tools: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     mitigation_control: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     responsibility: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     ia_controls: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     check__system: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     check_check_content: {
@@ -94,15 +93,15 @@ export const up = async () => {
       allowNull: false,
     },
     check_check_content_ref__name: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     check_check_content_ref__href: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     fix__id: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     fixtext: {
@@ -110,35 +109,35 @@ export const up = async () => {
       allowNull: false,
     },
     fixtext__fixref: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     reference__dc_identifier: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     reference__dc_publisher: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     reference__dc_subject: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     reference__dc_title: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     reference__dc_type: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
@@ -165,7 +164,7 @@ export const up = async () => {
     },
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("StigData");
   await sequelize.getQueryInterface().dropTable("Stig_StigData");
 };
