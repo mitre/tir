@@ -398,12 +398,25 @@ export async function generateSctm(
       for (const ref of refs) {
         if (!ref.index) continue;
 
-        // Normalize by removing spaces for universal matching
-        const normalizedIndex = ref.index.replace(/\s+/g, "");
+        // Roll statement-level references up to their base control or enhancement
+        const controlMatch = ref.index
+          .trim()
+          .toUpperCase()
+          .match(/^([A-Z]{2}-\d+(?:\s*\(\d+\))?)/);
+
+        if (!controlMatch) continue;
+
+        const normalizedIndex = controlMatch[1].replace(/\s+/g, "");
+
         if (!cciMap.has(normalizedIndex)) {
           cciMap.set(normalizedIndex, []);
         }
-        cciMap.get(normalizedIndex)!.push(cciItem.cciId);
+
+        const cciIds = cciMap.get(normalizedIndex)!;
+
+        if (!cciIds.includes(cciItem.cciId)) {
+          cciIds.push(cciItem.cciId);
+        }
       }
     }
 
@@ -521,7 +534,9 @@ export async function generateSctm(
         control.ControlStatements?.map((s: any) => s.description).join("\n") || "";
     }
     newRow[Columns.controlNumber] = controlNumber;
-    const normalizedControlNumber = controlNumber.replace(/\s+/g, "");
+    const normalizedControlNumber = controlNumber
+      .replace(/\s+/g, "")
+      .toUpperCase();
     const cciIds = cciMap.get(normalizedControlNumber) || [];
     newRow[Columns.cci] = cciIds.length ? cciIds.join("\n") + "\n" : "";
     // Map all other fields from ControlRecordItem

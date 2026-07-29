@@ -394,11 +394,25 @@ export async function generateSecurityControlAssessment(
     const refs = cciItem.CciReferences ?? [];
     for (const ref of refs) {
       if (!ref.index) continue;
-      const normalizedIndex = ref.index.replace(/\s+/g, "");
+      // Roll statement references up to their base control or enhancement.
+      const controlMatch = ref.index
+        .trim()
+        .toUpperCase()
+        .match(/^([A-Z]{2}-\d+(?:\s*\(\d+\))?)/);
+
+      if (!controlMatch) continue;
+
+      const normalizedIndex = controlMatch[1].replace(/\s+/g, "");
+
       if (!cciMap.has(normalizedIndex)) {
         cciMap.set(normalizedIndex, []);
       }
-      cciMap.get(normalizedIndex)!.push(cciItem.cciId);
+
+      const cciIds = cciMap.get(normalizedIndex)!;
+
+      if (!cciIds.includes(cciItem.cciId)) {
+        cciIds.push(cciItem.cciId);
+      }
     }
   }
 
@@ -564,7 +578,9 @@ export async function generateSecurityControlAssessment(
     }
 
     newRow[Columns.controlNumber] = controlNumber;
-    const normalizedControlNumber = controlNumber.replace(/\s+/g, "");
+    const normalizedControlNumber = controlNumber
+      .replace(/\s+/g, "")
+      .toUpperCase();
     const statusMap = controlToStatusMap.get(normalizedControlNumber);
     const cciIds = cciMap.get(normalizedControlNumber) || [];
     newRow[Columns.cci] = cciIds.length ? cciIds.join("\n") + "\n" : "";
