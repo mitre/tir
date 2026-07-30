@@ -387,6 +387,16 @@ export async function generateSecurityControlAssessment(
       },
     ],
   });
+
+  function normalizeCciControlIndex(index: string): string | null {
+    const controlMatch = index
+      .trim()
+      .toUpperCase()
+      .match(/^([A-Z]{2}-\s*\d+(?:\s*\(\d+\))?)/);
+
+    return controlMatch ? controlMatch[1].replace(/\s+/g, "") : null;
+  }
+
   const cciItemMap = new Map(cciItems.map((item) => [item.cciId, item]));
   const cciMap = new Map<string, string[]>();
 
@@ -395,14 +405,9 @@ export async function generateSecurityControlAssessment(
     for (const ref of refs) {
       if (!ref.index) continue;
       // Roll statement references up to their base control or enhancement.
-      const controlMatch = ref.index
-        .trim()
-        .toUpperCase()
-        .match(/^([A-Z]{2}-\d+(?:\s*\(\d+\))?)/);
 
-      if (!controlMatch) continue;
-
-      const normalizedIndex = controlMatch[1].replace(/\s+/g, "");
+      const normalizedIndex = normalizeCciControlIndex(ref.index);
+      if (!normalizedIndex) continue;
 
       if (!cciMap.has(normalizedIndex)) {
         cciMap.set(normalizedIndex, []);
@@ -432,19 +437,26 @@ export async function generateSecurityControlAssessment(
 
       for (const cciId of cciIds) {
         const cciItem = cciItemMap.get(cciId);
-        const cciRef = cciItem?.CciReferences?.[0]?.index ?? "";
-        const normalizedControl = cciRef.replace(/\s+/g, "");
-        if (!normalizedControl) continue;
+        const refs = cciItem?.CciReferences ?? [];
 
-        if (!controlToStatusMap.has(normalizedControl)) {
-          controlToStatusMap.set(normalizedControl, new Map());
-        }
+        for (const ref of refs) {
+          if (!ref.index) continue;
 
-        const statusMap = controlToStatusMap.get(normalizedControl)!;
-        if (!statusMap.has(status)) {
-          statusMap.set(status, new Set());
+          const normalizedControl = normalizeCciControlIndex(ref.index);
+          if (!normalizedControl) continue;
+
+          if (!controlToStatusMap.has(normalizedControl)) {
+            controlToStatusMap.set(normalizedControl, new Map());
+          }
+
+          const statusMap = controlToStatusMap.get(normalizedControl)!;
+
+          if (!statusMap.has(status)) {
+            statusMap.set(status, new Set());
+          }
+
+          statusMap.get(status)!.add(displayValue);
         }
-        statusMap.get(status)!.add(displayValue);
       }
     }
   }
@@ -578,9 +590,7 @@ export async function generateSecurityControlAssessment(
     }
 
     newRow[Columns.controlNumber] = controlNumber;
-    const normalizedControlNumber = controlNumber
-      .replace(/\s+/g, "")
-      .toUpperCase();
+    const normalizedControlNumber = controlNumber.replace(/\s+/g, "").toUpperCase();
     const statusMap = controlToStatusMap.get(normalizedControlNumber);
     const cciIds = cciMap.get(normalizedControlNumber) || [];
     newRow[Columns.cci] = cciIds.length ? cciIds.join("\n") + "\n" : "";
