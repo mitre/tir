@@ -255,7 +255,7 @@
 
 <script setup lang="ts">
 import { CheckIcon, ChevronDownIcon } from "@heroicons/vue/20/solid";
-import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions, Transition } from "@headlessui/vue";
+import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue";
 
 interface DropdownItem {
   id: number;
