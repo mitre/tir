@@ -363,6 +363,62 @@ function determineCciStatus(cciVKeys: { vKey: string; status: string }[]): strin
   }
 }
 
+interface TechnicalAssessment {
+  cci: string;
+  technicalAssessmentStatus: string;
+  technicalAssessmentComments: string[];
+}
+
+function getTechnicalAssessment(
+  normalizedControlNumber: string,
+  controlToStatusMap: Map<string, Map<string, Set<string>>>,
+  cciMap: Map<string, string[]>,
+  stigLookup: Record<string, { cciIds: Set<string>; stig: any }>,
+): TechnicalAssessment {
+  const statusMap = controlToStatusMap.get(normalizedControlNumber);
+  const cciIds = cciMap.get(normalizedControlNumber) ?? [];
+
+  if (!statusMap || statusMap.size === 0) {
+    return {
+      cci: "",
+      technicalAssessmentStatus: "",
+      technicalAssessmentComments: [
+        "No applicable STIG mapping for this Control.",
+      ],
+    };
+  }
+
+  let cci = "";
+
+  for (const cciId of cciIds) {
+    const cciVKeys: { vKey: string; status: string }[] = [];
+
+    for (const [status, vKeys] of statusMap) {
+      for (const displayValue of vKeys) {
+        const vKey = displayValue.split(" - ")[0];
+        const stigEntry = stigLookup[vKey];
+
+        if (stigEntry?.cciIds.has(cciId)) {
+          cciVKeys.push({ vKey, status });
+        }
+      }
+    }
+
+    if (cciVKeys.length === 0) {
+      continue;
+    }
+
+    const cciStatus = determineCciStatus(cciVKeys);
+    cci += `  ${cciId}: ${cciStatus}\n`;
+  }
+
+  return {
+    cci,
+    technicalAssessmentStatus: evaluateStatuses(statusMap),
+    technicalAssessmentComments: buildDisplayLines(statusMap),
+  };
+}
+
 export async function getControlSummary(
   BoundaryId: number,
   ControlRecordId: number,
@@ -478,19 +534,32 @@ export async function getControlSummary(
 
       for (const cciId of cciIds) {
         const cciItem = cciItemMap.get(cciId);
-        const cciRef = cciItem?.CciReferences?.[0]?.index ?? "";
-        const normalizedControl = parseTopLevelControl(cciRef);
-        if (!normalizedControl) continue;
+        const cciReferences = cciItem?.CciReferences ?? [];
 
-        if (!controlToStatusMap.has(normalizedControl)) {
-          controlToStatusMap.set(normalizedControl, new Map());
-        }
+        for (const cciReference of cciReferences) {
+          if (!cciReference.index) continue;
 
-        const statusMap = controlToStatusMap.get(normalizedControl)!;
-        if (!statusMap.has(status)) {
-          statusMap.set(status, new Set());
+          const normalizedControl = parseTopLevelControl(
+            cciReference.index,
+          );
+
+          if (!normalizedControl) continue;
+
+          if (!controlToStatusMap.has(normalizedControl)) {
+            controlToStatusMap.set(
+              normalizedControl,
+              new Map<string, Set<string>>(),
+            );
+          }
+
+          const statusMap = controlToStatusMap.get(normalizedControl)!;
+
+          if (!statusMap.has(status)) {
+            statusMap.set(status, new Set<string>());
+          }
+
+          statusMap.get(status)!.add(displayValue);
         }
-        statusMap.get(status)!.add(displayValue);
       }
     }
   }
@@ -502,89 +571,50 @@ export async function getControlSummary(
     if (!match) return cleaned;
     return match[1] + (match[2] || "");
   }
-  const controlSummaries: (ControlSummary | EnhancementSummary)[] = results.map((item) => {
-    if (item.ControlEnhancementId && item.ControlEnhancement) {
-      const normalizedControlNumber = parseTopLevelControl(
-        item.ControlEnhancement.enhancementIdentifier,
-      );
-      const statusMap = controlToStatusMap.get(normalizedControlNumber);
-      const cciIds = cciMap.get(normalizedControlNumber) || [];
-      let cci = "";
-      let technicalAssessmentComments;
-      let technicalAssessmentStatus = "";
-      if (statusMap && statusMap.size > 0) {
-        technicalAssessmentStatus = evaluateStatuses(statusMap);
-        const displayLines = buildDisplayLines(statusMap);
+  const controlSummaries: (ControlSummary | EnhancementSummary)[] =
+    results.map((item) => {
+      if (item.ControlEnhancementId && item.ControlEnhancement) {
+        const normalizedControlNumber = parseTopLevelControl(
+          item.ControlEnhancement.enhancementIdentifier,
+        );
 
-        technicalAssessmentComments = displayLines;
+        const assessment = getTechnicalAssessment(
+          normalizedControlNumber,
+          controlToStatusMap,
+          cciMap,
+          stigLookup,
+        );
 
-        for (const cciId of cciIds) {
-          const cciVKeys: { vKey: string; status: string }[] = [];
-          for (const [status, vKeys] of statusMap) {
-            for (const vKey of vKeys) {
-              const originalVKey = vKey.split(" - ")[0];
-              if (stigLookup[originalVKey] && stigLookup[originalVKey].cciIds.has(cciId)) {
-                cciVKeys.push({ vKey: originalVKey, status });
-              }
-            }
-          }
-          if (cciVKeys.length === 0) {
-            continue;
-          }
-          const cciStatus = determineCciStatus(cciVKeys);
-          cci += `  ${cciId}: ${cciStatus || "Not Reviewed"}\n`;
-        }
-      } else {
-        technicalAssessmentComments = ["No applicable STIG mapping for this Control."];
+        return getEnhancementSummary(
+          item,
+          assessment.cci,
+          assessment.technicalAssessmentStatus,
+          assessment.technicalAssessmentComments,
+        );
       }
-      const result = getEnhancementSummary(
-        item,
-        cci,
-        technicalAssessmentStatus,
-        technicalAssessmentComments,
-      );
-      return result;
-    }
-    if (item.Control && item.Control.ControlNumber) {
-      const normalizedControlNumber = parseTopLevelControl(item.Control.ControlNumber.number);
-      const statusMap = controlToStatusMap.get(normalizedControlNumber);
-      const cciIds = cciMap.get(normalizedControlNumber) || [];
-      let cci = "";
-      let technicalAssessmentComments;
-      let technicalAssessmentStatus = "";
-      if (statusMap && statusMap.size > 0) {
-        technicalAssessmentStatus = evaluateStatuses(statusMap);
-        const displayLines = buildDisplayLines(statusMap);
-        technicalAssessmentComments = displayLines;
 
-        for (const cciId of cciIds) {
-          const cciVKeys: { vKey: string; status: string }[] = [];
-          for (const [status, vKeys] of statusMap) {
-            for (const vKey of vKeys) {
-              const originalVKey = vKey.split(" - ")[0];
-              if (stigLookup[originalVKey] && stigLookup[originalVKey].cciIds.has(cciId)) {
-                cciVKeys.push({ vKey: originalVKey, status });
-              }
-            }
-          }
-          if (cciVKeys.length === 0) {
-            continue;
-          }
-          const cciStatus = determineCciStatus(cciVKeys);
-          cci += `  ${cciId}: ${cciStatus || "Not Reviewed"}\n`;
-        }
-      } else {
-        technicalAssessmentComments = ["No applicable STIG mapping for this Control."];
+      if (item.Control?.ControlNumber) {
+        const normalizedControlNumber = parseTopLevelControl(
+          item.Control.ControlNumber.number,
+        );
+
+        const assessment = getTechnicalAssessment(
+          normalizedControlNumber,
+          controlToStatusMap,
+          cciMap,
+          stigLookup,
+        );
+
+        return getStandardControlSummary(
+          item,
+          assessment.cci,
+          assessment.technicalAssessmentStatus,
+          assessment.technicalAssessmentComments,
+        );
       }
-      const result = getStandardControlSummary(
-        item,
-        cci,
-        technicalAssessmentStatus,
-        technicalAssessmentComments,
-      );
-      return result;
-    }
-    throw new Error("ControlRecordItem without Control or Enhancement");
-  });
+
+      throw new Error("ControlRecordItem without Control or Enhancement");
+    });
+
   return controlSummaries;
 }
