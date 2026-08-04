@@ -419,6 +419,58 @@ function getTechnicalAssessment(
   };
 }
 
+function parseTopLevelControl(raw: string): string {
+  if (!raw) return "";
+
+  const cleaned = raw.toUpperCase().replace(/\s+/g, "");
+  const match = cleaned.match(/^([A-Z]{2,3}-\d+)(\(\d+\))?/);
+
+  return match
+    ? match[1] + (match[2] ?? "")
+    : cleaned;
+}
+
+async function loadCciItems(policyDocumentId: number | undefined) {
+  return CciItem.findAll({
+    attributes: ["cciId", "definition"],
+    include: [
+      {
+        model: CciReference,
+        attributes: ["index"],
+        through: { attributes: [] },
+        where: {
+          PolicyDocumentId: policyDocumentId,
+        },
+      },
+    ],
+  });
+}
+
+function buildCciMaps(cciItems: Awaited<ReturnType<typeof loadCciItems>>) {
+  const cciItemMap = new Map(
+    cciItems.map((item) => [item.cciId, item]),
+  );
+
+  const cciMap = new Map<string, string[]>();
+
+  for (const item of cciItems) {
+    for (const reference of item.CciReferences ?? []) {
+      if (!reference.index) continue;
+
+      const controlNumber = parseTopLevelControl(reference.index);
+      const mappedCcis = cciMap.get(controlNumber) ?? [];
+
+      mappedCcis.push(item.cciId);
+      cciMap.set(controlNumber, mappedCcis);
+    }
+  }
+
+  return {
+    cciItemMap,
+    cciMap,
+  };
+}
+
 export async function getControlSummary(
   BoundaryId: number,
   ControlRecordId: number,
@@ -484,33 +536,11 @@ export async function getControlSummary(
     ],
   });
 
-  const cciItems = await CciItem.findAll({
-    attributes: ["cciId", "definition"],
-    include: [
-      {
-        model: CciReference,
-        attributes: ["index"],
-        through: { attributes: [] },
-        where: {
-          PolicyDocumentId: boundary?.PolicyDocumentId,
-        },
-      },
-    ],
-  });
-  const cciItemMap = new Map(cciItems.map((item) => [item.cciId, item]));
-  const cciMap = new Map<string, string[]>();
+  const cciItems = await loadCciItems(
+    boundary?.PolicyDocumentId,
+  );
 
-  for (const cciItem of cciItems) {
-    const refs = cciItem.CciReferences ?? [];
-    for (const ref of refs) {
-      if (!ref.index) continue;
-      const normalizedIndex = parseTopLevelControl(ref.index);
-      if (!cciMap.has(normalizedIndex)) {
-        cciMap.set(normalizedIndex, []);
-      }
-      cciMap.get(normalizedIndex)!.push(cciItem.cciId);
-    }
-  }
+  const { cciItemMap, cciMap } = buildCciMaps(cciItems);
 
   const stigResults = await getEvaluationSummary(BoundaryId, undefined, false);
 
@@ -564,13 +594,6 @@ export async function getControlSummary(
     }
   }
   perfTimer.stop("Query");
-  function parseTopLevelControl(raw: string) {
-    if (!raw) return "";
-    const cleaned = raw.toUpperCase().replace(/\s+/g, "");
-    const match = cleaned.match(/^([A-Z]{2,3}-\d+)(\(\d+\))?/);
-    if (!match) return cleaned;
-    return match[1] + (match[2] || "");
-  }
   const controlSummaries: (ControlSummary | EnhancementSummary)[] =
     results.map((item) => {
       if (item.ControlEnhancementId && item.ControlEnhancement) {
