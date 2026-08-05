@@ -380,15 +380,15 @@ function getTechnicalAssessment(
 
   if (!statusMap || statusMap.size === 0) {
     return {
-      cci: "",
-      technicalAssessmentStatus: "",
+      cci: cciIds.map((cciId) => `  ${cciId}: Not-Applicable`).join("\n"),
+      technicalAssessmentStatus: "Not-Applicable",
       technicalAssessmentComments: [
         "No applicable STIG mapping for this Control.",
       ],
     };
   }
 
-  let cci = "";
+  const cciLines: string[] = [];
 
   for (const cciId of cciIds) {
     const cciVKeys: { vKey: string; status: string }[] = [];
@@ -404,16 +404,16 @@ function getTechnicalAssessment(
       }
     }
 
-    if (cciVKeys.length === 0) {
-      continue;
-    }
+    const cciStatus =
+      cciVKeys.length > 0
+        ? determineCciStatus(cciVKeys)
+        : "Not-Applicable";
 
-    const cciStatus = determineCciStatus(cciVKeys);
-    cci += `  ${cciId}: ${cciStatus}\n`;
+    cciLines.push(`  ${cciId}: ${cciStatus}`);
   }
 
   return {
-    cci,
+    cci: cciLines.join("\n"),
     technicalAssessmentStatus: evaluateStatuses(statusMap),
     technicalAssessmentComments: buildDisplayLines(statusMap),
   };
@@ -460,7 +460,10 @@ function buildCciMaps(cciItems: Awaited<ReturnType<typeof loadCciItems>>) {
       const controlNumber = parseTopLevelControl(reference.index);
       const mappedCcis = cciMap.get(controlNumber) ?? [];
 
-      mappedCcis.push(item.cciId);
+      if (!mappedCcis.includes(item.cciId)) {
+        mappedCcis.push(item.cciId);
+      }
+
       cciMap.set(controlNumber, mappedCcis);
     }
   }
