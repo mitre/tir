@@ -16,9 +16,11 @@ import {
   FrequencyType,
   ImplementationStatus,
   TestMethod,
-  CciItem,
-  CciReference
 } from "~/db/models";
+import {
+  getCciMappingData,
+  normalizeCciControlIndex,
+} from "~/server/utils/cciMapping";
 
 export async function generateSctm(
   boundaryId: number,
@@ -376,49 +378,9 @@ export async function generateSctm(
     ],
   }))
 
-  const cciItems = await CciItem.findAll({
-      attributes: ["cciId", "definition"],
-      include: [
-        {
-          model: CciReference,
-          attributes: ["index"],
-          through: { attributes: [] },
-          where: {
-            PolicyDocumentId: boundary?.PolicyDocumentId,
-          },
-        },
-      ],
-    });
-
-    const cciMap = new Map<string, string[]>();
-
-
-    for (const cciItem of cciItems) {
-      const refs = cciItem.CciReferences ?? []; // safe fallback
-      for (const ref of refs) {
-        if (!ref.index) continue;
-
-        // Roll statement-level references up to their base control or enhancement
-        const controlMatch = ref.index
-          .trim()
-          .toUpperCase()
-          .match(/^([A-Z]{2}-\d+(?:\s*\(\d+\))?)/);
-
-        if (!controlMatch) continue;
-
-        const normalizedIndex = controlMatch[1].replace(/\s+/g, "");
-
-        if (!cciMap.has(normalizedIndex)) {
-          cciMap.set(normalizedIndex, []);
-        }
-
-        const cciIds = cciMap.get(normalizedIndex)!;
-
-        if (!cciIds.includes(cciItem.cciId)) {
-          cciIds.push(cciItem.cciId);
-        }
-      }
-    }
+  const { cciMap } = await getCciMappingData(
+    boundary?.PolicyDocumentId,
+  );
 
   const revName = `rev${boundary?.PolicyDocument?.version}`;
   const revision = await ControlRevision.findOne({ where: { name: revName } });
@@ -534,9 +496,7 @@ export async function generateSctm(
         control.ControlStatements?.map((s: any) => s.description).join("\n") || "";
     }
     newRow[Columns.controlNumber] = controlNumber;
-    const normalizedControlNumber = controlNumber
-      .replace(/\s+/g, "")
-      .toUpperCase();
+    const normalizedControlNumber = normalizeCciControlIndex(controlNumber) ?? "";
     const cciIds = cciMap.get(normalizedControlNumber) || [];
     newRow[Columns.cci] = cciIds.length ? cciIds.join("\n") + "\n" : "";
     // Map all other fields from ControlRecordItem

@@ -16,10 +16,12 @@ import {
   FrequencyType,
   ImplementationStatus,
   TestMethod,
-  CciItem,
-  CciReference,
   ComplianceStatus,
 } from "~/db/models";
+import {
+  getCciMappingData,
+  normalizeCciControlIndex,
+} from "~/server/utils/cciMapping";
 
 export async function generateSecurityControlAssessment(
   boundaryId: number,
@@ -374,52 +376,13 @@ export async function generateSecurityControlAssessment(
     ],
   });
 
-  const cciItems = await CciItem.findAll({
-    attributes: ["cciId", "definition"],
-    include: [
-      {
-        model: CciReference,
-        attributes: ["index"],
-        through: { attributes: [] },
-        where: {
-          PolicyDocumentId: boundary?.PolicyDocumentId,
-        },
-      },
-    ],
-  });
+  const { cciItems, cciMap } = await getCciMappingData(
+    boundary?.PolicyDocumentId,
+  );
 
-  function normalizeCciControlIndex(index: string): string | null {
-    const controlMatch = index
-      .trim()
-      .toUpperCase()
-      .match(/^([A-Z]{2}-\s*\d+(?:\s*\(\d+\))?)/);
-
-    return controlMatch ? controlMatch[1].replace(/\s+/g, "") : null;
-  }
-
-  const cciItemMap = new Map(cciItems.map((item) => [item.cciId, item]));
-  const cciMap = new Map<string, string[]>();
-
-  for (const cciItem of cciItems) {
-    const refs = cciItem.CciReferences ?? [];
-    for (const ref of refs) {
-      if (!ref.index) continue;
-      // Roll statement references up to their base control or enhancement.
-
-      const normalizedIndex = normalizeCciControlIndex(ref.index);
-      if (!normalizedIndex) continue;
-
-      if (!cciMap.has(normalizedIndex)) {
-        cciMap.set(normalizedIndex, []);
-      }
-
-      const cciIds = cciMap.get(normalizedIndex)!;
-
-      if (!cciIds.includes(cciItem.cciId)) {
-        cciIds.push(cciItem.cciId);
-      }
-    }
-  }
+  const cciItemMap = new Map(
+    cciItems.map((item) => [item.cciId, item]),
+  );
 
   const stigResults = await getEvaluationSummary(boundaryId, undefined, false);
 
@@ -590,7 +553,7 @@ export async function generateSecurityControlAssessment(
     }
 
     newRow[Columns.controlNumber] = controlNumber;
-    const normalizedControlNumber = controlNumber.replace(/\s+/g, "").toUpperCase();
+    const normalizedControlNumber = normalizeCciControlIndex(controlNumber) ?? "";
     const statusMap = controlToStatusMap.get(normalizedControlNumber);
     const cciIds = cciMap.get(normalizedControlNumber) || [];
     newRow[Columns.cci] = cciIds.length ? cciIds.join("\n") + "\n" : "";
