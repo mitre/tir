@@ -87,16 +87,26 @@
                     </span>
                   </div>
                 </td>
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
                 <td v-if="isAdmin" class="w-[10%] py-4 pl-4 pr-4 text-right text-sm sm:pr-6">
                   <button
                     class="mr-3 align-middle text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
                     title="Edit revision label (empty resets to automatic)"
+<<<<<<< Updated upstream
                     @click="renameLabel(library)"
+=======
+                    @click="labelTarget = library"
+>>>>>>> Stashed changes
                   >
                     <PencilSquareIcon class="h-5 w-5" aria-hidden="true" />
                     <span class="sr-only">Edit revision label</span>
                   </button>
                   <button
+<<<<<<< Updated upstream
                     class="align-middle text-red-600 hover:text-red-500 disabled:opacity-50 dark:text-red-400"
                     title="Delete library"
                     :disabled="deletingId === library.id"
@@ -106,22 +116,71 @@
                     <span class="sr-only">Delete library</span>
                   </button>
                 </td>
+=======
+                    class="align-middle text-red-600 hover:text-red-500 dark:text-red-400"
+                    title="Delete library"
+                    @click="deleteTarget = library"
+                  >
+                    <TrashIcon class="h-5 w-5" aria-hidden="true" />
+                    <span class="sr-only">Delete library</span>
+                  </button>
+                </td>
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
               </tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
+
+    <ModalDialog
+      :show="!!labelTarget"
+      title="Edit revision label"
+      :message="
+        labelTarget
+          ? `${libraryName(labelTarget)} (${labelTarget.filename}). Leave empty to reset to the automatic label.`
+          : ''
+      "
+      confirm-text="Save"
+      :initial-value="labelTarget?.revisionLabel || ''"
+      placeholder="e.g. Q3 v2"
+      show-input
+      @confirm="saveLabel"
+      @cancel="labelTarget = null"
+    />
+
+    <ModalDialog
+      :show="!!deleteTarget"
+      :title="deleteTarget ? `Delete ${libraryName(deleteTarget)}?` : ''"
+      :message="
+        deleteTarget
+          ? `${deleteTarget.filename} and any STIGs that exist only in this library will be permanently removed. This cannot be undone.`
+          : ''
+      "
+      confirm-text="Delete"
+      busy-text="Deleting..."
+      danger
+      :busy="deleting"
+      @confirm="confirmDelete"
+      @cancel="deleteTarget = null"
+    />
   </div>
 </template>
 
 <script setup>
+<<<<<<< Updated upstream
 import { DateTime } from "luxon";
 import { PencilSquareIcon, TrashIcon } from "@heroicons/vue/24/outline";
 
 const notificationStore = useNotificationStore();
 
 const { data: StigLibraries, refresh } = useFetch("/api/stigLibrary/");
+=======
+const { data: StigLibraries, refresh } = useFetch("/api/stigLibrary/");
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
 const { data: currentUser } = useFetch("/api/auth/currentUser");
 
 const isAdmin = computed(() => currentUser.value?.UserRole?.id === 1);
@@ -139,6 +198,7 @@ function jobFor(libraryId) {
   return props.activeImports[libraryId] || null;
 }
 
+<<<<<<< Updated upstream
 async function renameLabel(library) {
   const input = window.prompt(
     `Revision label for library ${library.id} (${library.filename}).\nLeave empty to reset to the automatic label.`,
@@ -149,6 +209,26 @@ async function renameLabel(library) {
     await $fetch(`/api/stigLibrary/${library.id}/label`, {
       method: "PUT",
       body: { label: input.trim() || null },
+=======
+const labelTarget = ref(null);
+const deleteTarget = ref(null);
+const deleting = ref(false);
+
+function libraryName(library) {
+  return [library.classification, formatLibraryDate(library.libraryDate), library.revisionLabel]
+    .filter(Boolean)
+    .join(" ");
+}
+
+async function saveLabel(value) {
+  const library = labelTarget.value;
+  labelTarget.value = null;
+  if (!library) return;
+  try {
+    await $fetch(`/api/stigLibrary/${library.id}/label`, {
+      method: "PUT",
+      body: { label: value.trim() || null },
+>>>>>>> Stashed changes
     });
     await refresh();
   } catch (error) {
@@ -159,6 +239,7 @@ async function renameLabel(library) {
   }
 }
 
+<<<<<<< Updated upstream
 const deletingId = ref(null);
 
 async function deleteLibrary(library) {
@@ -169,11 +250,21 @@ async function deleteLibrary(library) {
     return;
   }
   deletingId.value = library.id;
+=======
+async function confirmDelete() {
+  const library = deleteTarget.value;
+  if (!library) return;
+  deleting.value = true;
+>>>>>>> Stashed changes
   try {
     const result = await $fetch(`/api/stigLibrary/${library.id}`, { method: "DELETE" });
     notificationStore.addNotification({
       type: "success",
+<<<<<<< Updated upstream
       message: `Deleted library ${name}: ${result.removedStigs} STIG(s) removed, ${result.detachedStigs} shared STIG(s) kept.`,
+=======
+      message: `Deleted library ${libraryName(library)}: ${result.removedStigs} STIG(s) removed, ${result.detachedStigs} shared STIG(s) kept.`,
+>>>>>>> Stashed changes
     });
     await refresh();
   } catch (error) {
@@ -182,7 +273,12 @@ async function deleteLibrary(library) {
       message: error?.data?.statusMessage || "Failed to delete the library.",
     });
   } finally {
+<<<<<<< Updated upstream
     deletingId.value = null;
+=======
+    deleting.value = false;
+    deleteTarget.value = null;
+>>>>>>> Stashed changes
   }
 }
 
@@ -201,6 +297,10 @@ function formatCompleted(importedDate) {
     ? dt.toLocaleString(DateTime.DATETIME_MED)
     : dt.toLocaleString(DateTime.DATE_MED);
 }
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
 const props = defineProps({
   refreshTrigger: {
