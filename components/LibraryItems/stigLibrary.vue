@@ -91,18 +91,17 @@
                   <button
                     class="mr-3 align-middle text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
                     title="Edit revision label (empty resets to automatic)"
-                    @click="renameLabel(library)"
+                    @click="labelTarget = library"
                   >
                     <PencilSquareIcon class="h-5 w-5" aria-hidden="true" />
                     <span class="sr-only">Edit revision label</span>
                   </button>
                   <button
-                    class="align-middle text-red-600 hover:text-red-500 disabled:opacity-50 dark:text-red-400"
+                    class="align-middle text-red-600 hover:text-red-500 dark:text-red-400"
                     title="Delete library"
-                    :disabled="deletingId === library.id"
-                    @click="deleteLibrary(library)"
+                    @click="deleteTarget = library"
                   >
-                    <TrashIcon class="h-5 w-5" :class="{ 'animate-pulse': deletingId === library.id }" aria-hidden="true" />
+                    <TrashIcon class="h-5 w-5" aria-hidden="true" />
                     <span class="sr-only">Delete library</span>
                   </button>
                 </td>
@@ -112,6 +111,38 @@
         </div>
       </div>
     </div>
+
+    <ModalDialog
+      :show="!!labelTarget"
+      title="Edit revision label"
+      :message="
+        labelTarget
+          ? `${libraryName(labelTarget)} (${labelTarget.filename}). Leave empty to reset to the automatic label.`
+          : ''
+      "
+      confirm-text="Save"
+      :initial-value="labelTarget?.revisionLabel || ''"
+      placeholder="e.g. Q3 v2"
+      show-input
+      @confirm="saveLabel"
+      @cancel="labelTarget = null"
+    />
+
+    <ModalDialog
+      :show="!!deleteTarget"
+      :title="deleteTarget ? `Delete ${libraryName(deleteTarget)}?` : ''"
+      :message="
+        deleteTarget
+          ? `${deleteTarget.filename} and any STIGs that exist only in this library will be permanently removed. This cannot be undone.`
+          : ''
+      "
+      confirm-text="Delete"
+      busy-text="Deleting..."
+      danger
+      :busy="deleting"
+      @confirm="confirmDelete"
+      @cancel="deleteTarget = null"
+    />
   </div>
 </template>
 
@@ -139,16 +170,24 @@ function jobFor(libraryId) {
   return props.activeImports[libraryId] || null;
 }
 
-async function renameLabel(library) {
-  const input = window.prompt(
-    `Revision label for library ${library.id} (${library.filename}).\nLeave empty to reset to the automatic label.`,
-    library.revisionLabel || "",
-  );
-  if (input === null) return;
+const labelTarget = ref(null);
+const deleteTarget = ref(null);
+const deleting = ref(false);
+
+function libraryName(library) {
+  return [library.classification, formatLibraryDate(library.libraryDate), library.revisionLabel]
+    .filter(Boolean)
+    .join(" ");
+}
+
+async function saveLabel(value) {
+  const library = labelTarget.value;
+  labelTarget.value = null;
+  if (!library) return;
   try {
     await $fetch(`/api/stigLibrary/${library.id}/label`, {
       method: "PUT",
-      body: { label: input.trim() || null },
+      body: { label: value.trim() || null },
     });
     await refresh();
   } catch (error) {
@@ -159,21 +198,15 @@ async function renameLabel(library) {
   }
 }
 
-const deletingId = ref(null);
-
-async function deleteLibrary(library) {
-  const name = [library.classification, formatLibraryDate(library.libraryDate), library.revisionLabel]
-    .filter(Boolean)
-    .join(" ");
-  if (!window.confirm(`Delete STIG library ${name} (${library.filename})? This cannot be undone.`)) {
-    return;
-  }
-  deletingId.value = library.id;
+async function confirmDelete() {
+  const library = deleteTarget.value;
+  if (!library) return;
+  deleting.value = true;
   try {
     const result = await $fetch(`/api/stigLibrary/${library.id}`, { method: "DELETE" });
     notificationStore.addNotification({
       type: "success",
-      message: `Deleted library ${name}: ${result.removedStigs} STIG(s) removed, ${result.detachedStigs} shared STIG(s) kept.`,
+      message: `Deleted library ${libraryName(library)}: ${result.removedStigs} STIG(s) removed, ${result.detachedStigs} shared STIG(s) kept.`,
     });
     await refresh();
   } catch (error) {
@@ -182,7 +215,8 @@ async function deleteLibrary(library) {
       message: error?.data?.statusMessage || "Failed to delete the library.",
     });
   } finally {
-    deletingId.value = null;
+    deleting.value = false;
+    deleteTarget.value = null;
   }
 }
 
