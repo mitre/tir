@@ -43,8 +43,10 @@
                       {{ message }}
                     </p>
                     <slot />
+                    <label v-if="showInput" for="modal-dialog-input" class="sr-only">{{ title }}</label>
                     <input
                       v-if="showInput"
+                      id="modal-dialog-input"
                       ref="inputRef"
                       v-model="inputText"
                       type="text"
