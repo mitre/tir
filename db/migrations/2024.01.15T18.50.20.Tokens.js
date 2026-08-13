@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize";
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("Tokens", {
     id: {
       type: DataTypes.INTEGER,
@@ -9,23 +8,23 @@ export const up = async () => {
       autoIncrement: true,
     },
     name: {
-      type: DataTypes.STRING(),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     token: {
-      type: DataTypes.STRING(),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     date: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     UserId: {
@@ -39,6 +38,6 @@ export const up = async () => {
     },
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("Tokens");
 };

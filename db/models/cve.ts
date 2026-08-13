@@ -132,7 +132,7 @@ Cve.init(
       autoIncrement: true,
     },
     cveId: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     cvss3AttackComplexity: {
@@ -168,14 +168,14 @@ Cve.init(
       values: Object.values(cvss3UserInteraction),
     },
     cvss3Version: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     lastUpdate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

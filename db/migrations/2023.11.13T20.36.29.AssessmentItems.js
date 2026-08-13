@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("AssessmentItems", {
     id: {
       type: DataTypes.INTEGER,
@@ -25,18 +24,18 @@ export const up = async () => {
       allowNull: true,
     },
     severity_justification: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     current: {
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     previousId: {
@@ -66,6 +65,6 @@ export const up = async () => {
     },
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("AssessmentItems");
 };

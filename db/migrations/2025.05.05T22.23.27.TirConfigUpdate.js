@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
-import { sequelize } from "../umzug.js";
 
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   const upMigration = await sequelize.transaction();
 
   try {
@@ -49,7 +48,7 @@ export const up = async () => {
   }
 };
 
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   const downMigration = await sequelize.transaction();
 
   try {
@@ -58,7 +57,7 @@ export const down = async () => {
         "TirConfigs",
         "value",
         {
-          type: DataTypes.STRING,
+          type: DataTypes.TEXT,
           allowNull: false,
         },
         { transaction: downMigration },

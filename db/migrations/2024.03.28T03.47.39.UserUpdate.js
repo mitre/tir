@@ -1,12 +1,11 @@
 import { DataTypes } from "sequelize";
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   const upMigration = await sequelize.transaction();
   await sequelize.getQueryInterface().addColumn(
     "Users",
     "organization",
     {
-      type: DataTypes.STRING(64),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     { transaction: upMigration },
@@ -15,7 +14,7 @@ export const up = async () => {
     "Users",
     "passwordChangedAt",
     {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     { transaction: upMigration },
@@ -44,7 +43,7 @@ export const up = async () => {
     "Users",
     "lastLogin",
     {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     { transaction: upMigration },
@@ -53,7 +52,7 @@ export const up = async () => {
     "Users",
     "creationMethod",
     {
-      type: DataTypes.STRING(16),
+      type: DataTypes.TEXT,
       allowNull: false,
       defaultValue: "local",
     },
@@ -63,14 +62,14 @@ export const up = async () => {
     "Users",
     "salt",
     {
-      type: DataTypes.STRING(32),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     { transaction: upMigration },
   );
   await upMigration.commit();
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   const downMigration = await sequelize.transaction();
   if (sequelize.getDialect() !== "sqlite") {
     await sequelize
@@ -97,7 +96,7 @@ export const down = async () => {
     await downMigration.commit();
   } else {
     await sequelize.query(
-      `CREATE TABLE 'Users_backup' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'firstName' VARCHAR(255) NOT NULL, 'lastName' VARCHAR(255) NOT NULL, 'email' VARCHAR(255) NOT NULL UNIQUE, 'password' VARCHAR(128), 'UserRoleId' INTEGER REFERENCES 'UserRoles' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'lastUpdate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'creationDate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'TimezoneId' INTEGER REFERENCES 'Timezones' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'ThemeId' INTEGER REFERENCES 'Themes' ('id') ON DELETE SET NULL ON UPDATE CASCADE);`,
+      `CREATE TABLE 'Users_backup' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'firstName' TEXT NOT NULL, 'lastName' TEXT NOT NULL, 'email' TEXT NOT NULL UNIQUE, 'password' TEXT, 'UserRoleId' INTEGER REFERENCES 'UserRoles' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'lastUpdate' TEXT NOT NULL, 'creationDate' TEXT NOT NULL, 'TimezoneId' INTEGER REFERENCES 'Timezones' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'ThemeId' INTEGER REFERENCES 'Themes' ('id') ON DELETE SET NULL ON UPDATE CASCADE);`,
       { transaction: downMigration },
     );
     await sequelize.query(
@@ -106,7 +105,7 @@ export const down = async () => {
     );
     await sequelize.query(`DROP TABLE 'Users';`, { transaction: downMigration });
     await sequelize.query(
-      `CREATE TABLE 'Users' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'firstName' VARCHAR(255) NOT NULL, 'lastName' VARCHAR(255) NOT NULL, 'email' VARCHAR(255) NOT NULL UNIQUE, 'password' VARCHAR(128), 'UserRoleId' INTEGER REFERENCES 'UserRoles' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'lastUpdate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'creationDate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'TimezoneId' INTEGER REFERENCES 'Timezones' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'ThemeId' INTEGER REFERENCES 'Themes' ('id') ON DELETE SET NULL ON UPDATE CASCADE);`,
+      `CREATE TABLE 'Users' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'firstName' TEXT NOT NULL, 'lastName' TEXT NOT NULL, 'email' TEXT NOT NULL UNIQUE, 'password' TEXT, 'UserRoleId' INTEGER REFERENCES 'UserRoles' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'lastUpdate' TEXT NOT NULL, 'creationDate' TEXT NOT NULL, 'TimezoneId' INTEGER REFERENCES 'Timezones' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'ThemeId' INTEGER REFERENCES 'Themes' ('id') ON DELETE SET NULL ON UPDATE CASCADE);`,
       { transaction: downMigration },
     );
     await sequelize.query(
