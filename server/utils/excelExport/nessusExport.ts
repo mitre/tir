@@ -268,14 +268,13 @@ function formatOutput(
       const splitted = longString.split(splitDelimiter);
       for (const myVal of splitted) {
         const softwareDetails = myVal.split("\n");
-        const mySoftware = softwareDetails[0].replace('"', '"');
+        const mySoftware = softwareDetails[0];
         if (mySoftware !== "") {
           const myVersion = myVal
             .split("All Possible Versions")[1]
             .split("\n")[0]
             .split(":")[1]
             .trim()
-            .replace('"', '"');
           const printName = '"' + mySoftware + '"';
           const printVersion = '"' + myVersion + '"';
           const theseSystems = addSoftwareSystem(
