@@ -1,88 +1,120 @@
-import { Client, SearchEntry } from "ldapts";
+import { Client, type Entry } from "ldapts";
 import { H3Event, H3Error } from "h3";
 import { AuthProvider } from "./authProvider";
-import { SessionService } from "./sessionService";
-import { User } from "~/db/models/user";
+import { GroupClaimExtractor } from "./groupClaimExtractor";
+import {
+  UAC_ACCOUNT_DISABLED,
+  escapeFilter,
+  domainFromBaseDn,
+  firstAttr,
+  allAttrs,
+} from "./ldapUtils";
+import type { LDAPProviderConfig } from "~/types/auth";
 
-const sessionService = new SessionService();
+const CONNECT_TIMEOUT_MS = 10_000;
+
+function buildClientOptions(config: LDAPProviderConfig): any {
+  const opts: any = { url: config.url, connectTimeout: CONNECT_TIMEOUT_MS };
+  if (config.ssl) {
+    if (config.sslInsecure) {
+      opts.tlsOptions = { rejectUnauthorized: false };
+    } else if (config.sslCa) {
+      opts.tlsOptions = { ca: config.sslCa };
+    } else {
+      opts.tlsOptions = {};
+    }
+  }
+  return opts;
+}
 
 export class LDAPAuthProvider extends AuthProvider {
-  private config: any;
+  private readonly config: LDAPProviderConfig & { password?: string };
 
-  constructor(config: any) {
+  constructor(config: LDAPProviderConfig & { password?: string }) {
     super();
     this.config = config;
   }
 
   async init(): Promise<void> {}
 
-  async authenticate(event: H3Event, credentials: any): Promise<any> {
-    const { username, password } = credentials;
-    const { ldapUrl, ldapBindDn, ldapPassword, ldapBaseDn } = this.config;
+  private resolveGroupRole(groups: string[]): number | null {
+    const mappingsRaw = (this.config.groupMappings || "").trim();
+    if (!mappingsRaw) return null;
+    const extractor = new GroupClaimExtractor({
+      mode: "claim",
+      claimPath: "",
+      groupRoleMappings: GroupClaimExtractor.parseGroupMappings(mappingsRaw, "|"),
+    });
+    const roleIds = extractor.getAllMatchingRoles(groups);
+    if (roleIds.includes(2)) return 2;
+    if (roleIds.includes(1)) return 1;
+    return null;
+  }
 
-    if (!ldapUrl || !ldapBindDn || !ldapPassword || !ldapBaseDn) {
+  async authenticate(event: H3Event, credentials: any): Promise<any> {
+    if (this.config.template === "msad") {
+      return this.authenticateMSAD(event, credentials);
+    }
+    return this.authenticateOpenLDAP(event, credentials);
+  }
+
+  private async authenticateOpenLDAP(event: H3Event, credentials: any): Promise<any> {
+    const { username, password } = credentials;
+    const { bindDn, password: ldapPassword, baseDn } = this.config;
+
+    if (!this.config.url || !bindDn || !ldapPassword || !baseDn) {
       throw new H3Error("LDAP configuration is incomplete.");
     }
 
-    const client = new Client({ url: ldapUrl });
+    const groupAttr = this.config.groupAttribute || "memberOf";
+    const client = new Client(buildClientOptions(this.config));
 
     try {
-      await client.bind(ldapBindDn, ldapPassword);
+      await client.bind(bindDn, ldapPassword);
 
-      const { searchEntries } = await client.search(ldapBaseDn, {
+      const { searchEntries } = await client.search(baseDn, {
         scope: "sub",
-        filter: `(uid=${username})`,
-        attributes: ["dn", "cn", "sn", "givenName", "mail"],
+        filter: `(uid=${escapeFilter(username)})`,
+        attributes: ["dn", "cn", "sn", "givenName", "mail", groupAttr],
       });
 
       if (searchEntries.length !== 1) {
-        logger.info({ service: "Auth", message: `LDAP user not found or not unique: ${username}` });
+        logger.info({ service: "auth", message: `LDAP user not found or not unique: ${username}` });
         return null;
       }
 
-      const ldapUser = searchEntries[0] as SearchEntry;
-
+      const ldapUser = searchEntries[0] as Entry;
       await client.bind(ldapUser.dn, password);
+
+      logger.info({ service: "auth", message: `LDAP authentication successful for: ${username}` });
+
+      const firstName = firstAttr(ldapUser.givenName, username);
+      const lastName = firstAttr(ldapUser.sn, "Unknown");
+      const mails = allAttrs(ldapUser.mail).filter(Boolean);
+      const email = mails.length ? mails : [`${username}@example.com`];
+
+      const groups = allAttrs(ldapUser[groupAttr]).map((g) => g.toLowerCase());
+      const userRoleId = this.resolveGroupRole(groups);
+
       logger.info({
-        service: "Auth",
-        message: `LDAP authentication successful for user: ${username}`,
+        service: "auth",
+        message: `LDAP '${
+          this.config.label
+        }' group resolution for ${username} -- groups=${JSON.stringify(
+          groups,
+        )}, role=${userRoleId}`,
       });
 
-      const firstName = (ldapUser.givenName as string) ?? username;
-      const lastName = (ldapUser.sn as string) ?? "Unknown";
-      const email = (ldapUser.mail as string) ?? `${username}@example.com`;
-
-      let user = await User.findOne({ where: { email } });
-
-      if (!user) {
-        user = await User.create({
-          firstName,
-          lastName,
-          email,
-          UserRoleId: 2,
-          TimezoneId: 1,
-          creationMethod: "ldap",
-          password: null,
-          salt: null,
-        });
-
-        logger.info({
-          service: "Auth",
-          message: `Created new local user for LDAP user: ${username}`,
-        });
+      if ((this.config.groupMappings || "").trim() && userRoleId === null) {
+        throw new H3Error("Unauthorized: You do not belong to any permitted groups.");
       }
 
-      const sessionId = await sessionService.createSession(user.id, event, {
-        authMethod: "ldap",
-        ipAddress: event.req.headers["x-forwarded-for"] || event.req.socket.remoteAddress,
-        userAgent: event.req.headers["user-agent"],
-      });
-
-      return { id: user.id, username, dn: ldapUser.dn, sessionId };
+      return this.finalizeLogin(event, { email, firstName, lastName }, "ldap", userRoleId);
     } catch (error: any) {
+      if (error instanceof H3Error) throw error;
       logger.info({
-        service: "Auth",
-        message: `LDAP authentication failed for user: ${username}, Error: ${error.message}`,
+        service: "auth",
+        message: `LDAP auth failed for ${username}: ${error.message}`,
       });
       return null;
     } finally {
@@ -90,11 +122,108 @@ export class LDAPAuthProvider extends AuthProvider {
     }
   }
 
-  async validateToken(token: string): Promise<any> {
-    logger.info({
-      service: "Auth",
-      message: `LDAP validateToken not implemented for token: ${token}`,
-    });
+  private async authenticateMSAD(event: H3Event, credentials: any): Promise<any> {
+    const { username, password } = credentials;
+    const { bindDn, password: ldapPassword, baseDn } = this.config;
+
+    if (!this.config.url || !bindDn || !ldapPassword || !baseDn) {
+      throw new H3Error("LDAP configuration is incomplete.");
+    }
+
+    const groupAttr = this.config.groupAttribute || "memberOf";
+    const client = new Client(buildClientOptions(this.config));
+
+    try {
+      await client.bind(bindDn, ldapPassword);
+
+      // Search by sAMAccountName or userPrincipalName - handle both domain\user and user@domain
+      const escaped = escapeFilter(username);
+      const filter = `(|(sAMAccountName=${escaped})(userPrincipalName=${escaped}))`;
+
+      const { searchEntries } = await client.search(baseDn, {
+        scope: "sub",
+        filter,
+        attributes: [
+          "dn",
+          "sAMAccountName",
+          "userPrincipalName",
+          "displayName",
+          "givenName",
+          "sn",
+          "mail",
+          "userAccountControl",
+          groupAttr,
+        ],
+      });
+
+      if (searchEntries.length !== 1) {
+        logger.info({ service: "auth", message: `AD user not found or not unique: ${username}` });
+        return null;
+      }
+
+      const adUser = searchEntries[0] as Entry;
+
+      // Check disabled account flag (bit 1 of userAccountControl)
+      const uac = Number.parseInt(adUser.userAccountControl as string, 10);
+      if (!Number.isNaN(uac) && uac & UAC_ACCOUNT_DISABLED) {
+        logger.info({
+          service: "auth",
+          message: `AD login rejected -- account disabled: ${username}`,
+        });
+        return null;
+      }
+
+      await client.bind(adUser.dn, password);
+
+      logger.info({ service: "auth", message: `AD authentication successful for: ${username}` });
+
+      const groups = allAttrs(adUser[groupAttr]).map((g) => g.toLowerCase());
+      const userRoleId = this.resolveGroupRole(groups);
+
+      logger.info({
+        service: "auth",
+        message: `AD '${
+          this.config.label
+        }' group resolution for ${username} -- groups=${JSON.stringify(
+          groups,
+        )}, role=${userRoleId}`,
+      });
+
+      if ((this.config.groupMappings || "").trim() && userRoleId === null) {
+        throw new H3Error("Unauthorized: You do not belong to any permitted groups.");
+      }
+
+      const profile = this.extractADProfile(adUser, username, baseDn);
+      return this.finalizeLogin(event, profile, "ldap", userRoleId);
+    } catch (error: any) {
+      if (error instanceof H3Error) throw error;
+      logger.info({ service: "auth", message: `AD auth failed for ${username}: ${error.message}` });
+      return null;
+    } finally {
+      await client.unbind();
+    }
+  }
+
+  private extractADProfile(
+    adUser: Entry,
+    username: string,
+    baseDn: string,
+  ): { email: string; firstName: string; lastName: string } {
+    const displayName = firstAttr(adUser.displayName);
+    const firstName = firstAttr(adUser.givenName) || displayName.split(" ")[0] || username;
+    const lastName = firstAttr(adUser.sn) || displayName.split(" ").slice(1).join(" ") || "Unknown";
+
+    let email = firstAttr(adUser.mail) || firstAttr(adUser.userPrincipalName);
+    if (!email?.includes("@")) {
+      const domain = domainFromBaseDn(baseDn);
+      const sam = firstAttr(adUser.sAMAccountName) || username;
+      email = domain ? `${sam}@${domain}` : `${sam}@example.com`;
+    }
+
+    return { email, firstName, lastName };
+  }
+
+  async validateToken(_token: string): Promise<any> {
     return null;
   }
 }

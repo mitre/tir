@@ -294,19 +294,14 @@ const { data: currentUser, error: userError } = useAsyncData(
   "currentUser",
   async () => {
     try {
-      return await $fetch("/api/auth/currentUser", {
-        method: "GET",
-        credentials: "include",
-      });
-    } catch (err) {
-      console.error("Failed to fetch currentUser:", err);
+      return await $fetch("/api/auth/currentUser", { method: "GET", credentials: "include" });
+    } catch {
       return null;
     }
   },
-  { server: false },
+  { server: false, default: () => null },
 );
 
-// Fetch alerts only after currentUser is available
 const { data: currentAlert, refresh: refreshAlerts } = useAsyncData(
   "currentAlert",
   async () => {
@@ -317,17 +312,20 @@ const { data: currentAlert, refresh: refreshAlerts } = useAsyncData(
       credentials: "include",
     });
   },
-  { watch: [currentUser] }, // Re-fetch whenever `currentUser` changes
+  { server: false, default: () => null, watch: [currentUser] },
 );
-// Fetch about data
-const { data: currentAbout } = useAsyncData("currentAbout", async () => {
-  try {
-    return await $fetch("/api/config/about", { method: "GET" });
-  } catch (error) {
-    console.error("Failed to fetch about data:", error);
-    return null; // Return null on error
-  }
-});
+
+const { data: currentAbout } = useAsyncData(
+  "currentAbout",
+  async () => {
+    try {
+      return await $fetch("/api/config/about", { method: "GET" });
+    } catch {
+      return null;
+    }
+  },
+  { default: () => null },
+);
 
 // Check if data is ready
 const isDataReady = computed(() => !!currentUser.value && !userError.value && navigation.value.length > 0);
