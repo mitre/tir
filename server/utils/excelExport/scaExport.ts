@@ -16,10 +16,12 @@ import {
   FrequencyType,
   ImplementationStatus,
   TestMethod,
-  CciItem,
-  CciReference,
   ComplianceStatus,
 } from "~/db/models";
+import {
+  getCciMappingData,
+  normalizeCciControlIndex,
+} from "~/server/utils/cciMapping";
 
 export async function generateSecurityControlAssessment(
   boundaryId: number,
@@ -374,33 +376,13 @@ export async function generateSecurityControlAssessment(
     ],
   });
 
-  const cciItems = await CciItem.findAll({
-    attributes: ["cciId", "definition"],
-    include: [
-      {
-        model: CciReference,
-        attributes: ["index"],
-        through: { attributes: [] },
-        where: {
-          PolicyDocumentId: boundary?.PolicyDocumentId,
-        },
-      },
-    ],
-  });
-  const cciItemMap = new Map(cciItems.map((item) => [item.cciId, item]));
-  const cciMap = new Map<string, string[]>();
+  const { cciItems, cciMap } = await getCciMappingData(
+    boundary?.PolicyDocumentId,
+  );
 
-  for (const cciItem of cciItems) {
-    const refs = cciItem.CciReferences ?? [];
-    for (const ref of refs) {
-      if (!ref.index) continue;
-      const normalizedIndex = ref.index.replace(/\s+/g, "");
-      if (!cciMap.has(normalizedIndex)) {
-        cciMap.set(normalizedIndex, []);
-      }
-      cciMap.get(normalizedIndex)!.push(cciItem.cciId);
-    }
-  }
+  const cciItemMap = new Map(
+    cciItems.map((item) => [item.cciId, item]),
+  );
 
   const stigResults = await getEvaluationSummary(boundaryId, undefined, false);
 
@@ -418,19 +400,26 @@ export async function generateSecurityControlAssessment(
 
       for (const cciId of cciIds) {
         const cciItem = cciItemMap.get(cciId);
-        const cciRef = cciItem?.CciReferences?.[0]?.index ?? "";
-        const normalizedControl = cciRef.replace(/\s+/g, "");
-        if (!normalizedControl) continue;
+        const refs = cciItem?.CciReferences ?? [];
 
-        if (!controlToStatusMap.has(normalizedControl)) {
-          controlToStatusMap.set(normalizedControl, new Map());
-        }
+        for (const ref of refs) {
+          if (!ref.index) continue;
 
-        const statusMap = controlToStatusMap.get(normalizedControl)!;
-        if (!statusMap.has(status)) {
-          statusMap.set(status, new Set());
+          const normalizedControl = normalizeCciControlIndex(ref.index);
+          if (!normalizedControl) continue;
+
+          if (!controlToStatusMap.has(normalizedControl)) {
+            controlToStatusMap.set(normalizedControl, new Map());
+          }
+
+          const statusMap = controlToStatusMap.get(normalizedControl)!;
+
+          if (!statusMap.has(status)) {
+            statusMap.set(status, new Set());
+          }
+
+          statusMap.get(status)!.add(displayValue);
         }
-        statusMap.get(status)!.add(displayValue);
       }
     }
   }
@@ -564,7 +553,7 @@ export async function generateSecurityControlAssessment(
     }
 
     newRow[Columns.controlNumber] = controlNumber;
-    const normalizedControlNumber = controlNumber.replace(/\s+/g, "");
+    const normalizedControlNumber = normalizeCciControlIndex(controlNumber) ?? "";
     const statusMap = controlToStatusMap.get(normalizedControlNumber);
     const cciIds = cciMap.get(normalizedControlNumber) || [];
     newRow[Columns.cci] = cciIds.length ? cciIds.join("\n") + "\n" : "";
