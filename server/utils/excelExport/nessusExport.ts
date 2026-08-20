@@ -20,17 +20,6 @@ function protocolFromId(id?: number | null): string {
   return protocolMap.get(id) ?? "";
 }
 
-function isSkippedStatus(value?: string | null): boolean {
-  const normalizedValue = value?.toLowerCase();
-
-  return (
-    normalizedValue === "notafinding" ||
-    normalizedValue === "notapplicable" ||
-    normalizedValue === "not_a_finding" ||
-    normalizedValue === "not_applicable"
-  );
-}
-
 export type NessusSoftwareItem = {
   name: string;
   version: string;
@@ -43,14 +32,6 @@ export type NessusParentObject = {
   existingObjects: string[];
 };
 
-type NessusSoftwareRow = [
-  name: string,
-  version: string,
-  systems: string,
-  pluginId: string,
-  component: string,
-];
-
 const columnGetters: Record<HeaderLabel, (ct: SourceData) => string> = {
   [NessusCsvHeaders.PluginId]: ({ item }) => String(item.NessusPlugin?.pluginId ?? ""),
   [NessusCsvHeaders.CVE]: (_ct) => "",
@@ -58,8 +39,8 @@ const columnGetters: Record<HeaderLabel, (ct: SourceData) => string> = {
   [NessusCsvHeaders.CvssV3]: ({ item }) => String(item.cvss3TemporalScore ?? ""),
   [NessusCsvHeaders.Risk]: ({ item }) => String(item.NessusPlugin?.riskFactor ?? ""),
   [NessusCsvHeaders.Host]: ({ report }) =>
-    String((report as any).host ?? report.reportHostName ?? ""),
-  [NessusCsvHeaders.Protocol]: ({ item }) => String(protocolFromId(item.ProtocolId)),
+    String((report as any).host ?? (report as any).reportHostName ?? ""),
+  [NessusCsvHeaders.Protocol]: ({ item }) => String(protocolFromId((item as any).ProtocolId)),
   [NessusCsvHeaders.Port]: ({ item }) => String(item.port ?? ""),
   [NessusCsvHeaders.Name]: ({ item }) => String(item.NessusPlugin?.pluginName ?? ""),
   [NessusCsvHeaders.Synopsis]: ({ item }) => String(item.NessusPlugin?.synopsis ?? ""),
@@ -72,7 +53,7 @@ const columnGetters: Record<HeaderLabel, (ct: SourceData) => string> = {
 };
 
 function getCveList(item: NessusReportItem): string[] {
-  const arr = item.NessusPlugin?.Cves?.map((c) => String(c.cveId)) ?? [];
+  const arr = item.NessusPlugin?.Cves?.map((c) => String((c as any).cveId)) ?? [];
   return arr.length ? arr : [""];
 }
 
@@ -148,20 +129,34 @@ export async function generateNessusCsv(
           for (const override of overrides[report.SystemId]) {
             if (Array.isArray(override)) {
               for (const sysOverride of override) {
-                if (
-                  sysOverride.NessusPluginId === item.NessusPluginId &&
-                  sysOverride.type.toLowerCase() === "status" &&
-                  isSkippedStatus(sysOverride.value)
-                ) {
-                  skipped = true;
+                if (sysOverride.NessusPluginId === item.NessusPluginId) {
+                  if (sysOverride.type.toLowerCase() === "status") {
+                    const cleanSysOverride = sysOverride?.value.toLowerCase();
+                    if (
+                      cleanSysOverride === "notafinding" ||
+                      cleanSysOverride === "notapplicable" ||
+                      cleanSysOverride === "not_a_finding" ||
+                      cleanSysOverride === "not_applicable"
+                    ) {
+                      skipped = true;
+                    }
+                  }
                 }
               }
             }
           }
         }
 
-        if (factorOverrides && isSkippedStatus(item.statusOverride)) {
-          skipped = true;
+        if (factorOverrides && item.statusOverride) {
+          const cleanStatusOverride = item.statusOverride?.toLowerCase();
+          if (
+            cleanStatusOverride === "notafinding" ||
+            cleanStatusOverride === "notapplicable" ||
+            cleanStatusOverride === "not_a_finding" ||
+            cleanStatusOverride === "not_applicable"
+          ) {
+            skipped = true;
+          }
         }
 
         if (!skipped) {
@@ -268,13 +263,14 @@ function formatOutput(
       const splitted = longString.split(splitDelimiter);
       for (const myVal of splitted) {
         const softwareDetails = myVal.split("\n");
-        const mySoftware = softwareDetails[0];
+        const mySoftware = softwareDetails[0].replace('"', '"');
         if (mySoftware !== "") {
           const myVersion = myVal
             .split("All Possible Versions")[1]
             .split("\n")[0]
             .split(":")[1]
             .trim()
+            .replace('"', '"');
           const printName = '"' + mySoftware + '"';
           const printVersion = '"' + myVersion + '"';
           const theseSystems = addSoftwareSystem(
@@ -365,10 +361,19 @@ function getSystemsPrint(systems: string[]): string {
 export async function generateNessusSW(
   boundaryId: number,
   reports: NessusReport[],
-): Promise<NessusSoftwareRow[]> {
-  const csvContent: NessusSoftwareRow[] = [
-    ["Name", "Version", "Systems", "Plugin ID", "Component"],
-  ];
+): Promise<string[][]> {
+  const headers: string[] = ["Name", "Version", "Systems", "Plugin ID", "Component"];
+
+  const csvContent: string[][] = [];
+  csvContent.push(Array(headers.length).fill("")); // for headers
+
+  let csvRow = 0;
+  let csvColumn = 0;
+  for (const h of headers) {
+    csvContent[csvRow][csvColumn] = h;
+    csvColumn++;
+  }
+  csvRow++;
 
   const loadedSystems = await System.findAll({
     where: {
@@ -380,46 +385,35 @@ export async function generateNessusSW(
 
   for (const report of reports) {
     if (!report.NessusReportItems) continue;
-
     for (const row of report.NessusReportItems) {
-      if (!row.NessusPlugin || !row.pluginOutput) {
-        continue;
-      }
-
-      const pluginId = row.NessusPlugin.pluginId;
       // Other potential pluginIds to be consider commented here: 20811, 22869, 97993, 178102
-      if (pluginId !== 22869 && pluginId !== 178102) {
-        continue;
+      if (row.NessusPlugin && (row.NessusPlugin.pluginId === 22869 || row.NessusPlugin.pluginId === 178102)) {
+        const mySystem = loadedSystems.find((sys) => sys.id === report.SystemId);
+        if (mySystem) {
+          ReportedSoftware = formatOutput(
+            row.pluginOutput,
+            mySystem.name,
+            row.NessusPlugin.pluginId,
+            ReportedSoftware,
+          );
+        }
       }
-
-      const system = loadedSystems.find((sys) => sys.id === report.SystemId);
-
-      if (!system?.name) {
-        continue;
-      }
-
-      ReportedSoftware = formatOutput(
-        row.pluginOutput,
-        system.name,
-        pluginId,
-        ReportedSoftware,
-      );
     }
   }
 
   let parentItem: string[] = [];
-
   for (const sw of ReportedSoftware) {
+    // this is where we check for parent
     const parentTestComponent = getParent(sw.name, sw.version, parentItem);
     parentItem = parentTestComponent.existingObjects;
 
-    csvContent.push([
-      sw.name,
-      sw.version,
-      getSystemsPrint(sw.systems),
-      sw.pluginId.toString(),
-      parentTestComponent.isComponent.toString(),
-    ]);
+    csvContent.push(Array(headers.length).fill("")); // for headers
+    csvContent[csvRow][0] = sw.name;
+    csvContent[csvRow][1] = sw.version;
+    csvContent[csvRow][2] = getSystemsPrint(sw.systems);
+    csvContent[csvRow][3] = sw.pluginId.toString();
+    csvContent[csvRow][4] = parentTestComponent.isComponent.toString();
+    csvRow++;
   }
 
   // Finished SW Export

@@ -10,7 +10,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+        <div class="fixed inset-0 bg-gray-500/75 transition-opacity" />
       </TransitionChild>
 
       <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
@@ -25,7 +25,7 @@
             leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
             <DialogPanel
-              class="relative transform overflow-hidden rounded-lg bg-gray-100 px-4 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-800 sm:my-8 sm:w-full sm:max-w-4xl sm:p-6"
+              class="relative overflow-hidden rounded-lg bg-gray-100 px-4 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-800 sm:my-8 sm:w-full sm:max-w-5xl sm:p-6"
             >
               <div class="overflow-y-hidden">
                 <div class="border-b border-gray-400 pb-5 dark:border-gray-200 sm:pb-0">
@@ -94,7 +94,8 @@
                           aria-describedby="open-description"
                           name="open"
                           type="checkbox"
-                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                          :disabled="checkedStatus.includes('RMF')"
+                          class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                         />
                       </div>
                       <div class="ml-3 text-sm leading-6">
@@ -111,7 +112,8 @@
                           aria-describedby="notAfinding-description"
                           name="notAfinding"
                           type="checkbox"
-                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                          :disabled="checkedStatus.includes('RMF')"
+                          class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                         />
                       </div>
                       <div class="ml-3 text-sm leading-6">
@@ -130,7 +132,8 @@
                           aria-describedby="notApplicable-description"
                           name="notApplicable"
                           type="checkbox"
-                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                          :disabled="checkedStatus.includes('RMF')"
+                          class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                         />
                       </div>
                       <div class="ml-3 text-sm leading-6">
@@ -151,13 +154,34 @@
                           aria-describedby="notReviewed-description"
                           name="notReviewed"
                           type="checkbox"
-                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                          :disabled="checkedStatus.includes('RMF')"
+                          class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                         />
                       </div>
                       <div class="ml-3 text-sm leading-6">
                         <label for="notReviewed" class="font-medium text-gray-800 dark:text-white">Not Reviewed</label>
                         <p id="notReviewed-description" class="text-gray-400">
                           Select results with a "Not Reviewed" Status.
+                        </p>
+                      </div>
+                    </div>
+                    <div class="relative flex items-start border-t border-gray-400 pt-5">
+                      <div class="flex h-6 items-center">
+                        <input
+                          id="rmf"
+                          v-model="checkedStatus"
+                          value="RMF"
+                          aria-describedby="open-description"
+                          name="rmf"
+                          type="checkbox"
+                          :disabled="checkedStatus.length > 0 && !checkedStatus.includes('RMF')"
+                          class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 disabled:text-gray-600"
+                        />
+                      </div>
+                      <div class="ml-3 text-sm leading-6">
+                        <label for="open" class="font-medium text-gray-800 dark:text-white">RMF Findings</label>
+                        <p id="open-description" class="text-gray-400">
+                          Select RMF results with a "Non-Compliant / Not Reviewed" Status.
                         </p>
                       </div>
                     </div>
@@ -188,44 +212,124 @@
                   </div>
                 </div>
                 <fieldset>
-                  <legend class="sr-only">Notifications</legend>
-                  <div class="space-y-5">
-                    <div class="relative flex items-start">
+                  <div class="relative my-5 flex items-start">
+                    <div class="flex h-6 items-center">
+                      <input
+                        id="cklv3-cklb"
+                        v-model="checklistVersion"
+                        value="cklb"
+                        aria-describedby="comments-description"
+                        type="radio"
+                        class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                      />
+                    </div>
+                    <div class="ml-3 text-sm leading-6">
+                      <label for="cklv3-cklb" class="font-medium text-gray-800 dark:text-white"
+                        >Checklist Version 3 (.cklb)</label
+                      >
+                    </div>
+                    <div class="ml-6 flex items-start">
                       <div class="flex h-6 items-center">
                         <input
-                          id="cklv3"
-                          v-model="cklOptions"
-                          value="cklb"
+                          id="cklv2"
+                          v-model="checklistVersion"
+                          value="ckl"
                           aria-describedby="comments-description"
-                          type="checkbox"
-                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                          type="radio"
+                          class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                         />
                       </div>
                       <div class="ml-3 text-sm leading-6">
-                        <label for="cklv3" class="font-medium text-gray-800 dark:text-white"
-                          >Checklist Version 3 (.cklb)</label
+                        <label for="cklv2" class="font-medium text-gray-800 dark:text-white"
+                          >Checklist Version 2 (.ckl)</label
                         >
                       </div>
                     </div>
-                    <div class="relative flex items-start">
+                  </div>
+                  <div class="relative my-5 flex items-start">
+                    <div class="flex h-6 items-center">
+                      <input
+                        id="system"
+                        v-model="groupValue"
+                        value="system"
+                        aria-describedby="comments-description"
+                        type="radio"
+                        class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                      />
+                    </div>
+                    <div class="group relative ml-3 text-sm leading-6">
+                      <label for="cklv3-cklb" class="cursor-help font-medium text-gray-800 dark:text-white">
+                        Group by system name
+                      </label>
+                      <div
+                        class="pointer-events-none absolute left-0 top-full z-10 mt-1 w-56 rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition delay-0 group-hover:opacity-100 group-hover:delay-1000"
+                      >
+                        Groups results by the system name as seen in TIR.
+                      </div>
+                    </div>
+                    <div class="ml-6 flex items-start">
                       <div class="flex h-6 items-center">
                         <input
-                          id="singleStigPerCkl"
-                          v-model="cklOptions"
-                          value="SingleStigPerCkl"
+                          id="host"
+                          v-model="groupValue"
+                          value="host"
                           aria-describedby="comments-description"
-                          name="singleStigPerCkl"
-                          type="checkbox"
-                          class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                          type="radio"
+                          class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                         />
                       </div>
-                      <div class="ml-3 text-sm leading-6">
-                        <label for="comments" class="font-medium text-gray-800 dark:text-white"
-                          >Single STIG per Checklist</label
+                      <div class="group relative ml-3 text-sm leading-6">
+                        <label for="cklv2" class="cursor-help font-medium text-gray-800 dark:text-white"
+                          >Group by hostname</label
                         >
-                        <p id="comments-description" class="text-gray-300">
-                          Create a checklist for each STIG instead of a single checklist per System.
-                        </p>
+                        <div
+                          class="pointer-events-none absolute left-0 top-full z-10 mt-1 w-56 rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition delay-0 duration-200 group-hover:opacity-100 group-hover:delay-1000"
+                        >
+                          Groups results by the hostname. When no hostname is defined defaults to system name.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="relative flex items-start">
+                    <div class="flex h-6 items-center">
+                      <input
+                        id="singleStigPerCkl"
+                        v-model="singleStigPerChecklist"
+                        aria-describedby="comments-description"
+                        name="singleStigPerCkl"
+                        type="checkbox"
+                        class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                      />
+                    </div>
+                    <div class="ml-3 text-sm leading-6">
+                      <label for="comments" class="font-medium text-gray-800 dark:text-white"
+                        >Single STIG per Checklist</label
+                      >
+                      <p id="comments-description" class="text-gray-300">
+                        Create a checklist for each STIG instead of a single checklist per System.
+                      </p>
+                    </div>
+                  </div>
+                  <div class="relative flex items-start">
+                    <div class="flex h-6 items-center">
+                      <input
+                        id="ignoreOverrides"
+                        v-model="ignoreSTIGStatusOverrides"
+                        aria-describedby="comments-description"
+                        name="ignoreOverrides"
+                        type="checkbox"
+                        class="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                      />
+                    </div>
+                    <div class="ml-3 text-sm leading-6">
+                      <div class="group relative text-sm leading-6">
+                        <label for="ignoreOverrides" class="cursor-help font-medium text-gray-800 dark:text-white"
+                        >Ignore TIR Status Overrides</label>
+                        <div
+                          class="pointer-events-none absolute left-0 top-full z-10 mt-1 w-56 rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition delay-0 duration-200 group-hover:opacity-100 group-hover:delay-1000"
+                        >
+                        Selecting this will export checklists without TIR System Status Overrides.
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -309,6 +413,7 @@
                     <p class="text-sm text-gray-600 dark:text-gray-300">Download HDF Below</p>
                   </div>
                 </div>
+
                 <div class="mt-5 sm:mt-6">
                   <button
                     type="button"
@@ -319,7 +424,28 @@
                   </button>
                 </div>
               </div>
+
               <div v-if="activeTab === 7">
+                <div class="mt-3 text-center sm:mt-5">
+                  <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-800 dark:text-white"
+                    >Software List Export
+                  </DialogTitle>
+                  <div class="mt-2">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Download SW List Below</p>
+                  </div>
+                </div>
+
+                <div class="mt-5 sm:mt-6">
+                  <button
+                    type="button"
+                    class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    @click="softwareListDownload"
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
+              <div v-if="activeTab === 8">
                 <div class="mt-3 text-center sm:mt-5">
                   <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-800 dark:text-white"
                     >SCTM
@@ -336,9 +462,10 @@
                           :id="option.value"
                           v-model="checkedSctmStatus"
                           :value="option.value"
+                          aria-describedby="eMASS-description"
                           name="status"
                           type="radio"
-                          class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                          class="size-4 border-gray-300 text-indigo-600 focus:ring-indigo-600"
                         />
                       </div>
                       <div class="ml-3 text-sm leading-6">
@@ -389,7 +516,7 @@ const props = defineProps({
     required: true,
   },
 });
-const checkedStatus = ref([]);
+const checkedStatus = ref<string[]>([]);
 const sctmOptions = [
   { value: "eMASS", label: "eMASS Implementation Plan", fileSuffix: "-eMASS-ImplementationPlan.xlsx" },
   { value: "sctm", label: "SCTM", fileSuffix: "-SCTM.xlsx" },
@@ -442,10 +569,11 @@ const findingsDownload = async () => {
   })
     .then((response) => response.blob())
     .then((blob) => {
+      const filename = checkedStatus.value.includes("RMF") ? `${boundaryName}-RMF` : boundaryName;
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `${boundaryName}-Findings.xlsx`);
+      link.setAttribute("download", `${filename}-Findings.xlsx`);
 
       document.body.appendChild(link);
 
@@ -455,16 +583,21 @@ const findingsDownload = async () => {
     });
 };
 
-const cklOptions = ref([]);
+const checklistVersion = ref("cklb");
+const singleStigPerChecklist = ref(false);
+const ignoreSTIGStatusOverrides = ref(false);
+const groupValue = ref("system");
 
 const cklDownload = async () => {
   const queryParams = new URLSearchParams();
-  queryParams.append("BoundaryId", boundaryId);
-
-  cklOptions.value.forEach((option) => {
-    queryParams.append(option, true);
-  });
-  if (cklOptions.value[0] === "cklb" || cklOptions.value[1] === "cklb") {
+  queryParams.append("BoundaryId", boundaryId.toString());
+  queryParams.append("groupValue", groupValue.value);
+  if (singleStigPerChecklist.value) {
+    queryParams.append("SingleStigPerCkl", "true");
+  }
+  queryParams.append("IgnoreOverrides", ignoreOverrides.value);
+  
+  if (checklistVersion.value === "cklb") {
     await fetch(`/api/export/cklv3?${queryParams}`, {
       method: "GET",
     })
@@ -474,11 +607,8 @@ const cklDownload = async () => {
         const link = document.createElement("a");
         link.href = url;
         link.setAttribute("download", `${boundaryName}-ChecklistsV3.zip`);
-
         document.body.appendChild(link);
-
         link.click();
-
         document.body.removeChild(link);
       });
   } else {
@@ -608,6 +738,30 @@ const hdfDownload = async () => {
     });
 };
 
+const softwareListDownload = async () => {
+  const { data: currentUser } = await useFetch("/api/auth/currentUser");
+  const queryParams = new URLSearchParams();
+  queryParams.append("BoundaryId", boundaryId);
+  queryParams.append("userEmail", currentUser.value.email);
+  await fetch(`/api/export/sw?${queryParams}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+    .then((response) => response.blob())
+    .then((blob) => {
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${boundaryName}_SW_HW_Export.xlsx`);
+
+      document.body.appendChild(link);
+
+      link.click();
+
+      document.body.removeChild(link);
+    });
+};
+
 const sctmDownload = async () => {
   const blob = await $fetch("/api/boundaries/sctmDownload", {
     method: "GET",
@@ -641,6 +795,7 @@ const tabs = [
   { name: "Nessus", href: "#" },
   { name: "PPSM", href: "#" },
   { name: "HDF", href: "#" },
+  { name: "Software List", href: "#" },
   { name: "SCTM", href: "#" },
 ];
 </script>

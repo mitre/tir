@@ -8,21 +8,33 @@ export default defineEventHandler(async (event) => {
   // Use query params to endpoint:
   //       singlestig   (true/false)
   //       boundary     (number)
-  if (checkResult.BoundaryRoleId) {
-    const system = await System.findAll({ where: { BoundaryId: query.BoundaryId } });
+  //       IgnoreOverrides (true/false)
+
+  const ignoreOverrides = query.IgnoreOverrides === "true";
+
+  if (checkResult.BoundaryRoleId || query.BoundaryId !== null) {
+    const system = await System.findAll({ where: { BoundaryId: query.BoundaryId as number } });
     // Get Checklist Array
-    const checklists = await convertToCKL3(system, query.singlestig);
+    const checklists = await convertToCKL3(system, query.SingleStigPerCkl as string, ignoreOverrides);
 
     // Zip and return checklist array for boundary X
     const zip = new AdmZip();
     for (const ckl of checklists) {
       const pretty = JSON.stringify(ckl);
       // using ckl.target_data.host_name / as folder containing each file to be zipped
-      zip.addFile(
-        ckl.target_data.host_name + "/" + ckl.title + ".cklb",
-        Buffer.from(pretty, "utf8"),
-        "Entering checklist v3 for " + ckl.title,
-      );
+      if (query.groupValue === "host") {
+        zip.addFile(
+          ckl.target_data.host_name + "/" + ckl.title + ".cklb",
+          Buffer.from(pretty, "utf8"),
+          "Entering checklist v3 for " + ckl.title,
+        );
+      } else if (query.groupValue === "system") {
+        zip.addFile(
+          ckl.target_data.tir_name + "/" + ckl.title + ".cklb",
+          Buffer.from(pretty, "utf8"),
+          "Entering checklist v3 for " + ckl.title,
+        );
+      }
     }
     const willSendThis = zip.toBuffer();
     return willSendThis;
