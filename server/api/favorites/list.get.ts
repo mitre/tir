@@ -12,6 +12,15 @@ export default defineEventHandler(async (event) => {
         through: {
           attributes: [],
         },
+        include: [
+          {
+            model: User,
+            where: { id: checkResult.user.id },
+            attributes: [],
+            through: { attributes: [] },
+            required: true,
+          },
+        ],
       },
       {
         model: Boundary,
@@ -19,6 +28,15 @@ export default defineEventHandler(async (event) => {
         through: {
           attributes: [],
         },
+        include: [
+          {
+            model: User,
+            where: { id: checkResult.user.id },
+            attributes: [],
+            through: { attributes: [] },
+            required: true,
+          },
+        ],
       },
     ],
   });

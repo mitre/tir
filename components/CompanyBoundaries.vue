@@ -1231,18 +1231,18 @@ for (let i = 0; i < boundaryList.value.length; i++) {
 }
 
 const toggleFavorite = async (item) => {
-  if (isFavorite(item)) {
-    if (item.type === "Company") {
-      await $fetch(`/api/favorites/tiers/${item.id}`, {
-        method: "DELETE",
-      });
-    } else {
-      await $fetch(`/api/favorites/boundaries/${item.id}`, {
-        method: "DELETE",
-      });
-    }
-  } else {
-    if (item.type === "Company") {
+  try {
+    if (isFavorite(item)) {
+      if (item.type === "Company") {
+        await $fetch(`/api/favorites/tiers/${item.id}`, {
+          method: "DELETE",
+        });
+      } else {
+        await $fetch(`/api/favorites/boundaries/${item.id}`, {
+          method: "DELETE",
+        });
+      }
+    } else if (item.type === "Company") {
       await $fetch(`/api/favorites/tiers/${item.id}`, {
         method: "POST",
       });
@@ -1251,9 +1251,16 @@ const toggleFavorite = async (item) => {
         method: "POST",
       });
     }
-  }
 
-  await loadFavorites();
+    await loadFavorites();
+  } catch (error) {
+    errorObject.value = error;
+    showErrorNotification.value = true;
+
+    setTimeout(() => {
+      showErrorNotification.value = false;
+    }, 6000);
+  }
 };
 
 const { data: get } = await useFetch("/api/tiers/get", {

@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   const user = await User.findByPk(body.id, { attributes: { exclude: ["password", "salt"] } });
 
-  if (!user ) {
+  if (!user) {
     throw createError({
       statusCode: 404,
       statusMessage: "User not found.",
@@ -55,8 +55,8 @@ export default defineEventHandler(async (event) => {
     delete body.UserRoleId;
   }
 
-  if (body.ThemeId &&  user.ThemeId !== body.ThemeId) {
-     user.ThemeId = body.ThemeId;
+  if (body.ThemeId && user.ThemeId !== body.ThemeId) {
+    user.ThemeId = body.ThemeId;
   } else {
     delete body.ThemeId;
   }
@@ -67,8 +67,8 @@ export default defineEventHandler(async (event) => {
       if (!timezone) {
         console.error(`Timezone with name ${body.timezone} not found.`);
         return;
-      } else if (timezone.id !==  user.TimezoneId) {
-         user.TimezoneId = timezone.id;
+      } else if (timezone.id !== user.TimezoneId) {
+        user.TimezoneId = timezone.id;
       } else {
         delete body.timezone;
       }

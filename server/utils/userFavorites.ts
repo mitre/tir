@@ -28,33 +28,77 @@ export async function updateUserFavorite(
   }
 
   if (type === "tier") {
-    const tier = await Tier.findByPk(id);
-
-    if (!tier) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: "Company not found.",
-      });
-    }
+    let tier;
 
     if (action === "add") {
+      tier = await Tier.findOne({
+        where: { id },
+        include: [
+          {
+            model: User,
+            where: { id: user.id },
+            attributes: [],
+            through: { attributes: [] },
+            required: true,
+          },
+        ],
+      });
+
+      if (!tier) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: "You do not have access to this company.",
+        });
+      }
+
       await user.addFavoriteTier(tier);
     } else {
+      tier = await Tier.findByPk(id);
+
+      if (!tier) {
+        throw createError({
+          statusCode: 404,
+          statusMessage: "Company not found.",
+        });
+      }
+
       await user.removeFavoriteTier(tier);
     }
   } else {
-    const boundary = await Boundary.findByPk(id);
-
-    if (!boundary) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: "Boundary not found.",
-      });
-    }
+    let boundary;
 
     if (action === "add") {
+      boundary = await Boundary.findOne({
+        where: { id },
+        include: [
+          {
+            model: User,
+            where: { id: user.id },
+            attributes: [],
+            through: { attributes: [] },
+            required: true,
+          },
+        ],
+      });
+
+      if (!boundary) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: "You do not have access to this boundary.",
+        });
+      }
+
       await user.addFavoriteBoundary(boundary);
     } else {
+      boundary = await Boundary.findByPk(id);
+
+      if (!boundary) {
+        throw createError({
+          statusCode: 404,
+          statusMessage: "Boundary not found.",
+        });
+      }
+
       await user.removeFavoriteBoundary(boundary);
     }
   }

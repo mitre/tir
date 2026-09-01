@@ -20,7 +20,7 @@
         <article>
           <h1 class="text-lg font-bold text-gray-800 dark:text-white">Favorites</h1>
           <div class="flex max-w-xl flex-col items-start justify-between">
-            <DashBoarditemsFavorites />
+            <DashBoarditemsFavoritesTable />
           </div>
         </article>
         <article>

@@ -14,7 +14,7 @@
             </p>
 
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {{ favorite.type }}
+              {{ favorite.typeLabel }}
             </p>
           </div>
         </div>
@@ -33,6 +33,12 @@
       </li>
     </ul>
   </div>
+    <ErrorNotification
+    v-if="showErrorNotification"
+    :show="showErrorNotification"
+    :error="errorObject"
+    @show="showErrorNotification = false"
+  />
 </template>
 
 <script setup>
@@ -43,7 +49,8 @@ const aliasStore = useAliasStore();
 const { data: config, error } = await useFetch("/api/favorites/list");
 const boundaryTerm = aliasStore.BoundaryAlias;
 const companyTerm = aliasStore.CompanyAlias;
-
+const showErrorNotification = ref(false);
+const errorObject = ref();
 const favorites = ref([]);
 
 if (config.value) {
@@ -52,17 +59,22 @@ if (config.value) {
       id: tier.id,
       name: tier.name,
       type: "Company",
+      typeLabel: companyTerm,
       parentId: tier.parentId,
     })),
     ...(config.value.FavoriteBoundaries || []).map((boundary) => ({
       id: boundary.id,
       name: boundary.name,
       type: "Boundary",
+      typeLabel: boundaryTerm,
       TierId: boundary.TierId,
     })),
   ];
 } else if (error.value) {
-  console.error("Failed to load user config:", error.value);
+  logger.error({
+    service: "UserConfig",
+    message: `Failed to load user config: ${error.value}`,
+  });
 }
 
 const removeFavorite = async (favorite) => {
