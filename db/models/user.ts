@@ -9,8 +9,10 @@ import {
   Association,
   type HasManyAddAssociationMixin,
   type ForeignKey,
+  type BelongsToManyAddAssociationMixin,
+  type BelongsToManyRemoveAssociationMixin,
 } from "sequelize";
-import type { Boundary, EvaluationItem, Milestone, Theme, Timezone, UserRole } from ".";
+import type { Boundary, EvaluationItem, Milestone, Theme, Tier, Timezone, UserRole } from ".";
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare id: number;
@@ -34,6 +36,12 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   declare EvaluationItems?: NonAttribute<EvaluationItem[]>;
   declare Milestones?: NonAttribute<Milestone[]>;
   declare addEvaluationItem: HasManyAddAssociationMixin<EvaluationItem, number>;
+  
+  declare addFavoriteTier: BelongsToManyAddAssociationMixin<Tier, number>;
+  declare removeFavoriteTier: BelongsToManyRemoveAssociationMixin<Tier, number>;
+
+  declare addFavoriteBoundary: BelongsToManyAddAssociationMixin<Boundary, number>;
+  declare removeFavoriteBoundary: BelongsToManyRemoveAssociationMixin<Boundary, number>;
 
   declare UserRole: NonAttribute<UserRole>;
 
