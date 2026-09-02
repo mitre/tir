@@ -18,19 +18,18 @@
         <div
           v-for="(line, index) in item.technicalAssessmentComments"
           :key="index"
-          :class="{
-            'pt-2 text-red-500': line.trim() === 'Open',
-            'pt-2 text-green-500': line.trim() === 'NotAFinding',
-            'pt-2 text-sky-500': line.trim() === 'Not_Applicable',
-            'pt-2 text-amber-500': line.trim() === 'Not_Reviewed',
-            'font-light text-black dark:text-gray-200': ![
-              'Open',
-              'NotAFinding',
-              'Not_Applicable',
-              'Not_Reviewed',
-            ].includes(line.trim()),
-          }"
-          class="block"
+          :class="[
+            'block pt-2',
+            getStatusColor(line.trim()),
+            {
+              'font-light': ![
+                'Open',
+                'NotAFinding',
+                'Not_Applicable',
+                'Not_Reviewed',
+              ].includes(line.trim()),
+            },
+          ]"
         >
           {{ line }}
         </div>
@@ -63,4 +62,14 @@ const props = defineProps({
 });
 
 const item = toRef(props, "evaluationItem");
+
+const statusColorMap: Record<string, string> = {
+  Open: "text-status-open",
+  NotAFinding: "text-status-notafinding",
+  Not_Reviewed: "text-status-not_reviewed",
+  Not_Applicable: "text-status-not_applicable",
+};
+
+const getStatusColor = (status: string) =>
+  statusColorMap[status] || "text-black dark:text-gray-200";
 </script>

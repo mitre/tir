@@ -336,11 +336,8 @@ function evaluateStatuses(statusMap: Map<string, Set<string>>): string {
     return "Not Reviewed";
   } else if (statuses.some((status) => status.trim() === "NotAFinding")) {
     return "Compliant";
-  } else if (statuses.some((status) => status.trim() === "Not_Applicable")) {
-    return "Not-Applicable";
-  } else {
-    return "Not-Applicable";
   }
+  return "Not-Applicable";
 }
 
 function buildDisplayLines(statusMap: Map<string, Set<string>>): string[] {
