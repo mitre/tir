@@ -171,7 +171,7 @@
                           id="rmf"
                           v-model="checkedStatus"
                           value="RMF"
-                          aria-describedby="open-description"
+                          aria-describedby="rmf-description"
                           name="rmf"
                           type="checkbox"
                           :disabled="checkedStatus.length > 0 && !checkedStatus.includes('RMF')"
@@ -179,8 +179,8 @@
                         />
                       </div>
                       <div class="ml-3 text-sm leading-6">
-                        <label for="open" class="font-medium text-gray-800 dark:text-white">RMF Findings</label>
-                        <p id="open-description" class="text-gray-400">
+                        <label for="rmf" class="font-medium text-gray-800 dark:text-white">RMF Findings</label>
+                        <p id="rmf-description" class="text-gray-400">
                           Select RMF results with a "Non-Compliant / Not Reviewed" Status.
                         </p>
                       </div>
@@ -258,7 +258,7 @@
                       />
                     </div>
                     <div class="group relative ml-3 text-sm leading-6">
-                      <label for="cklv3-cklb" class="cursor-help font-medium text-gray-800 dark:text-white">
+                      <label for="system" class="cursor-help font-medium text-gray-800 dark:text-white">
                         Group by system name
                       </label>
                       <div
@@ -279,7 +279,7 @@
                         />
                       </div>
                       <div class="group relative ml-3 text-sm leading-6">
-                        <label for="cklv2" class="cursor-help font-medium text-gray-800 dark:text-white"
+                        <label for="host" class="cursor-help font-medium text-gray-800 dark:text-white"
                           >Group by hostname</label
                         >
                         <div
