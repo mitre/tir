@@ -58,7 +58,7 @@ DATABASE_PASSWORD= # Required: Postgres User Password
 DATABASE_NAME= # Required: Database Name for TIR
 ```
 
-> **Note:** If passwords (`INIT_PASSWORD`, `DATABASE_PASSWORD`) or keys contain special characters like `$` or `#`, enclose the value in single quotes (e.g., `INIT_PASSWORD='my$ecurePassword'`). This prevents Docker Compose and environment loaders from misinterpreting `$` as a variable substitution.
+> **Note:** If passwords (`INIT_PASSWORD`, `DATABASE_PASSWORD`) or keys contain special characters like `$` or `#`, enclose the value in single quotes (e.g., `INIT_PASSWORD='my$ecurePassword'`). This prevents Docker Compose and most environment loaders from misinterpreting `$` as a variable substitution. The Nuxt dev server still evaluates `$` within quotes, so avoid `$` and `${` followed by a letter or `_` in these values.
 
 #### Initialize Database
 
