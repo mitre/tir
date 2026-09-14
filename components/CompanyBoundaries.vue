@@ -1069,69 +1069,11 @@
               </div>
             </Dialog>
           </TransitionRoot>
-          <TransitionRoot as="template" :show="loading">
-            <Dialog as="div" class="relative z-10" @close="loading = false">
-              <TransitionChild
-                as="template"
-                enter="ease-out duration-300"
-                enter-from="opacity-0"
-                enter-to="opacity-100"
-                leave="ease-in duration-200"
-                leave-from="opacity-100"
-                leave-to="opacity-0"
-              >
-                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
-              </TransitionChild>
-              <div class="fixed inset-0 z-10 overflow-y-auto">
-                <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                  <TransitionChild
-                    as="template"
-                    enter="ease-out duration-300"
-                    enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                    enter-to="opacity-100 translate-y-0 sm:scale-100"
-                    leave="ease-in duration-200"
-                    leave-from="opacity-100 translate-y-0 sm:scale-100"
-                    leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                  >
-                    <DialogPanel
-                      class="relative transform overflow-hidden rounded-lg bg-gray-900 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-xl sm:p-6"
-                    >
-                      <div>
-                        <div class="flex h-7 items-center">
-                          <button
-                            type="button"
-                            class="rounded-md bg-gray-900 text-indigo-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
-                            @click="loading = false"
-                          >
-                            <XMarkIcon class="h-6 w-6" aria-hidden="true" />
-                          </button>
-                        </div>
-                        <div class="text-center">
-                          <DialogTitle as="h3" class="text-base font-semibold leading-6 text-white"
-                            >Changing STIG Library
-                          </DialogTitle>
-                          <div class="mb-12 mt-2">
-                            <p class="text-sm text-white">Please Wait...</p>
-                          </div>
-                          <div class="absolute left-1/2 top-3/4 -translate-x-1/2 -translate-y-1/2">
-                            <svg
-                              class="h-7 w-7 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"
-                              viewBox="0 0 24 24"
-                            ></svg>
-                          </div>
-                        </div>
-                      </div>
-                    </DialogPanel>
-                  </TransitionChild>
-                </div>
-              </div>
-            </Dialog>
-          </TransitionRoot>
         </Dialog>
       </TransitionRoot>
     </div>
   </div>
-
+  <LoadingNotification v-if="loading" :show="loading" :msg="loadingMsg" @show="loading = false" />
   <Members
     v-if="openMembers"
     :open-members="openMembers"
@@ -1202,6 +1144,7 @@ const nameProp = ref("");
 const entityType = ref("");
 const commonName = ref("");
 const editId = ref();
+const loadingMsg = ref("");
 const store = useBreadcrumbStore();
 const { pages } = storeToRefs(store);
 const { tierId } = storeToRefs(store);
@@ -1373,16 +1316,20 @@ async function updateEditDetails() {
 
 async function removeCompany(companyId) {
   try {
+    loadingMsg.value = `Deleting ${tierView.alias}`;
+    loading.value = true;
     await $fetch("/api/tiers/remove", {
       method: "POST",
       body: { id: companyId },
     });
   } catch (error) {
+    loading.value = false;
     errorObject.value = error;
     showErrorNotification.value = true;
     setTimeout(() => (showErrorNotification.value = false), 6000);
   } finally {
-    updateList(tierId.value);
+    await updateList(tierId.value);
+    loading.value = false;
   }
 }
 
@@ -1578,6 +1525,7 @@ async function confirmSelection() {
 
 async function userConfirm() {
   loading.value = true;
+  loadingMsg.value = "Changing STIG Library";
   try {
     await $fetch("/api/boundaries/changeStigLibrary", {
       method: "POST",
@@ -1612,16 +1560,20 @@ async function editBoundary(editData) {
 }
 async function removeBoundary(boundaryId) {
   try {
+    loadingMsg.value = `Deleting ${boundaryView.alias}`;
+    loading.value = true;
     await $fetch("/api/boundaries/delete", {
       method: "POST",
       body: { id: boundaryId },
     });
   } catch (error) {
+    loading.value = false;
     errorObject.value = error;
     showErrorNotification.value = true;
     setTimeout(() => (showErrorNotification.value = false), 6000);
   } finally {
-    updateList(tierId.value);
+    await updateList(tierId.value);
+    loading.value = false;
   }
 }
 </script>
