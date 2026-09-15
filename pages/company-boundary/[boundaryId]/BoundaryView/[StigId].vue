@@ -2,7 +2,7 @@
   <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
     <div class="rounded-lg bg-white py-4 dark:bg-gray-800">
       <div class="mx-auto max-w-7xl px-6 lg:px-8">
-        <div class="mx-0 mx-auto max-w-2xl max-w-none space-y-16 sm:space-y-20">
+        <div class="mx-auto max-w-none space-y-16 sm:space-y-20">
           <div class="flex-auto">
             <a class="mb-2 flex cursor-pointer text-indigo-500 hover:text-indigo-400" @click="backButton()">
               <ArrowUturnLeftIcon class="mr-2 h-5 w-5" />
@@ -20,7 +20,6 @@
                 {{ evaluation.stigDate }}
               </h5>
             </div>
-            <div>{{ assessmentId }}</div>
             <div
               class="mx-auto mt-5 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-16 border-t border-gray-500 lg:mx-0 lg:max-w-none lg:grid-cols-3"
             ></div>
@@ -61,7 +60,7 @@
                                           : 'text-gray-200',
                           '  group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
                         ]"
-                        @click="[(item.current = !item.current), addFilter(item.name), getFilterItems()]"
+                        @click.stop="[(item.current = !item.current), addFilter(item.name), getFilterItems()]"
                       >
                         <span
                           :class="[
@@ -98,7 +97,7 @@
                       <a
                         :href="'#'"
                         class="group flex items-center rounded-md bg-white p-2 text-sm font-semibold leading-6 text-gray-800 dark:bg-gray-800 dark:text-white"
-                        @click="
+                        @click.stop="
                           [
                             findCheck(check.id),
                             (editId = check.EvaluationItems[0].id),
@@ -166,7 +165,7 @@
               </ul>
             </nav>
           </aside>
-          <main class="flex-auto px-4 px-6 lg:px-0">
+          <main class="flex-auto px-6 lg:px-0">
             <!-- CHECK INFO BOX -->
             <div class="flex items-center justify-between">
               <div class="min-w-0 flex-1">
@@ -347,7 +346,7 @@ import {
 import { Listbox, ListboxButton, Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 import { storeToRefs } from "pinia";
 import { useIdStorageStore } from "~~/stores/IdStorage";
-import { catSeverityToStig, stigSeverityToCat } from "~/utils/stig";
+import { stigSeverityToCat } from "~/utils/stig";
 
 const route = useRoute();
 const showErrorNotification = ref(false);
@@ -374,15 +373,6 @@ if (queryError.value && queryError.value.statusCode === 404) {
 
   refreshNuxtData("evaluationAPI");
 }
-
-// const rawOverrideData = await useFetch("/api/override/listAll", {
-//   method: "GET",
-//   query: {
-//     boundaryId: route.params.boundaryId,
-//     stigId: route.params.StigId,
-//     stigDatumId: listOfChecks[checkData].id,
-//   },
-// });
 
 // Filter Items
 const stigDatumItems = computed(() => {
@@ -615,17 +605,16 @@ const overrideData = computed(() => {
   return data.AssessmentItems.map((item) => {
     // Find overrides related to the current system
     const systemOverrides = data.Overrides.filter((override) => override.systemId === item.Assessment.System.id);
-
     // Build the system object with the necessary properties
     return {
       id: item.id,
       systemId: item.Assessment.System.id,
       name: item.Assessment.System.name,
-      severity: stigSeverityToCat(item.severityOverride || data.severity), // default to StigData severity if no override
+      severity: stigSeverityToCat(data.severity), 
       status: item.statusOverride || item.status, // use statusOverride if available, otherwise use item status
       overrides: {
         id: data.id,
-        severityOverride: stigSeverityToCat(item.severityOverride) || null,
+        severityOverride: stigSeverityToCat(item.severityOverride || data.severity) || null,
         severityOverrideJustification: item.severityOverrideJustification,
         statusOverride: item.statusOverride,
         statusOverrideJustification: item.statusOverrideJustification,

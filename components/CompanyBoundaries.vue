@@ -88,8 +88,8 @@
 
       <div class="rounded-lg border border-gray-400/20">
         <div class="flow-root">
-          <div class="-mx-4 -my-2 sm:-mx-6 lg:-mx-8">
-            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+          <div class="overflow-x-auto">
+            <div class="inline-block min-w-full py-2 align-middle">
               <table class="min-w-full divide-y divide-gray-400/20 dark:divide-gray-200/10">
                 <thead>
                   <tr class="hover:bg-gray-300 dark:hover:bg-gray-900/50">
@@ -202,7 +202,7 @@
                     <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm sm:pr-0">
                       <Menu as="div" class="relative ml-auto">
                         <MenuButton
-                          class="-m-2.5 block p-2.5 text-gray-800 hover:text-gray-500 hover:text-gray-500 dark:text-gray-100"
+                          class="-m-2.5 block p-2.5 text-gray-800 hover:text-gray-500 dark:text-gray-100"
                           @click.stop=""
                         >
                           <span class="sr-only">Open options</span>
@@ -578,9 +578,8 @@
                                   <ListboxButton
                                     class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6"
                                   >
-                                    <span class="inline-flex w-full truncate">
-                                      <span class="truncate text-xs">{{ base.filename }}</span>
-                                      <!-- <span class="ml-2 truncate text-gray-500">{{ base.date }}</span> -->
+                                    <span class="inline-flex w-full">
+                                      <span class="break-words text-xs">{{ base.filename }}</span>
                                     </span>
                                     <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                                       <ChevronUpDownIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -610,10 +609,12 @@
                                         >
                                           <div class="flex">
                                             <span
-                                              :class="[selected ? 'font-semibold' : 'font-normal', 'truncate text-xs']"
+                                              :class="[
+                                                selected ? 'font-semibold' : 'font-normal',
+                                                'break-words text-xs',
+                                              ]"
                                               >{{ file.filename }}</span
                                             >
-                                            <!-- <span :class="[active ? 'text-indigo-200' : 'text-gray-500', 'ml-2 truncate']">{{ file.date }}</span> -->
                                           </div>
 
                                           <span
@@ -640,8 +641,8 @@
                                   <ListboxButton
                                     class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:text-sm sm:leading-6"
                                   >
-                                    <span class="inline-flex w-full truncate">
-                                      <span class="truncate text-xs">{{ editBase.filename }}</span>
+                                    <span class="inline-flex w-full">
+                                      <span class="break-words text-xs">{{ editBase.filename }}</span>
                                       <!-- <span class="ml-2 truncate text-gray-500">{{ base.date }}</span> -->
                                     </span>
                                     <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -672,10 +673,12 @@
                                         >
                                           <div class="flex">
                                             <span
-                                              :class="[selected ? 'font-semibold' : 'font-normal', 'truncate text-xs']"
+                                              :class="[
+                                                selected ? 'font-semibold' : 'font-normal',
+                                                'break-words text-xs',
+                                              ]"
                                               >{{ file.filename }}</span
                                             >
-                                            <!-- <span :class="[active ? 'text-indigo-200' : 'text-gray-500', 'ml-2 truncate']">{{ file.date }}</span> -->
                                           </div>
 
                                           <span
@@ -1068,6 +1071,104 @@
               </div>
             </Dialog>
           </TransitionRoot>
+          <TransitionRoot as="template" :show="showWarnings">
+            <Dialog as="div" class="relative z-10" @close="showWarnings = false">
+              <TransitionChild
+                as="template"
+                enter="ease-out duration-300"
+                enter-from="opacity-0"
+                enter-to="opacity-100"
+                leave="ease-in duration-200"
+                leave-from="opacity-100"
+                leave-to="opacity-0"
+              >
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
+              </TransitionChild>
+
+              <div class="fixed inset-0 z-10 overflow-y-auto">
+                <div class="flex min-h-full items-center justify-center p-4 text-center">
+                  <TransitionChild
+                    as="template"
+                    enter="ease-out duration-300"
+                    enter-from="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    enter-to="opacity-100 translate-y-0 sm:scale-100"
+                    leave="ease-in duration-200"
+                    leave-from="opacity-100 translate-y-0 sm:scale-100"
+                    leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                  >
+                    <DialogPanel
+                      class="relative transform overflow-hidden rounded-lg bg-white px-6 pb-4 pt-5 text-left shadow-xl transition-all dark:bg-gray-900 sm:w-full sm:max-w-4xl"
+                    >
+                      <div class="mb-4 flex items-center justify-between">
+                        <DialogTitle class="text-lg font-semibold text-gray-900 dark:text-white"
+                          >STIG Baseline Migration Warning</DialogTitle
+                        >
+
+                        <button
+                          class="text-gray-500 hover:text-gray-700 dark:hover:text-white"
+                          @click="showWarnings = false"
+                        >
+                          <XMarkIcon class="h-6 w-6" />
+                        </button>
+                      </div>
+                      <div class="my-2">
+                        <p class="text-sm text-gray-500 dark:text-gray-300">
+                          The following STIGs are not present in the target STIG Baseline. Please review this list
+                          carefully. If you proceed with the migration, data for these STIGs will be lost. You may
+                          Cancel the migration or Continue, acknowledging this potential data loss.
+                        </p>
+                      </div>
+
+                      <div class="max-h-96 overflow-y-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                          <thead>
+                            <tr>
+                              <th class="px-2 py-1 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                                STIG ID
+                              </th>
+                              <th class="px-2 py-1 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Version
+                              </th>
+                              <th class="px-2 py-1 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Message
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <tr v-for="(w, idx) in warnings" :key="idx">
+                              <td class="px-2 py-1 text-sm text-gray-600 dark:text-gray-300">
+                                {{ w.stigid }}
+                              </td>
+                              <td class="px-2 py-1 text-sm text-gray-600 dark:text-gray-300">{{ w.version }}</td>
+                              <td class="px-2 py-1 text-sm text-gray-600 dark:text-gray-300">
+                                STIG not found in new baseline.
+                              </td>
+                              <!-- 
+                                  <td class="px-2 py-1 text-sm text-red-500 dark:text-red-400">{{ w.message }}</td> -->
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div class="mb-3 mt-4 flex justify-end gap-2">
+                        <button
+                          class="rounded-md bg-red-500 px-3 py-1 text-sm font-medium text-white hover:bg-red-600"
+                          @click="showWarnings = false"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          class="rounded-md bg-indigo-500 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-600"
+                          @click="warningConfirm"
+                        >
+                          Continue
+                        </button>
+                      </div>
+                    </DialogPanel>
+                  </TransitionChild>
+                </div>
+              </div>
+            </Dialog>
+          </TransitionRoot>
         </Dialog>
       </TransitionRoot>
     </div>
@@ -1157,6 +1258,9 @@ const companyDetails = {
 const boundaryTerm = aliasStore.BoundaryAlias;
 const companyTerm = aliasStore.CompanyAlias;
 
+const warnings = ref([]);
+const showWarnings = ref(false);
+
 const { data: currentUser } = await useFetch("/api/auth/currentUser");
 const { data: companyList } = await useFetch("/api/tiers/list", {
   method: "POST",
@@ -1186,8 +1290,6 @@ const { data: get } = await useFetch("/api/tiers/get", {
   method: "POST",
   body: companyDetails,
 });
-const { data: users } = await useFetch("/api/users");
-const filteredUsers = users.value.filter((o) => o.UserRoleId === 2);
 
 function addBreadcrumb(pageInfo) {
   store.addBreadcrumb(pageInfo);
@@ -1349,7 +1451,7 @@ function uniqueCompany(id, name, parentId) {
       addBreadcrumb({ name, tierId: id, parentId });
     }
   } else {
-    console.log("Not unique ID");
+    logger.error({ service: "naviation", message: "Breadcrumb Error: Not unique ID" });
   }
 }
 
@@ -1358,12 +1460,6 @@ function formatDate(isoDate) {
     const parsedDate = new Date(isoDate);
 
     const format = {
-      // month: "short",
-      // day: "numeric",
-      // year: "numeric",
-      // hour: "numeric",
-      // minute: "numeric",
-      // second: "numeric",
       timeZoneName: "short",
     };
     const formattedDate = parsedDate.toLocaleString("en-US", format);
@@ -1529,12 +1625,22 @@ async function userConfirm() {
   loading.value = true;
   loadingMsg.value = "Changing STIG Library";
   try {
-    await $fetch("/api/boundaries/changeStigLibrary", {
+    const checkResult = await $fetch("/api/boundaries/checkStigLibrary", {
       method: "POST",
       body: { BoundaryId: editId.value, StigLibraryId: editData.value.StigLibraryId },
     });
-    loading.value = false;
-    await editBoundary(editData.value);
+    if (checkResult.results?.length) {
+      loading.value = false;
+      warnings.value = checkResult.results;
+      showWarnings.value = true; // show warnings modal
+    } else {
+      await $fetch("/api/boundaries/changeStigLibrary", {
+        method: "POST",
+        body: { BoundaryId: editId.value, StigLibraryId: editData.value.StigLibraryId },
+      });
+      loading.value = false;
+      await editBoundary(editData.value);
+    }
   } catch (err) {
     loading.value = false;
     addBoundary.value = false;
@@ -1542,6 +1648,17 @@ async function userConfirm() {
     showErrorNotification.value = true;
     setTimeout(() => (showErrorNotification.value = false), 6000);
   }
+}
+
+async function warningConfirm() {
+  showWarnings.value = false;
+  loading.value = true;
+  await $fetch("/api/boundaries/changeStigLibrary", {
+    method: "POST",
+    body: { BoundaryId: editId.value, StigLibraryId: editData.value.StigLibraryId },
+  });
+  loading.value = false;
+  await editBoundary(editData.value);
 }
 
 async function editBoundary(editData) {

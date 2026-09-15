@@ -1,6 +1,7 @@
 import { Readable } from "node:stream";
 import { sendStream } from "h3";
 import { generateFindings } from "../../utils/excelExport/findingsSheet";
+import { generateRmfFindings } from "../../utils/excelExport/rmfFindingsSheet";
 import { Boundary, BoundaryInterface } from "~/db/models";
 
 export default defineEventHandler(async (event) => {
@@ -8,7 +9,14 @@ export default defineEventHandler(async (event) => {
   const checkResult = await userCheck(event, undefined, body.BoundaryId, undefined);
   if (checkResult.BoundaryRoleId) {
     const boundary = (await Boundary.findByPk(body.BoundaryId)) as BoundaryInterface;
-    const findingsWorkBook = await generateFindings(body.BoundaryId, body.filterStatus);
+     let findingsWorkBook
+    if (body.filterStatus[0] === "RMF" ) {
+      findingsWorkBook = await generateRmfFindings(body.BoundaryId);
+    }
+    else{
+      findingsWorkBook = await generateFindings(body.BoundaryId, body.filterStatus);
+    }
+
 
     const buffer = await findingsWorkBook.xlsx.writeBuffer();
     const stream = new Readable();

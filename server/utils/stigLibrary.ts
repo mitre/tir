@@ -40,8 +40,9 @@ export const migrateBoundary = async (
       });
       for (const assessment of currentAssessments) {
         const oldStig = await Stig.findOne({ where: { id: assessment.StigId } });
+
         const newStig = await Stig.findOne({
-          where: { stigid: oldStig.stigid },
+          where: { stigid: oldStig?.stigid },
           include: [
             {
               model: StigLibrary,
@@ -51,11 +52,17 @@ export const migrateBoundary = async (
           ],
         });
 
-        await system.removeStig(oldStig);
+        if (oldStig) {
+          await system.removeStig(oldStig);
+        }
+        if (!newStig) {
+          continue;
+        }
+
         await system.addStig(newStig);
 
         const newAssessment = await createBlankAssessment(assessment.SystemId, newStig.id);
-
+        await createEvaluation(boundaryId, newStig.id);
         assessment.succeededByAssessmentId = newAssessment.id;
         await assessment.save();
 
@@ -89,6 +96,52 @@ export const migrateBoundary = async (
     throw createError({
       statusCode: 400,
       statusMessage: "Error with Migration",
+    });
+  }
+};
+
+export const checkBoundary = async (
+  boundaryId: number,
+  newStigLibraryId: number,
+): Promise<{ results: { stigid: string; version: string }[] }> => {
+  console.log("Check Boundary Starting...");
+  try {
+    const reviewStigs = [];
+    const boundarySystems = await System.findAll({ where: { BoundaryId: boundaryId } });
+    for (const system of boundarySystems) {
+      const currentAssessments = await Assessment.findAll({
+        where: {
+          SystemId: system.id,
+          succeededByAssessmentId: { [Op.is]: null },
+        },
+      });
+      for (const assessment of currentAssessments) {
+        const oldStig = await Stig.findOne({ where: { id: assessment.StigId } });
+        const newStig = await Stig.findOne({
+          where: { stigid: oldStig?.stigid },
+          include: [
+            {
+              model: StigLibrary,
+              where: { id: newStigLibraryId },
+              required: true,
+            },
+          ],
+        });
+        if (!newStig && oldStig) {
+          reviewStigs.push({
+            stigid: oldStig.stigid,
+            version: `v${oldStig.version}r${oldStig.stigRelease}`,
+          });
+          continue;
+        }
+      }
+    }
+    return { results: reviewStigs };
+  } catch (error) {
+    logger.error(error);
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Error with Migration Check",
     });
   }
 };
@@ -195,7 +248,7 @@ export const processLibrary = async (
   return processLibraryResults;
 };
 
-const extractLibrary = async (sourceZip: string, outputDirectory: string): Promise<string[]> => {
+const extractLibrary = (sourceZip: string, outputDirectory: string): string[] => {
   const temporaryExtraction = path.join(outputDirectory, "tempExtraction");
   const mainZip = new AdmZip(sourceZip);
   const fileList: string[] = [];
@@ -246,7 +299,7 @@ export const parseLibraryName = (filename: string): parseResults => {
     parsedAttributes.errorMessage = "Unable to parse library classification";
   }
 
-  const dateMatches = filename.match(/\d{4}\_\d{2}/);
+  const dateMatches = filename.match(/\d{4}_\d{2}/);
   if (dateMatches && dateMatches.length > 0) {
     const paddedMatch = dateMatches[0] + "_01";
     parsedAttributes.date = DateTime.fromFormat(paddedMatch, "yyyy_LL_dd").toISODate() || "";
