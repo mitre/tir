@@ -37,8 +37,9 @@ npm install
 #### `.env` for TIR server
 
 ```ini
-SECRET_KEY= # Required
+SECRET_KEY= # Required: Secret key used password hashing
 INIT_PASSWORD= # Required: Initial Password for initial TIR admin Account
+PORT= # Optional: Dev Web Server Port Defaults to 3000
 ```
 
 #### `.env` for SQLite config
@@ -50,7 +51,6 @@ SQLITE=true
 #### `.env` for Postgres config
 
 ```ini
-PORT= # Optional: Dev Web Server Port Defaults to 3000
 DATABASE_HOST= # Required: Postgres Database IP/FQDN
 DATABASE_PORT= # Optional: Defaults to 5432
 DATABASE_USER= # Required: Postgres User
