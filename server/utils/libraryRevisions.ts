@@ -64,8 +64,8 @@ export async function recomputeRevisionLabels(
     await library.save();
   }
 
-  const newest = ordered[ordered.length - 1];
-  const previous = ordered.length > 1 ? ordered[ordered.length - 2] : null;
+  const newest = ordered.at(-1);
+  const previous = ordered.length > 1 ? ordered.at(-2) : null;
   return {
     label: newest.ref.revisionLabel,
     groupSize: ordered.length,

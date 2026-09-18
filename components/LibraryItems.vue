@@ -175,7 +175,7 @@ function subscribe(jobId: string, filename = "") {
 }
 
 function formatEta(seconds: number): string {
-  if (!isFinite(seconds) || seconds <= 0) return "";
+  if (!Number.isFinite(seconds) || seconds <= 0) return "";
   if (seconds < 1) return "<1s";
   return Duration.fromObject({ seconds: Math.round(seconds) })
     .rescale()

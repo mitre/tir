@@ -140,7 +140,6 @@ export const checkBoundary = async (
             stigid: oldStig.stigid,
             version: `v${oldStig.version}r${oldStig.stigRelease}`,
           });
-          continue;
         }
       }
     }
@@ -162,7 +161,7 @@ export const findMatch = (check: AssessmentItem, array: AssessmentItem[]) => {
 const CLASSIFICATION_RANK: Record<Classification, number> = { U: 0, FOUO: 1, CUI: 2 };
 
 export const classificationFromPackageName = (name: string): Classification | null => {
-  const match = name.match(/^(CUI|FOUO|U)_/);
+  const match = /^(CUI|FOUO|U)_/.exec(name);
   return match ? (match[1] as Classification) : null;
 };
 

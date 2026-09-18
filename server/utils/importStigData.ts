@@ -5,7 +5,9 @@ import { Stig, StigData, StigResponsibility, StigReference, StigIdent } from "..
 import { PerfTimer } from "./perfTimer";
 
 function errorSummary(error: unknown): string {
-  if (!(error instanceof Error)) return String(error);
+  if (!(error instanceof Error)) {
+    return typeof error === "object" ? JSON.stringify(error) : String(error);
+  }
   const original = (error as { original?: { column?: string; constraint?: string; detail?: string } })
     .original;
   const parts = [`${error.name}: ${error.message}`];
@@ -115,8 +117,9 @@ export async function parseStigData(
         .filter(([, v]) => typeof v === "string" && v.length > 255)
         .map(([k, v]) => `${k}=${(v as string).length}`)
         .join(", ");
+      const longFieldsNote = longFields ? ` | fields>255: ${longFields}` : "";
       logger.error(
-        `Error saving StigData ${newStigData.dataValues.vuln_num} (${stigGroupObj.Rule.$.id}) in stig ${stig.dataValues.title}: ${errorSummary(error)}${longFields ? ` | fields>255: ${longFields}` : ""}`,
+        `Error saving StigData ${newStigData.dataValues.vuln_num} (${stigGroupObj.Rule.$.id}) in stig ${stig.dataValues.title}: ${errorSummary(error)}${longFieldsNote}`,
       );
     }
   } else {

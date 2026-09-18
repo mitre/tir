@@ -210,7 +210,7 @@ const populateStigModel = (stigInstance: Stig, jsonObj: any): void => {
   );
   const releaseInfo = stigInstance.dataValues.plain_text__release_info ?? "";
   const releaseMatch = releaseInfo.match(/Release:\s*(\d+)/);
-  stigInstance.dataValues.stigRelease = releaseMatch ? parseInt(releaseMatch[1], 10) : 0;
+  stigInstance.dataValues.stigRelease = releaseMatch ? Number.parseInt(releaseMatch[1], 10) : 0;
   stigInstance.dataValues.plain_text__generator = getPlainTextById(
     jsonObj.Benchmark["plain-text"],
     "generator",

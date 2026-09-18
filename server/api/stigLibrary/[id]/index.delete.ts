@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { Op, type Transaction } from "sequelize";
 import { recomputeRevisionLabels } from "~/server/utils/libraryRevisions";
 import { beginLibraryDeletion, endLibraryDeletion } from "~/server/utils/importLock";

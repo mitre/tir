@@ -1140,8 +1140,6 @@
                               <td class="px-2 py-1 text-sm text-gray-600 dark:text-gray-300">
                                 STIG not found in new baseline.
                               </td>
-                              <!-- 
-                                  <td class="px-2 py-1 text-sm text-red-500 dark:text-red-400">{{ w.message }}</td> -->
                             </tr>
                           </tbody>
                         </table>

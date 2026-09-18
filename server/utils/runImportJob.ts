@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { DateTime } from "luxon";
 import { processLibrary } from "./stigLibrary";
 import { createJobReporter } from "./jobReporter";
