@@ -78,8 +78,8 @@ export function diffBenchmarks(newer: BenchmarkTuple[], older: BenchmarkTuple[])
   }
   const removed = [...oldById.keys()].filter((stigid) => !newById.has(stigid));
 
-  added.sort();
-  removed.sort();
+  added.sort((a, b) => a.localeCompare(b));
+  removed.sort((a, b) => a.localeCompare(b));
   changed.sort((a, b) => a.stigid.localeCompare(b.stigid));
   return { added, removed, changed };
 }

@@ -167,7 +167,10 @@ export const classificationFromPackageName = (name: string): Classification | nu
 };
 
 const highestClassification = (values: Classification[]): Classification =>
-  values.reduce((max, value) => (CLASSIFICATION_RANK[value] > CLASSIFICATION_RANK[max] ? value : max));
+  values.reduce(
+    (max, value) => (CLASSIFICATION_RANK[value] > CLASSIFICATION_RANK[max] ? value : max),
+    "U",
+  );
 
 const readBenchmarkDate = (xmlFilePath: string): string | null => {
   const fd = fs.openSync(xmlFilePath, "r");
