@@ -20,16 +20,13 @@
         class="mx-auto mt-5 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-16 border-t border-gray-500 lg:mx-0 lg:max-w-none lg:grid-cols-3"
       ></div>
       <div v-if="uploadingStig" class="mt-2">
-        <UProgress :value="barProgressStig" />
-        <p v-if="messageLoadStig">{{ messageLoadStig }}</p>
+        <UProgress :value="barProgressStig" max="100" />
+        <p v-if="messageLoadStig" class="truncate text-xs text-gray-500 dark:text-gray-400">
+          {{ messageLoadStig }}
+        </p>
       </div>
 
-      <LibraryItemsStigLibrary
-        :refresh-trigger="refreshFlag"
-        :message-load="messageLoadStig"
-        :bar-progress="barProgressStig"
-        :current-uploading-library-id="currentUploadingLibraryId"
-      />
+      <LibraryItemsStigLibrary :refresh-trigger="refreshFlag" :active-imports="jobsByLibrary" />
 
       <div class="sm:flex sm:items-center">
         <div class="sm:flex-auto">
@@ -85,15 +82,214 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from "vue";
+import { Duration } from "luxon";
 import { useUploadStream } from "~/composables/useUploadStream";
 import type { ProgressMessage } from "~/types/progress";
 
 const notificationStore = useNotificationStore();
+const alertsStore = useAlertsStore();
 
-const uploadingStig = ref(false);
-const barProgressStig = ref(0);
-const messageLoadStig = ref("");
+type Phase = "uploading" | "processing" | "done" | "error";
+interface ImportJobView {
+  jobId: string;
+  filename: string;
+  phase: Phase;
+  percent: number;
+  message: string;
+  stigLibraryId: number | null;
+}
+
+// client progress state is ephemeral - the server (ImportJob + SSE replay) is authoritative
+const jobs = reactive<Record<string, ImportJobView>>({});
+const sources = new Map<string, EventSource>();
+let activeUpload: { abort: () => void } | null = null;
+
+function upsert(jobId: string, patch: Partial<ImportJobView>) {
+  jobs[jobId] = { ...jobs[jobId], ...patch } as ImportJobView;
+}
+
+function closeSource(jobId: string) {
+  sources.get(jobId)?.close();
+  sources.delete(jobId);
+}
+
+function dismiss(jobId: string) {
+  closeSource(jobId);
+  delete jobs[jobId];
+}
+
+function applyMessage(jobId: string, msg: ProgressMessage) {
+  const filename = jobs[jobId]?.filename;
+  switch (msg.type) {
+    case "progress":
+      upsert(jobId, { percent: Math.round(msg.value) });
+      break;
+    case "status":
+      upsert(jobId, { message: msg.value });
+      break;
+    case "saved":
+      upsert(jobId, { stigLibraryId: msg.value });
+      refreshData();
+      break;
+    case "complete": {
+      const failed = msg.failed ?? 0;
+      upsert(jobId, { phase: "done", percent: 100, message: msg.value || "Processing complete!" });
+      closeSource(jobId);
+      refreshData();
+      alertsStore.refresh();
+      notificationStore.addNotification({
+        type: failed > 0 ? "error" : "success",
+        message:
+          failed > 0
+            ? `Import of ${filename || "STIG library"} finished with failures: ${msg.value}`
+            : `Completed import of ${filename || "STIG library"}`,
+      });
+      setTimeout(() => dismiss(jobId), failed > 0 ? 30000 : 6000);
+      break;
+    }
+    case "error":
+      upsert(jobId, { phase: "error", message: msg.value });
+      closeSource(jobId);
+      notificationStore.addNotification({ type: "error", message: msg.value });
+      break;
+  }
+}
+
+function subscribe(jobId: string, filename = "") {
+  if (sources.has(jobId)) return;
+  if (!jobs[jobId]) {
+    upsert(jobId, { jobId, filename, phase: "processing", percent: 0, message: "", stigLibraryId: null });
+  }
+  const eventSource = new EventSource(`/api/stigLibrary/jobs/${jobId}/events`);
+  sources.set(jobId, eventSource);
+  eventSource.onmessage = (event) => {
+    let msg: ProgressMessage;
+    try {
+      msg = JSON.parse(event.data) as ProgressMessage;
+    } catch {
+      return;
+    }
+    applyMessage(jobId, msg);
+  };
+}
+
+function formatEta(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "";
+  if (seconds < 1) return "<1s";
+  return Duration.fromObject({ seconds: Math.round(seconds) })
+    .rescale()
+    .toHuman({ unitDisplay: "short" });
+}
+
+async function startStigUpload(file: File) {
+  let jobId: string;
+  try {
+    ({ jobId } = await $fetch<{ jobId: string }>("/api/stigLibrary/jobs", {
+      method: "POST",
+      body: { filename: file.name },
+    }));
+  } catch (error) {
+    const message =
+      (error as { data?: { statusMessage?: string } })?.data?.statusMessage ||
+      "Unable to start the import.";
+    notificationStore.addNotification({ type: "error", message });
+    return;
+  }
+
+  upsert(jobId, {
+    jobId,
+    filename: file.name,
+    phase: "uploading",
+    percent: 0,
+    message: "Starting upload...",
+    stigLibraryId: null,
+  });
+  subscribe(jobId, file.name);
+
+  const tus = await import("tus-js-client");
+  let startTime: number | null = null;
+  let startSent = 0;
+  const upload = new tus.Upload(file, {
+    endpoint: "/api/uploads",
+    retryDelays: [0, 1000, 3000, 5000, 10000, 20000],
+    chunkSize: 8 * 1024 * 1024,
+    removeFingerprintOnSuccess: true,
+    metadata: { filename: file.name, jobId },
+    onProgress: (sent, total) => {
+      if (!total || jobs[jobId]?.phase !== "uploading") return;
+      const percent = Math.floor((sent / total) * 100);
+      if (startTime === null) {
+        startTime = Date.now();
+        startSent = sent;
+      }
+      const elapsed = (Date.now() - startTime) / 1000;
+      const rate = elapsed > 0 ? (sent - startSent) / elapsed : 0;
+      const eta = rate > 0 ? formatEta((total - sent) / rate) : "";
+      upsert(jobId, {
+        percent,
+        message: eta ? `Uploading ${percent}% - ~${eta} left` : `Uploading ${percent}%`,
+      });
+    },
+    onSuccess: () => {
+      if (jobs[jobId]?.phase === "uploading") {
+        upsert(jobId, { phase: "processing", percent: 0, message: "Upload complete. Processing..." });
+      }
+    },
+    onError: () => {
+      upsert(jobId, { phase: "error", message: "Upload failed." });
+      closeSource(jobId);
+      notificationStore.addNotification({ type: "error", message: "STIG library upload failed." });
+    },
+  });
+  activeUpload = upload;
+  upload.start();
+}
+
+async function resumeActive() {
+  try {
+    const active = await $fetch<
+      { jobId: string; filename: string; percent: number; message: string; stigLibraryId: number | null }[]
+    >("/api/stigLibrary/jobs");
+    let added = 0;
+    for (const job of active) {
+      if (sources.has(job.jobId)) continue;
+      upsert(job.jobId, {
+        jobId: job.jobId,
+        filename: job.filename,
+        phase: "processing",
+        percent: job.percent ?? 0,
+        message: job.message || "",
+        stigLibraryId: job.stigLibraryId ?? null,
+      });
+      subscribe(job.jobId, job.filename);
+      added += 1;
+    }
+    if (added > 0) refreshData();
+  } catch {
+    // best-effort reattach, fine to ignore
+  }
+}
+
+const pendingStigJob = computed(
+  () =>
+    Object.values(jobs).find(
+      (j) => (j.phase === "uploading" || j.phase === "processing") && !j.stigLibraryId,
+    ) || null,
+);
+const uploadingStig = computed(() => !!pendingStigJob.value);
+const barProgressStig = computed(() => pendingStigJob.value?.percent ?? 0);
+const messageLoadStig = computed(() => pendingStigJob.value?.message ?? "");
+
+const jobsByLibrary = computed<Record<number, ImportJobView>>(() => {
+  const map: Record<number, ImportJobView> = {};
+  for (const job of Object.values(jobs)) {
+    if (job.stigLibraryId && (job.phase === "processing" || job.phase === "done")) {
+      map[job.stigLibraryId] = job;
+    }
+  }
+  return map;
+});
 
 const uploadingCci = ref(false);
 const barProgressCci = ref(0);
@@ -102,7 +298,6 @@ const uploadDoneCci = ref(false);
 
 const refreshFlag = ref(false);
 const refreshCciFlag = ref(false);
-const currentUploadingLibraryId = ref<number | undefined>(undefined);
 
 const fileInputS = ref<HTMLInputElement | null>(null);
 const matrixInput = ref<HTMLInputElement | null>(null);
@@ -125,54 +320,22 @@ async function handleStigChange() {
   });
 
   if (data.value?.error) {
-    notificationStore.addNotification({ type: "error", message: "Invalid STIG filename" });
+    notificationStore.addNotification({
+      type: "error",
+      message: data.value.message || "Invalid STIG file",
+    });
     return;
   }
 
-  const formData = new FormData();
-  formData.append("file", selectedFile);
-  uploadingStig.value = true;
-
-  await useUploadStream(
-    "/api/stigLibrary/upload",
-    formData,
-    (msg: ProgressMessage) => {
-      switch (msg.type) {
-        case "progress":
-          barProgressStig.value = Math.round(msg.value);
-          break;
-        case "status":
-          if (msg.value !== messageLoadStig.value) {
-            messageLoadStig.value = msg.value;
-          }
-          break;
-        case "saved":
-          currentUploadingLibraryId.value = msg.value;
-          refreshData();
-          break;
-        case "complete":
-          uploadingStig.value = false;
-          messageLoadStig.value = "Processing completed!";
-          refreshData();
-          notificationStore.addNotification({ type: "success", message: "Completed upload of STIG library" });
-          break;
-        case "error":
-          uploadingStig.value = false;
-          notificationStore.addNotification({ type: "error", message: msg.value });
-          break;
-      }
-    },
-    () => {
-      uploadingStig.value = false;
-    },
-    (error) => {
-      logger.error({ service: "STIGLibraryImport", message: `Unknown Error ${error}` });
-      uploadingStig.value = false;
-      notificationStore.addNotification({ type: "error", message: "Unkown Error" });
-    },
-    { uploadLengthHint: selectedFile.size },
-  );
+  await startStigUpload(selectedFile);
 }
+
+onMounted(() => resumeActive());
+onBeforeUnmount(() => {
+  sources.forEach((es) => es.close());
+  sources.clear();
+  activeUpload?.abort();
+});
 
 function handleOverlayChange() {}
 

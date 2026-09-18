@@ -2,7 +2,7 @@
   <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
     <div class="rounded-lg bg-white py-4 dark:bg-gray-800">
       <div class="mx-auto max-w-7xl px-6 lg:px-8">
-        <div class="mx-0 mx-auto max-w-2xl max-w-none space-y-16 sm:space-y-20">
+        <div class="mx-auto max-w-none space-y-16 sm:space-y-20">
           <div class="flex-auto">
             <a class="mb-2 flex cursor-pointer text-indigo-500 hover:text-indigo-400" @click="backButton()">
               <ArrowUturnLeftIcon class="mr-2 h-5 w-5" />
@@ -166,7 +166,7 @@
               </ul>
             </nav>
           </aside>
-          <main class="flex-auto px-4 px-6 lg:px-0">
+          <main class="flex-auto px-6 lg:px-0">
             <!-- CHECK INFO BOX -->
             <div class="flex items-center justify-between">
               <div class="min-w-0 flex-1">
@@ -347,7 +347,7 @@ import {
 import { Listbox, ListboxButton, Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 import { storeToRefs } from "pinia";
 import { useIdStorageStore } from "~~/stores/IdStorage";
-import { catSeverityToStig, stigSeverityToCat } from "~/utils/stig";
+import { stigSeverityToCat } from "~/utils/stig";
 
 const route = useRoute();
 const showErrorNotification = ref(false);
@@ -373,16 +373,8 @@ if (queryError.value && queryError.value.statusCode === 404) {
   });
 
   refreshNuxtData("evaluationAPI");
+  location.reload();
 }
-
-// const rawOverrideData = await useFetch("/api/override/listAll", {
-//   method: "GET",
-//   query: {
-//     boundaryId: route.params.boundaryId,
-//     stigId: route.params.StigId,
-//     stigDatumId: listOfChecks[checkData].id,
-//   },
-// });
 
 // Filter Items
 const stigDatumItems = computed(() => {

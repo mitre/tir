@@ -19,10 +19,12 @@ export class StigLibrary extends Model<
   declare id: CreationOptional<number>;
   declare filename: string;
   declare hash: string;
+  declare revisionLabel: CreationOptional<string | null>;
+  declare labelSource: CreationOptional<string>;
   declare classification: string;
   declare libraryDate: string;
-  declare version: number;
-  declare importedDate: string;
+  declare version: CreationOptional<number | null>;
+  declare importedDate: CreationOptional<string | null>;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
 
@@ -48,13 +50,21 @@ StigLibrary.init(
     },
     filename: {
       type: DataTypes.TEXT,
-      unique: true,
       allowNull: false,
     },
     hash: {
       type: DataTypes.TEXT,
       unique: true,
       allowNull: false,
+    },
+    revisionLabel: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    labelSource: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+      defaultValue: "auto",
     },
     classification: {
       type: DataTypes.ENUM,
