@@ -14,6 +14,7 @@ import {
 } from "../../db/models";
 import { getIndexesByCciIds } from "./cci";
 import { type FindingCounts } from "~/types/findings";
+import { type SeverityCounts } from "~/types/severity";
 
 // import findingsDownloadPost from "../api/boundaries/findingsDownload.post";
 
@@ -281,4 +282,31 @@ export function catFromSeverity(rawSeverity: string): string {
   }
 
   return Cat;
+}
+
+export function initializeSeverityCounts(): SeverityCounts {
+  return {
+    catI: 0,
+    catII: 0,
+    catIII: 0,
+    notReviewed: 0,
+  };
+}
+
+export function uniqueTransformSeverityCounts(
+  counts: SeverityCounts,
+): SeverityCounts {
+  const { catI, catII, catIII, notReviewed } = counts;
+
+  if (catI) {
+    return { catI: 1, catII: 0, catIII: 0, notReviewed: 0 };
+  } else if (catII) {
+    return { catI: 0, catII: 1, catIII: 0, notReviewed: 0 };
+  } else if (catIII) {
+    return { catI: 0, catII: 0, catIII: 1, notReviewed: 0 };
+  } else if (notReviewed) {
+    return { catI: 0, catII: 0, catIII: 0, notReviewed: 1 };
+  }
+
+  return { catI: 0, catII: 0, catIII: 0, notReviewed: 0 };
 }

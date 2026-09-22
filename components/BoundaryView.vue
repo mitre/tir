@@ -26,6 +26,9 @@
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-800 dark:text-white">
                       Finding Status
                     </th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-800 dark:text-white">
+                      Severity Counts
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-800">
@@ -57,6 +60,17 @@
                         <p class="text-sky-500">{{ evaluation.findings.Not_Applicable }}</p>
                         /
                         <p class="text-amber-500">{{ evaluation.findings.Not_Reviewed }}</p>
+                      </div>
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      <div class="flex">
+                        <p class="text-red-500">{{ evaluation.severities.catI }}</p>
+                        /
+                        <p class="text-orange-500">{{ evaluation.severities.catII }}</p>
+                        /
+                        <p class="text-yellow-500">{{ evaluation.severities.catIII }}</p>
+                        /
+                        <p class="text-grey-500">{{ evaluation.severities.notReviewed }}</p>
                       </div>
                     </td>
                   </tr>

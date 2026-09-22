@@ -391,19 +391,27 @@
               </div>
               <div class="border-t border-black/5 px-4 py-6 dark:border-white/5 sm:border-l sm:px-6 lg:px-8">
                 <div class="text-sm font-medium leading-6 text-gray-600 dark:text-gray-400">NIST Version</div>
-                <div class="mt-2 items-baseline gap-x-2">
+                <div class="my-1 items-baseline gap-x-2">
                   <span class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
                     {{ policyDocument.title }}
+                  </span>
+                </div>
+                <div class="text-sm font-medium leading-6 text-gray-600 dark:text-gray-400">Stig Baseline</div>
+                <div class="mt-1 items-baseline gap-x-2">
+                  <span class="break-all text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
+                    {{ summary.boundaryInfo.stigLibrary }}
                   </span>
                 </div>
               </div>
 
               <div class="border-t border-black/5 px-4 py-6 dark:border-white/5 sm:px-6 lg:px-8">
-                <div class="text-sm font-medium leading-6 text-gray-600 dark:text-gray-400">Stig Baseline</div>
-                <div class="mt-2 items-baseline gap-x-2">
-                  <span class="break-all text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
-                    {{ summary.boundaryInfo.stigLibrary }}
-                  </span>
+                <div class="text-sm font-medium leading-6 text-gray-600 dark:text-gray-400">
+                  <SummaryCounts
+                    title="Severity Counts"
+                    :items="severityHoverItems"
+                    :stats1="summary.totalSeverityCounts"
+                    :stats2="summary.uniqueSeverityCounts"
+                  />
                 </div>
               </div>
 
@@ -1391,6 +1399,13 @@ const vulnHoverItems = [
   { name: "Medium", text: "Medium", color: "amber" },
   { name: "Low", text: "Low", color: "sky" },
   { name: "None", text: "None", color: "grey" },
+];
+
+const severityHoverItems = [
+  { name: "catI", text: "CAT I", color: "red" },
+  { name: "catII", text: "CAT II", color: "orange" },
+  { name: "catIII", text: "CAT III", color: "yellow" },
+  { name: "notReviewed", text: "Not Reviewed", color: "grey" },
 ];
 
 const sctmHoverItems = [
