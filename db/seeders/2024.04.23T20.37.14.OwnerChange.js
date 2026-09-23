@@ -86,14 +86,14 @@ export const up = async ({ context: sequelize }) => {
             await sequelize.query(`
         CREATE TABLE IF NOT EXISTS "Boundaries_backup" (
           "id" INTEGER PRIMARY KEY AUTOINCREMENT, 
-          "name" VARCHAR(255) NOT NULL UNIQUE, 
-          "lastUpdate" VARCHAR(29) NOT NULL, 
-          "creationDate" VARCHAR(29) NOT NULL, 
+          "name" TEXT NOT NULL UNIQUE, 
+          "lastUpdate" TEXT NOT NULL, 
+          "creationDate" TEXT NOT NULL, 
           "TierId" INTEGER NOT NULL REFERENCES "Tiers" ("id") ON DELETE CASCADE ON UPDATE CASCADE, 
           "StigLibraryId" INTEGER REFERENCES "StigLibraries" ("id") ON DELETE RESTRICT ON UPDATE CASCADE, 
           "PolicyDocumentId" INTEGER NOT NULL REFERENCES "PolicyDocuments" ("id") ON DELETE RESTRICT ON UPDATE CASCADE, 
           "ClassificationId" INTEGER REFERENCES "Classifications" ("id") ON DELETE RESTRICT ON UPDATE CASCADE, 
-          "caveats" VARCHAR(50)
+          "caveats" TEXT
         );`);
             await sequelize.query(`
         INSERT INTO "Boundaries_backup" 
@@ -104,14 +104,14 @@ export const up = async ({ context: sequelize }) => {
             await sequelize.query(`
         CREATE TABLE IF NOT EXISTS "Boundaries" (
           "id" INTEGER PRIMARY KEY AUTOINCREMENT, 
-          "name" VARCHAR(255) NOT NULL UNIQUE, 
-          "lastUpdate" VARCHAR(29) NOT NULL, 
-          "creationDate" VARCHAR(29) NOT NULL, 
+          "name" TEXT NOT NULL UNIQUE, 
+          "lastUpdate" TEXT NOT NULL, 
+          "creationDate" TEXT NOT NULL, 
           "TierId" INTEGER NOT NULL REFERENCES "Tiers" ("id") ON DELETE CASCADE ON UPDATE CASCADE, 
           "StigLibraryId" INTEGER REFERENCES "StigLibraries" ("id") ON DELETE RESTRICT ON UPDATE CASCADE, 
           "PolicyDocumentId" INTEGER NOT NULL REFERENCES "PolicyDocuments" ("id") ON DELETE RESTRICT ON UPDATE CASCADE, 
           "ClassificationId" INTEGER REFERENCES "Classifications" ("id") ON DELETE RESTRICT ON UPDATE CASCADE, 
-          "caveats" VARCHAR(50)
+          "caveats" TEXT
         );`);
             await sequelize.query(`
         INSERT INTO "Boundaries" 
@@ -122,10 +122,10 @@ export const up = async ({ context: sequelize }) => {
             await sequelize.query(`
         CREATE TABLE IF NOT EXISTS "Tiers_backup" (
           "id" INTEGER PRIMARY KEY AUTOINCREMENT, 
-          "name" VARCHAR(255) NOT NULL UNIQUE, 
+          "name" TEXT NOT NULL UNIQUE, 
           "parentId" INTEGER REFERENCES "Tiers_backup" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-          "lastUpdate" VARCHAR(29) NOT NULL, 
-          "creationDate" VARCHAR(29) NOT NULL
+          "lastUpdate" TEXT NOT NULL, 
+          "creationDate" TEXT NOT NULL
         );`);
             await sequelize.query(`
         INSERT INTO "Tiers_backup" 
@@ -137,10 +137,10 @@ export const up = async ({ context: sequelize }) => {
             await sequelize.query(`
         CREATE TABLE IF NOT EXISTS "Tiers" (
           "id" INTEGER PRIMARY KEY AUTOINCREMENT, 
-          "name" VARCHAR(255) NOT NULL UNIQUE, 
+          "name" TEXT NOT NULL UNIQUE, 
           "parentId" INTEGER REFERENCES "Tiers" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-          "lastUpdate" VARCHAR(29) NOT NULL, 
-          "creationDate" VARCHAR(29) NOT NULL
+          "lastUpdate" TEXT NOT NULL, 
+          "creationDate" TEXT NOT NULL
         );`);
             await sequelize.query(`
         INSERT INTO "Tiers" 

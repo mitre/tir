@@ -25,16 +25,16 @@ StigResponsibility.init(
       primaryKey: true,
     },
     name: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

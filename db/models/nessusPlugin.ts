@@ -64,22 +64,22 @@ NessusPlugin.init(
       allowNull: false,
     },
     pluginPublicationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     pluginModificationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     pluginName: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     fname: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     scriptVersion: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     severity: {
@@ -105,15 +105,15 @@ NessusPlugin.init(
       allowNull: false,
     },
     synopsis: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

@@ -43,21 +43,21 @@ TirNotification.init(
       autoIncrement: true,
     },
     message: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     dueDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     daysLeft: {
       type: DataTypes.INTEGER,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

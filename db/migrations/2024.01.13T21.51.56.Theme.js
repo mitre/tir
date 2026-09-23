@@ -1,9 +1,8 @@
 import * as dotenv from "dotenv";
 import { DataTypes } from "sequelize";
 
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
 dotenv.config();
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("Themes", {
     id: {
       type: DataTypes.INTEGER,
@@ -11,15 +10,15 @@ export const up = async () => {
       primaryKey: true,
     },
     name: {
-      type: DataTypes.STRING(64),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
@@ -33,19 +32,19 @@ export const up = async () => {
     onDelete: "SET NULL",
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   if (sequelize.getDialect() !== "sqlite") {
     await sequelize.getQueryInterface().removeColumn("Users", "ThemeId");
   } else {
     await sequelize.query(
-      `CREATE TABLE IF NOT EXISTS 'Users_backup' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'firstName' VARCHAR(255) NOT NULL, 'lastName' VARCHAR(255) NOT NULL, 'email' VARCHAR(255) NOT NULL UNIQUE, 'password' VARCHAR(128), 'lastUpdate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'creationDate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'UserRoleId' INTEGER REFERENCES 'UserRoles' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'TimezoneId' INTEGER REFERENCES 'Timezones' ('id') ON DELETE SET NULL ON UPDATE CASCADE);`,
+      `CREATE TABLE IF NOT EXISTS 'Users_backup' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'firstName' TEXT NOT NULL, 'lastName' TEXT NOT NULL, 'email' TEXT NOT NULL UNIQUE, 'password' TEXT, 'lastUpdate' TEXT NOT NULL, 'creationDate' TEXT NOT NULL, 'UserRoleId' INTEGER REFERENCES 'UserRoles' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'TimezoneId' INTEGER REFERENCES 'Timezones' ('id') ON DELETE SET NULL ON UPDATE CASCADE);`,
     );
     await sequelize.query(
       "INSERT INTO `Users_backup` SELECT `id`, `firstName`, `lastName`, `email`, `password`, `lastUpdate`, `creationDate`, `UserRoleId`, `TimezoneId` FROM `Users`;",
     );
     await sequelize.query("DROP TABLE `Users`;");
     await sequelize.query(
-      `CREATE TABLE IF NOT EXISTS 'Users' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'firstName' VARCHAR(255) NOT NULL, 'lastName' VARCHAR(255) NOT NULL, 'email' VARCHAR(255) NOT NULL UNIQUE, 'password' VARCHAR(128), 'lastUpdate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'creationDate' VARCHAR(${DATETIME_LENGTH}) NOT NULL, 'UserRoleId' INTEGER REFERENCES 'UserRoles' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'TimezoneId' INTEGER REFERENCES 'Timezones' ('id') ON DELETE SET NULL ON UPDATE CASCADE);`,
+      `CREATE TABLE IF NOT EXISTS 'Users' ('id' INTEGER PRIMARY KEY AUTOINCREMENT, 'firstName' TEXT NOT NULL, 'lastName' TEXT NOT NULL, 'email' TEXT NOT NULL UNIQUE, 'password' TEXT, 'lastUpdate' TEXT NOT NULL, 'creationDate' TEXT NOT NULL, 'UserRoleId' INTEGER REFERENCES 'UserRoles' ('id') ON DELETE SET NULL ON UPDATE CASCADE, 'TimezoneId' INTEGER REFERENCES 'Timezones' ('id') ON DELETE SET NULL ON UPDATE CASCADE);`,
     );
     await sequelize.query(
       "INSERT INTO `Users` SELECT `id`, `firstName`, `lastName`, `email`, `password`, `lastUpdate`, `creationDate`, `UserRoleId`, `TimezoneId` FROM `Users_backup`;",

@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
-import { sequelize } from "../umzug.js";
 
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   const upMigration = await sequelize.transaction();
   try {
     // ControlNumber table
@@ -680,7 +679,7 @@ export const up = async () => {
     throw error;
   }
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   const downMigration = await sequelize.transaction();
   try {
     await sequelize.getQueryInterface().dropTable("ControlWithdrawns", {

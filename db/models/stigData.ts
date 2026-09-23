@@ -88,19 +88,19 @@ StigData.init(
       primaryKey: true,
     },
     vuln_num: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     group_title: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     description: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     rule_id: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
     },
@@ -110,11 +110,11 @@ StigData.init(
       allowNull: true,
     },
     weight: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     rule_ver: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     rule_title: {
@@ -126,19 +126,19 @@ StigData.init(
       allowNull: false,
     },
     false_positives: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     false_negatives: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     documentable: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     mitigations: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     security_override_guidance: {
@@ -146,27 +146,27 @@ StigData.init(
       allowNull: true,
     },
     potential_impact: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     third_party_tools: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     mitigation_control: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     responsibility: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     ia_controls: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     check__system: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     check_check_content: {
@@ -174,15 +174,15 @@ StigData.init(
       allowNull: false,
     },
     check_check_content_ref__name: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     check_check_content_ref__href: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     fix__id: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     fixtext: {
@@ -190,15 +190,15 @@ StigData.init(
       allowNull: false,
     },
     fixtext__fixref: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

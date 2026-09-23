@@ -35,23 +35,23 @@ Classification.init(
       autoIncrement: true,
     },
     name: {
-      type: DataTypes.STRING(50),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     abbreviation: {
-      type: DataTypes.STRING(5),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     color: {
-      type: DataTypes.STRING(6),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

@@ -373,6 +373,7 @@
 
 <script setup lang="ts">
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from "@headlessui/vue";
+import { NessusCsvHeaders } from "~/types/nessus";
 
 const props = defineProps({
   boundaryId: {
@@ -525,11 +526,23 @@ const ssaDownload = async () => {
 };
 
 const nessusDownload = async () => {
-  const { data: currentUser } = await useFetch("/api/auth/currentUser");
+  const selectedHeaders = [
+    NessusCsvHeaders.PluginId,
+    NessusCsvHeaders.CVE,
+    NessusCsvHeaders.CvssV2,
+    NessusCsvHeaders.CvssV3,
+    NessusCsvHeaders.Risk,
+    NessusCsvHeaders.Host,
+    NessusCsvHeaders.Protocol,
+    NessusCsvHeaders.Port,
+    NessusCsvHeaders.Name,
+    NessusCsvHeaders.Description,
+    NessusCsvHeaders.PluginOutput,
+  ] as const;
 
   const queryParams = new URLSearchParams();
   queryParams.append("BoundaryId", boundaryId);
-  queryParams.append("userEmail", currentUser.value.email);
+  queryParams.append("selectedHeaders", selectedHeaders);
   await fetch(`/api/boundaries/nessus?${queryParams}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
