@@ -109,3 +109,11 @@ export async function userCheck(
   const checkResults = { user, UserRoleId: user?.UserRoleId, BoundaryRoleId, TierRoleId };
   return checkResults;
 }
+
+export async function requireAdmin(event: any) {
+  const checkResult = await userCheck(event, undefined, undefined, undefined);
+  if (checkResult.UserRoleId !== 1) {
+    throw createError({ statusCode: 403, statusMessage: "Administrator role required." });
+  }
+  return checkResult;
+}

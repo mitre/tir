@@ -7,7 +7,7 @@ import {
   allAttrs,
   domainFromBaseDn,
 } from "~/server/auth/ldapUtils";
-import { getRawConfigValue } from "~/server/utils/config/tirConfig";
+import { storedLDAPPassword } from "~/server/utils/config/authConfig";
 
 const CONNECT_TIMEOUT_MS = 10_000;
 
@@ -26,11 +26,10 @@ function resolveRoleQuiet(groupMappings: string, groups: string[]): number | nul
 }
 
 export default defineEventHandler(async (event) => {
-  await userCheck(event, undefined, undefined, undefined);
+  await requireAdmin(event);
 
   const body = await readBody(event);
   const {
-    id,
     url,
     bindDn,
     password: providedBindPassword,
@@ -52,17 +51,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "Provider configuration is incomplete." });
   }
 
-  let bindPassword: string | undefined = providedBindPassword;
-  if (!bindPassword && id) {
-    const stored = await getRawConfigValue(`auth:ldap:${id}:password`);
-    if (stored) bindPassword = stored;
-  }
+  const bindPassword: string | undefined =
+    providedBindPassword || (await storedLDAPPassword(body));
 
   if (!bindPassword) {
     throw createError({
       statusCode: 400,
       message:
-        "Bind password is required — enter it in the Password field or save the config first.",
+        "Bind password is required - enter it in the Password field. The saved password only applies while the URL and bind DN are unchanged.",
     });
   }
 

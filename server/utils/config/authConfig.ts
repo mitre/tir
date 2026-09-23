@@ -22,14 +22,14 @@ import {
 // auth:oauth:index +  auth:oauth:<id>:<field>
 // auth:defaultLoginProvider
 
-const OIDC_INDEX_KEY  = "auth:oidc:index";
-const LDAP_INDEX_KEY  = "auth:ldap:index";
+const OIDC_INDEX_KEY = "auth:oidc:index";
+const LDAP_INDEX_KEY = "auth:ldap:index";
 const OAUTH_INDEX_KEY = "auth:oauth:index";
 
-const localKey  = (field: string) => `auth:local:${field}`;
-const oidcKey   = (id: string, field: string) => `auth:oidc:${id}:${field}`;
-const ldapKey   = (id: string, field: string) => `auth:ldap:${id}:${field}`;
-const oauthKey  = (id: string, field: string) => `auth:oauth:${id}:${field}`;
+const localKey = (field: string) => `auth:local:${field}`;
+const oidcKey = (id: string, field: string) => `auth:oidc:${id}:${field}`;
+const ldapKey = (id: string, field: string) => `auth:ldap:${id}:${field}`;
+const oauthKey = (id: string, field: string) => `auth:oauth:${id}:${field}`;
 
 async function getIndex(indexKey: string): Promise<string[]> {
   const raw = await getRawConfigValue(indexKey);
@@ -45,8 +45,8 @@ function coerce(raw: string | undefined, type: string, dflt: any): any {
   if (raw === undefined) return dflt;
   switch (type) {
     case "bool": return raw === "true" || raw === "1";
-    case "num":  { const n = Number(raw); return Number.isFinite(n) ? n : dflt; }
-    default:     return raw;
+    case "num": { const n = Number(raw); return Number.isFinite(n) ? n : dflt; }
+    default: return raw;
   }
 }
 
@@ -85,8 +85,8 @@ async function loadProvider<T>(
   return out as T;
 }
 
-const loadOIDCProvider  = (id: string) => loadProvider<OIDCProviderConfig>((f) => oidcKey(id, f),  OIDC_PROVIDER_SCHEMA,  id);
-const loadLDAPProvider  = (id: string) => loadProvider<LDAPProviderConfig>((f) => ldapKey(id, f),  LDAP_PROVIDER_SCHEMA,  id);
+const loadOIDCProvider = (id: string) => loadProvider<OIDCProviderConfig>((f) => oidcKey(id, f), OIDC_PROVIDER_SCHEMA, id);
+const loadLDAPProvider = (id: string) => loadProvider<LDAPProviderConfig>((f) => ldapKey(id, f), LDAP_PROVIDER_SCHEMA, id);
 const loadOAuthProvider = (id: string) => loadProvider<OAuthProviderConfig>((f) => oauthKey(id, f), OAUTH_PROVIDER_SCHEMA, id);
 
 async function saveProvider(
@@ -106,6 +106,36 @@ async function saveProvider(
 
 async function deleteProvider(keyFn: (f: string) => string, schema: Record<string, any>): Promise<void> {
   await Promise.all(Object.keys(schema).map((f) => deleteRawConfigValue(keyFn(f))));
+}
+
+async function storedSecretIfUnchanged(
+  indexKey: string,
+  keyFn: (id: string, field: string) => string,
+  schema: Record<string, any>,
+  secretField: string,
+  submitted: Record<string, unknown>,
+  matchFields: string[],
+): Promise<string | undefined> {
+  const id = submitted.id;
+  if (typeof id !== "string" || !id) return undefined;
+
+  const ids = await getIndex(indexKey);
+  if (!ids.includes(id)) return undefined;
+
+  const stored = await loadProvider<Record<string, unknown>>((f) => keyFn(id, f), schema, id);
+  const unchanged = matchFields.every((f) => stored[f] === submitted[f]);
+  if (!unchanged) return undefined;
+  return getRawConfigValue(keyFn(id, secretField));
+}
+
+/** The saved bind password, only while the submitted url and bindDn still match the saved provider. */
+export function storedLDAPPassword(submitted: Record<string, unknown>): Promise<string | undefined> {
+  return storedSecretIfUnchanged(LDAP_INDEX_KEY, ldapKey, LDAP_PROVIDER_SCHEMA, "password", submitted, ["url", "bindDn"]);
+}
+
+/** The saved client secret, only while the submitted url and clientId still match the saved provider. */
+export function storedOIDCSecret(submitted: Record<string, unknown>): Promise<string | undefined> {
+  return storedSecretIfUnchanged(OIDC_INDEX_KEY, oidcKey, OIDC_PROVIDER_SCHEMA, "secret", submitted, ["url", "clientId"]);
 }
 
 export async function loadAuthConfig(): Promise<AuthConfig> {

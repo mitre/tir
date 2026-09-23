@@ -36,7 +36,7 @@ async function probeGet(label: string, url: string): Promise<CheckResult> {
 }
 
 export default defineEventHandler(async (event) => {
-  await userCheck(event, undefined, undefined, undefined);
+  await requireAdmin(event);
 
   const body = (await readBody(event)) as Partial<OAuthProviderConfig>;
   const { providerType, baseUrl, authorizationUrl, tokenUrl, userInfoUrl } = body;

@@ -1,6 +1,6 @@
 import https from "node:https";
 import http from "node:http";
-import { getRawConfigValue } from "~/server/utils/config/tirConfig";
+import { storedOIDCSecret } from "~/server/utils/config/authConfig";
 
 const PROBE_TIMEOUT_MS = 8_000;
 
@@ -63,19 +63,16 @@ function httpJson(
 }
 
 export default defineEventHandler(async (event) => {
-  await userCheck(event, undefined, undefined, undefined);
+  await requireAdmin(event);
 
-  const { id, url, clientId, secret: providedSecret, callback, sslInsecure } = await readBody(event);
+  const body = await readBody(event);
+  const { url, clientId, secret: providedSecret, callback, sslInsecure } = body;
 
   if (!url) {
     return { ok: false, checks: [{ name: "Discovery", ok: false, message: "URL is required" }] };
   }
 
-  let secret: string | undefined = providedSecret;
-  if (!secret && id) {
-    const stored = await getRawConfigValue(`auth:oidc:${id}:secret`);
-    if (stored) secret = stored;
-  }
+  const secret: string | undefined = providedSecret || (await storedOIDCSecret(body));
 
   const rejectUnauthorized = !sslInsecure;
   const checks: CheckResult[] = [];
@@ -163,7 +160,9 @@ export default defineEventHandler(async (event) => {
     checks.push({
       name: "Client credentials",
       ok: false,
-      message: clientId ? "No secret available -- enter a secret to test credentials" : "Client ID not configured",
+      message: clientId
+        ? "No secret available - enter the secret to test credentials. The saved secret only applies while the URL and client ID are unchanged."
+        : "Client ID not configured",
     });
   } else {
     checks.push({ name: "Client credentials", ok: false, message: "Token endpoint missing from discovery document" });

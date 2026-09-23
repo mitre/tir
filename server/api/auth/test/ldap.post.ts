@@ -1,5 +1,5 @@
 import { Client } from "ldapts";
-import { getRawConfigValue } from "~/server/utils/config/tirConfig";
+import { storedLDAPPassword } from "~/server/utils/config/authConfig";
 
 const CONNECT_TIMEOUT_MS = 8_000;
 
@@ -10,20 +10,16 @@ interface CheckResult {
 }
 
 export default defineEventHandler(async (event) => {
-  await userCheck(event, undefined, undefined, undefined);
+  await requireAdmin(event);
 
   const body = await readBody(event);
-  const { id, url, bindDn, password: providedPassword, baseDn, ssl, sslInsecure, sslCa } = body;
+  const { url, bindDn, password: providedPassword, baseDn, ssl, sslInsecure, sslCa } = body;
 
   if (!url) {
     return { ok: false, checks: [{ name: "Connect", ok: false, message: "URL is required" }] };
   }
 
-  let password: string | undefined = providedPassword;
-  if (!password && id) {
-    const stored = await getRawConfigValue(`auth:ldap:${id}:password`);
-    if (stored) password = stored;
-  }
+  const password: string | undefined = providedPassword || (await storedLDAPPassword(body));
 
   const checks: CheckResult[] = [];
 
@@ -84,7 +80,8 @@ export default defineEventHandler(async (event) => {
       checks.push({
         name: "Bind",
         ok: false,
-        message: "No password available - enter a password to test bind",
+        message:
+          "No password available - enter the password to test bind. The saved password only applies while the URL and bind DN are unchanged.",
       });
     } else {
       checks.push({ name: "Bind", ok: false, message: "Bind DN not configured" });
