@@ -19,6 +19,9 @@ import {
 
 interface BaseFields {
   ControlRecordItemId: number;
+  ControlId: number;
+  ControlEnhancementId: number | null;
+  controlTitle: string;
   family: string;
   ComplianceStatusId: number;
   ImplementationStatusId: number;
@@ -56,30 +59,31 @@ interface BaseFields {
   lastUpdate: string;
   creationDate: string;
 }
-interface ControlSummary extends BaseFields {
+export interface TechnicalAssessment {
+  cci: string;
+  technicalAssessmentStatus: string;
+  technicalAssessmentComments: string[];
+  hasStigMapping: boolean;
+}
+
+export interface ControlSummary extends BaseFields, TechnicalAssessment {
   type: "control";
   id: number;
   number: string;
   title: string;
   revision: string;
   guidance: string;
-  statements: string[];
-  cci: string;
-  technicalAssessmentStatus: string;
-  technicalAssessmentComments: string[];
+  statements: { description: string }[];
 }
 
-interface EnhancementSummary extends BaseFields {
+export interface EnhancementSummary extends BaseFields, TechnicalAssessment {
   type: "enhancement";
   id: number;
   number: string;
   title: string;
   revision: string;
   guidance: string;
-  statements: string[];
-  cci: string;
-  technicalAssessmentStatus: string;
-  technicalAssessmentComments: string[];
+  statements: { description: string }[];
 }
 interface NewRecord {
   BoundaryId: number;
@@ -241,6 +245,9 @@ export async function createControlRecords(BoundaryId: number, controlRev: strin
 function getBaseFields(item: any): BaseFields {
   return {
     ControlRecordItemId: item.id,
+    ControlId: item.ControlId,
+    ControlEnhancementId: item.ControlEnhancementId ?? null,
+    controlTitle: item.Control?.title ?? "",
     family: item.Control.ControlFamily?.name || "",
     ComplianceStatusId: item.ComplianceStatusId,
     ImplementationStatusId: item.ImplementationStatusId,
@@ -280,13 +287,7 @@ function getBaseFields(item: any): BaseFields {
   };
 }
 
-function getStandardControlSummary(
-  item: any,
-  cci: string,
-  technicalAssessmentStatus: string,
-  technicalAssessmentComments: string[],
-): ControlSummary {
-  const baseFields = getBaseFields(item);
+function getStandardControlSummary(item: any, assessment: TechnicalAssessment): ControlSummary {
   return {
     type: "control",
     id: item.Control.id,
@@ -295,32 +296,22 @@ function getStandardControlSummary(
     revision: item.Control.ControlRevision?.name || "",
     guidance: item.Control.guidance,
     statements: item.Control.ControlStatements || [],
-    ...baseFields,
-    cci,
-    technicalAssessmentStatus,
-    technicalAssessmentComments,
+    ...getBaseFields(item),
+    ...assessment,
   };
 }
 
-function getEnhancementSummary(
-  item: any,
-  cci: string,
-  technicalAssessmentStatus: string,
-  technicalAssessmentComments: string[],
-): EnhancementSummary {
-  const baseFields = getBaseFields(item);
+function getEnhancementSummary(item: any, assessment: TechnicalAssessment): EnhancementSummary {
   return {
     type: "enhancement",
     id: item.ControlEnhancement.id,
     number: item.ControlEnhancement.enhancementIdentifier,
     title: item.ControlEnhancement.title,
-    revision: "", // enhancements may not have a revision
+    revision: "",
     guidance: item.ControlEnhancement.guidance,
     statements: item.ControlEnhancement.ControlEnhancementStatements || [],
-    ...baseFields,
-    cci,
-    technicalAssessmentStatus,
-    technicalAssessmentComments,
+    ...getBaseFields(item),
+    ...assessment,
   };
 }
 
@@ -336,11 +327,8 @@ function evaluateStatuses(statusMap: Map<string, Set<string>>): string {
     return "Not Reviewed";
   } else if (statuses.some((status) => status.trim() === "NotAFinding")) {
     return "Compliant";
-  } else if (statuses.some((status) => status.trim() === "Not_Applicable")) {
-    return "Not-Applicable";
-  } else {
-    return "Not-Applicable";
   }
+  return "Not-Applicable";
 }
 
 function buildDisplayLines(statusMap: Map<string, Set<string>>): string[] {
@@ -363,20 +351,149 @@ function determineCciStatus(cciVKeys: { vKey: string; status: string }[]): strin
   }
 }
 
+function getTechnicalAssessment(
+  normalizedControlNumber: string,
+  controlToStatusMap: Map<string, Map<string, Set<string>>>,
+  cciMap: Map<string, string[]>,
+  stigLookup: Record<string, { cciIds: Set<string>; stig: any }>,
+): TechnicalAssessment {
+  const statusMap = controlToStatusMap.get(normalizedControlNumber);
+  const cciIds = cciMap.get(normalizedControlNumber) ?? [];
+
+  if (!statusMap || statusMap.size === 0) {
+    return {
+      cci: cciIds.map((cciId) => `  ${cciId}: Not-Applicable`).join("\n"),
+      technicalAssessmentStatus: "Not-Applicable",
+      technicalAssessmentComments: ["No applicable STIG mapping for this Control."],
+      hasStigMapping: false,
+    };
+  }
+
+  const cciLines: string[] = [];
+
+  for (const cciId of cciIds) {
+    const cciVKeys: { vKey: string; status: string }[] = [];
+
+    for (const [status, vKeys] of statusMap) {
+      for (const displayValue of vKeys) {
+        const vKey = displayValue.split(" - ")[0];
+        const stigEntry = stigLookup[vKey];
+
+        if (stigEntry?.cciIds.has(cciId)) {
+          cciVKeys.push({ vKey, status });
+        }
+      }
+    }
+
+    const cciStatus = cciVKeys.length > 0 ? determineCciStatus(cciVKeys) : "Not-Applicable";
+
+    cciLines.push(`  ${cciId}: ${cciStatus}`);
+  }
+
+  return {
+    cci: cciLines.join("\n"),
+    technicalAssessmentStatus: evaluateStatuses(statusMap),
+    technicalAssessmentComments: buildDisplayLines(statusMap),
+    hasStigMapping: true,
+  };
+}
+
+function parseTopLevelControl(raw: string): string {
+  if (!raw) return "";
+
+  const cleaned = raw.toUpperCase().replace(/\s+/g, "");
+  const match = cleaned.match(/^([A-Z]{2,3}-\d+)(\(\d+\))?/);
+
+  return match ? match[1] + (match[2] ?? "") : cleaned;
+}
+
+function loadCciItems(policyDocumentId: number | undefined) {
+  return CciItem.findAll({
+    attributes: ["cciId", "definition"],
+    include: [
+      {
+        model: CciReference,
+        attributes: ["index"],
+        through: { attributes: [] },
+        where: {
+          PolicyDocumentId: policyDocumentId,
+        },
+      },
+    ],
+  });
+}
+
+function buildCciMaps(cciItems: Awaited<ReturnType<typeof loadCciItems>>) {
+  const cciItemMap = new Map(cciItems.map((item) => [item.cciId, item]));
+
+  const cciMap = new Map<string, string[]>();
+
+  for (const item of cciItems) {
+    for (const reference of item.CciReferences ?? []) {
+      if (!reference.index) continue;
+
+      const controlNumber = parseTopLevelControl(reference.index);
+      const mappedCcis = cciMap.get(controlNumber) ?? [];
+
+      if (!mappedCcis.includes(item.cciId)) {
+        mappedCcis.push(item.cciId);
+      }
+
+      cciMap.set(controlNumber, mappedCcis);
+    }
+  }
+
+  return {
+    cciItemMap,
+    cciMap,
+  };
+}
+
+export type ControlSummaryRow = ControlSummary | EnhancementSummary;
+
+async function currentRevisionId(boundary: Boundary | null): Promise<number | undefined> {
+  const version = boundary?.PolicyDocument?.version;
+  if (!version) return undefined;
+  const revision = await ControlRevision.findOne({
+    where: { name: `rev${version}` },
+    attributes: ["id"],
+  });
+  return revision?.id;
+}
+
 export async function getControlSummary(
   BoundaryId: number,
-  ControlRecordId: number,
-): Promise<(ControlSummary | EnhancementSummary)[]> {
+  ControlRecordId?: number,
+): Promise<ControlSummaryRow[]> {
   const perfTimer = new PerfTimer();
+
+  const boundary = await Boundary.findOne({
+    where: { id: BoundaryId },
+    include: [
+      {
+        model: Classification,
+      },
+      {
+        model: PolicyDocument,
+      },
+    ],
+  });
+
+  let recordWhere: { BoundaryId: number; ControlRevisionId?: number } = { BoundaryId };
+  if (ControlRecordId === undefined) {
+    const revisionId = await currentRevisionId(boundary);
+    if (!revisionId) return [];
+    recordWhere = { BoundaryId, ControlRevisionId: revisionId };
+  }
 
   perfTimer.start("Query");
   const results = await ControlRecordItem.findAll({
-    where: { ControlRecordId },
+    where: ControlRecordId === undefined ? undefined : { ControlRecordId },
     include: [
       {
         model: ControlRecord,
         attributes: ["ControlFamilyId"],
-        where: { BoundaryId },
+        where: recordWhere,
         required: true,
         include: [{ model: ControlFamily, attributes: ["name"] }],
       },
@@ -416,45 +533,9 @@ export async function getControlSummary(
     ],
   });
 
-  const boundary = await Boundary.findOne({
-    where: { id: BoundaryId },
-    include: [
-      {
-        model: Classification,
-      },
-      {
-        model: PolicyDocument,
-      },
-    ],
-  });
+  const cciItems = await loadCciItems(boundary?.PolicyDocumentId);
 
-  const cciItems = await CciItem.findAll({
-    attributes: ["cciId", "definition"],
-    include: [
-      {
-        model: CciReference,
-        attributes: ["index"],
-        through: { attributes: [] },
-        where: {
-          PolicyDocumentId: boundary?.PolicyDocumentId,
-        },
-      },
-    ],
-  });
-  const cciItemMap = new Map(cciItems.map((item) => [item.cciId, item]));
-  const cciMap = new Map<string, string[]>();
-
-  for (const cciItem of cciItems) {
-    const refs = cciItem.CciReferences ?? [];
-    for (const ref of refs) {
-      if (!ref.index) continue;
-      const normalizedIndex = parseTopLevelControl(ref.index);
-      if (!cciMap.has(normalizedIndex)) {
-        cciMap.set(normalizedIndex, []);
-      }
-      cciMap.get(normalizedIndex)!.push(cciItem.cciId);
-    }
-  }
+  const { cciItemMap, cciMap } = buildCciMaps(cciItems);
 
   const stigResults = await getEvaluationSummary(BoundaryId, undefined, false);
 
@@ -478,113 +559,62 @@ export async function getControlSummary(
 
       for (const cciId of cciIds) {
         const cciItem = cciItemMap.get(cciId);
-        const cciRef = cciItem?.CciReferences?.[0]?.index ?? "";
-        const normalizedControl = parseTopLevelControl(cciRef);
-        if (!normalizedControl) continue;
+        const cciReferences = cciItem?.CciReferences ?? [];
 
-        if (!controlToStatusMap.has(normalizedControl)) {
-          controlToStatusMap.set(normalizedControl, new Map());
-        }
+        for (const cciReference of cciReferences) {
+          if (!cciReference.index) continue;
 
-        const statusMap = controlToStatusMap.get(normalizedControl)!;
-        if (!statusMap.has(status)) {
-          statusMap.set(status, new Set());
+          const normalizedControl = parseTopLevelControl(cciReference.index);
+
+          if (!normalizedControl) continue;
+
+          if (!controlToStatusMap.has(normalizedControl)) {
+            controlToStatusMap.set(normalizedControl, new Map<string, Set<string>>());
+          }
+
+          const statusMap = controlToStatusMap.get(normalizedControl)!;
+
+          if (!statusMap.has(status)) {
+            statusMap.set(status, new Set<string>());
+          }
+
+          statusMap.get(status)!.add(displayValue);
         }
-        statusMap.get(status)!.add(displayValue);
       }
     }
   }
   perfTimer.stop("Query");
-  function parseTopLevelControl(raw: string) {
-    if (!raw) return "";
-    const cleaned = raw.toUpperCase().replace(/\s+/g, "");
-    const match = cleaned.match(/^([A-Z]{2,3}-\d+)(\(\d+\))?/);
-    if (!match) return cleaned;
-    return match[1] + (match[2] || "");
-  }
-  const controlSummaries: (ControlSummary | EnhancementSummary)[] = results.map((item) => {
+  const controlSummaries: ControlSummaryRow[] = results.map((item) => {
     if (item.ControlEnhancementId && item.ControlEnhancement) {
       const normalizedControlNumber = parseTopLevelControl(
         item.ControlEnhancement.enhancementIdentifier,
       );
-      const statusMap = controlToStatusMap.get(normalizedControlNumber);
-      const cciIds = cciMap.get(normalizedControlNumber) || [];
-      let cci = "";
-      let technicalAssessmentComments;
-      let technicalAssessmentStatus = "";
-      if (statusMap && statusMap.size > 0) {
-        technicalAssessmentStatus = evaluateStatuses(statusMap);
-        const displayLines = buildDisplayLines(statusMap);
 
-        technicalAssessmentComments = displayLines;
-
-        for (const cciId of cciIds) {
-          const cciVKeys: { vKey: string; status: string }[] = [];
-          for (const [status, vKeys] of statusMap) {
-            for (const vKey of vKeys) {
-              const originalVKey = vKey.split(" - ")[0];
-              if (stigLookup[originalVKey] && stigLookup[originalVKey].cciIds.has(cciId)) {
-                cciVKeys.push({ vKey: originalVKey, status });
-              }
-            }
-          }
-          if (cciVKeys.length === 0) {
-            continue;
-          }
-          const cciStatus = determineCciStatus(cciVKeys);
-          cci += `  ${cciId}: ${cciStatus || "Not Reviewed"}\n`;
-        }
-      } else {
-        technicalAssessmentComments = ["No applicable STIG mapping for this Control."];
-      }
-      const result = getEnhancementSummary(
-        item,
-        cci,
-        technicalAssessmentStatus,
-        technicalAssessmentComments,
+      const assessment = getTechnicalAssessment(
+        normalizedControlNumber,
+        controlToStatusMap,
+        cciMap,
+        stigLookup,
       );
-      return result;
+
+      return getEnhancementSummary(item, assessment);
     }
-    if (item.Control && item.Control.ControlNumber) {
+
+    if (item.Control?.ControlNumber) {
       const normalizedControlNumber = parseTopLevelControl(item.Control.ControlNumber.number);
-      const statusMap = controlToStatusMap.get(normalizedControlNumber);
-      const cciIds = cciMap.get(normalizedControlNumber) || [];
-      let cci = "";
-      let technicalAssessmentComments;
-      let technicalAssessmentStatus = "";
-      if (statusMap && statusMap.size > 0) {
-        technicalAssessmentStatus = evaluateStatuses(statusMap);
-        const displayLines = buildDisplayLines(statusMap);
-        technicalAssessmentComments = displayLines;
 
-        for (const cciId of cciIds) {
-          const cciVKeys: { vKey: string; status: string }[] = [];
-          for (const [status, vKeys] of statusMap) {
-            for (const vKey of vKeys) {
-              const originalVKey = vKey.split(" - ")[0];
-              if (stigLookup[originalVKey] && stigLookup[originalVKey].cciIds.has(cciId)) {
-                cciVKeys.push({ vKey: originalVKey, status });
-              }
-            }
-          }
-          if (cciVKeys.length === 0) {
-            continue;
-          }
-          const cciStatus = determineCciStatus(cciVKeys);
-          cci += `  ${cciId}: ${cciStatus || "Not Reviewed"}\n`;
-        }
-      } else {
-        technicalAssessmentComments = ["No applicable STIG mapping for this Control."];
-      }
-      const result = getStandardControlSummary(
-        item,
-        cci,
-        technicalAssessmentStatus,
-        technicalAssessmentComments,
+      const assessment = getTechnicalAssessment(
+        normalizedControlNumber,
+        controlToStatusMap,
+        cciMap,
+        stigLookup,
       );
-      return result;
+
+      return getStandardControlSummary(item, assessment);
     }
+
     throw new Error("ControlRecordItem without Control or Enhancement");
   });
+
   return controlSummaries;
 }
