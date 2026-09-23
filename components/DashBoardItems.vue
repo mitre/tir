@@ -18,9 +18,9 @@
         class="mx-auto mt-5 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-16 border-t border-gray-500 pt-10 sm:pt-16 lg:mx-0 lg:max-w-none lg:grid-cols-3"
       >
         <article>
-          <h1 class="text-lg font-bold text-gray-800 dark:text-white">{{ boundaryTerm }} Changes</h1>
+          <h1 class="text-lg font-bold text-gray-800 dark:text-white">Favorites</h1>
           <div class="flex max-w-xl flex-col items-start justify-between">
-            <DashBoarditemsBoundaryChanges />
+            <DashBoarditemsFavoritesTable />
           </div>
         </article>
         <article>
