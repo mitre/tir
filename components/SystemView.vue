@@ -20,6 +20,9 @@
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-800 dark:text-white">
                       Finding Status
                     </th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-800 dark:text-white">
+                      Severity Counts
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-400 dark:divide-gray-800">
@@ -37,7 +40,7 @@
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-300">
                       {{ system.stigsApplied.length }}
                     </td>
-                    <td class="flex whitespace-nowrap px-3 py-4 text-sm text-gray-800 dark:text-gray-300">
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-800 dark:text-gray-300">
                       <div class="flex">
                         <p class="text-green-500">{{ system.findings.NotAFinding }}</p>
                         /
@@ -46,6 +49,33 @@
                         <p class="text-sky-500">{{ system.findings.Not_Applicable }}</p>
                         /
                         <p class="text-amber-500">{{ system.findings.Not_Reviewed }}</p>
+                        <UTooltip
+                          v-if="system.override"
+                          :ui="{
+                            base: 'h-full',
+                          }"
+                          class="ml-4"
+                          :popper="{ placement: 'right' }"
+                        >
+                          <InformationCircleIcon class="h-5 w-5" />
+                          <template #text>
+                            <div>
+                              <p>This displays raw data.</p>
+                              <p>Overrides are not reflected.</p>
+                            </div>
+                          </template>
+                        </UTooltip>
+                      </div>
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-800 dark:text-gray-300">
+                      <div class="flex">
+                        <p class="text-red-500">{{ system.severities.catI }}</p>
+                        /
+                        <p class="text-orange-600">{{ system.severities.catII }}</p>
+                        /
+                        <p class="text-yellow-500">{{ system.severities.catIII }}</p>
+                        /
+                        <p class="text-grey-500">{{ system.severities.notReviewed }}</p>
                         <UTooltip
                           v-if="system.override"
                           :ui="{
