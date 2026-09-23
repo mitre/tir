@@ -111,7 +111,7 @@ export async function userCheck(
 }
 
 export async function requireBoundaryEditor(event: any, boundaryId: number) {
-  const checkResult = await userCheck(event, undefined, boundaryId, undefined);
+  const checkResult = await userCheck(event, undefined, boundaryId);
 
   const boundary = await Boundary.findByPk(boundaryId);
   if (!boundary) {
