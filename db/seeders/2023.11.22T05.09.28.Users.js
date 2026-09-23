@@ -40,6 +40,15 @@ const users = [
 ];
 export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().bulkInsert("Users", users);
+
+  if (sequelize.getDialect() === "postgres") {
+    await sequelize.query(`
+      SELECT setval(
+        pg_get_serial_sequence('"Users"', 'id'),
+        (SELECT MAX(id) FROM "Users")
+      );
+    `);
+  }
 };
 export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().bulkDelete("Users", { id: users.map((s) => s.id) });

@@ -25,19 +25,19 @@ StigAlias.init(
       primaryKey: true,
     },
     alias: {
-      type: DataTypes.STRING(64),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     identifier: {
-      type: DataTypes.STRING(64),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

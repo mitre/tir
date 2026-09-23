@@ -32,35 +32,35 @@ export class Session extends Model<InferAttributes<Session>, InferCreationAttrib
 Session.init(
   {
     id: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       primaryKey: true,
     },
     expiresAt: {
-      type: DataTypes.STRING, // Store as ISO string
+      type: DataTypes.TEXT, // Store as ISO string
       allowNull: false,
     },
     authMethod: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     ipAddress: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     userAgent: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     loginTime: {
-      type: DataTypes.STRING, // Store as ISO string
+      type: DataTypes.TEXT, // Store as ISO string
       allowNull: true,
     },
     lastUpdate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

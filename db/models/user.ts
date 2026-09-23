@@ -56,28 +56,28 @@ User.init(
       autoIncrement: true,
     },
     firstName: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastName: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     email: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
     },
     password: {
-      type: DataTypes.STRING(128),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     organization: {
-      type: DataTypes.STRING(64),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     passwordChangedAt: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     forcePasswordChange: {
@@ -91,24 +91,24 @@ User.init(
       defaultValue: 0,
     },
     lastLogin: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     creationMethod: {
-      type: DataTypes.STRING(16),
+      type: DataTypes.TEXT,
       allowNull: false,
       defaultValue: "local",
     },
     salt: {
-      type: DataTypes.STRING(16),
+      type: DataTypes.TEXT,
       allowNull: true,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

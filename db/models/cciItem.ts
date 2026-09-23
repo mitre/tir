@@ -47,7 +47,7 @@ CciItem.init(
       autoIncrement: true,
     },
     cciId: {
-      type: DataTypes.STRING(10),
+      type: DataTypes.TEXT,
       allowNull: false,
       unique: true,
     },
@@ -56,15 +56,15 @@ CciItem.init(
       allowNull: false,
     },
     publishdate: {
-      type: DataTypes.STRING(25),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     contributor: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     definition: {
-      type: DataTypes.STRING(1024),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     typePolicy: {
@@ -76,11 +76,11 @@ CciItem.init(
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

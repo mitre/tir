@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
-import { sequelize } from "../umzug.js";
 
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().addColumn("Assessments", "succeededByAssessmentId", {
     type: DataTypes.INTEGER,
     allowNull: true,
@@ -14,6 +13,6 @@ export const up = async () => {
   });
 };
 
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().removeColumn("Assessments", "succeededByAssessmentId");
 };
