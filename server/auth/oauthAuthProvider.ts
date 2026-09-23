@@ -1,4 +1,4 @@
-import { H3Event, H3Error } from "h3";
+import { H3Event, H3Error, getQuery } from "h3";
 import { AuthProvider, assertEmailVerified } from "./authProvider";
 import type { TestLoginResult } from "./authProvider";
 import type { OAuthProviderConfig, OAuthProviderType } from "~/types/auth";
@@ -92,11 +92,9 @@ export class OAuthAuthProvider extends AuthProvider {
     const { state } = event.context.auth || {};
     if (!state) throw new Error("Missing state in OAuth callback.");
 
-    const url = new URL(
-      `${event.node.req.headers["x-forwarded-proto"] || "http"}://${event.node.req.headers.host}${event.node.req.url}`,
-    );
-    const code = url.searchParams.get("code");
-    const returnedState = url.searchParams.get("state");
+    const query = getQuery(event);
+    const code = typeof query.code === "string" ? query.code : null;
+    const returnedState = typeof query.state === "string" ? query.state : null;
 
     if (!code) throw new Error("No authorization code in OAuth callback.");
     if (returnedState !== state) throw new Error("State mismatch in OAuth callback.");

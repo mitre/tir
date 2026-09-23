@@ -154,10 +154,11 @@ export class OIDCAuthProvider extends AuthProvider {
     if (!nonce) throw new Error("Missing nonce");
     if (!codeVerifier) throw new Error("Missing PKCE code verifier");
 
-    const fullUrl = `${event.node.req.headers["x-forwarded-proto"] || "http"}://${
-      event.node.req.headers.host
-    }${event.node.req.url}`;
-    const callbackUrl = new URL(fullUrl);
+    // openid-client derives redirect_uri from this URL, so build it from the configured
+    // callback rather than the Host and X-Forwarded-Proto headers.
+    if (!config.callback) throw new Error("OIDC provider has no callback URL configured.");
+    const callbackUrl = new URL(config.callback);
+    callbackUrl.search = new URL(event.node.req.url ?? "", "http://localhost").search;
 
     let tokens;
     try {
