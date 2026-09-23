@@ -25,68 +25,89 @@ export type ProcessLibraryResults = {
   xmlsExtracted: number;
 };
 
+type AssessmentMigration = {
+  system: System;
+  assessment: Assessment;
+  oldStig: Stig | null;
+  newStig: Stig | null;
+};
+
+async function* walkCurrentAssessments(
+  boundaryId: number,
+  newStigLibraryId: number,
+): AsyncGenerator<AssessmentMigration> {
+  const boundarySystems = await System.findAll({ where: { BoundaryId: boundaryId } });
+  for (const system of boundarySystems) {
+    const currentAssessments = await Assessment.findAll({
+      where: {
+        SystemId: system.id,
+        succeededByAssessmentId: { [Op.is]: null },
+      },
+    });
+    for (const assessment of currentAssessments) {
+      const oldStig = await Stig.findOne({ where: { id: assessment.StigId } });
+      if (!oldStig) {
+        yield { system, assessment, oldStig, newStig: null };
+        continue;
+      }
+      const newStig = await Stig.findOne({
+        where: { stigid: oldStig.stigid },
+        include: [
+          {
+            model: StigLibrary,
+            where: { id: newStigLibraryId },
+            required: true,
+          },
+        ],
+      });
+      yield { system, assessment, oldStig, newStig };
+    }
+  }
+}
+
 export const migrateBoundary = async (
   boundaryId: number,
   newStigLibraryId: number,
 ): Promise<{ results: string }> => {
   try {
-    const boundarySystems = await System.findAll({ where: { BoundaryId: boundaryId } });
-    for (const system of boundarySystems) {
-      const currentAssessments = await Assessment.findAll({
-        where: {
-          SystemId: system.id,
-          succeededByAssessmentId: { [Op.is]: null },
-        },
+    for await (const { system, assessment, oldStig, newStig } of walkCurrentAssessments(
+      boundaryId,
+      newStigLibraryId,
+    )) {
+      if (oldStig) {
+        await system.removeStig(oldStig);
+      }
+      if (!newStig) {
+        continue;
+      }
+
+      await system.addStig(newStig);
+
+      const newAssessment = await createBlankAssessment(assessment.SystemId, newStig.id);
+      await createEvaluation(boundaryId, newStig.id);
+      assessment.succeededByAssessmentId = newAssessment.id;
+      await assessment.save();
+
+      const oldChecks = await AssessmentItem.findAll({
+        where: { AssessmentId: assessment.id },
+        include: [{ model: StigData, attributes: ["vuln_num", "rule_id"] }],
       });
-      for (const assessment of currentAssessments) {
-        const oldStig = await Stig.findOne({ where: { id: assessment.StigId } });
+      const newChecks = await AssessmentItem.findAll({
+        where: { AssessmentId: newAssessment.id },
+        include: [{ model: StigData, attributes: ["vuln_num", "rule_id"] }],
+      });
 
-        const newStig = await Stig.findOne({
-          where: { stigid: oldStig?.stigid },
-          include: [
-            {
-              model: StigLibrary,
-              where: { id: newStigLibraryId },
-              required: true,
-            },
-          ],
-        });
+      for (const check of newChecks) {
+        const matchingCheck = findMatch(check, oldChecks);
 
-        if (oldStig) {
-          await system.removeStig(oldStig);
-        }
-        if (!newStig) {
-          continue;
-        }
-
-        await system.addStig(newStig);
-
-        const newAssessment = await createBlankAssessment(assessment.SystemId, newStig.id);
-        await createEvaluation(boundaryId, newStig.id);
-        assessment.succeededByAssessmentId = newAssessment.id;
-        await assessment.save();
-
-        const oldChecks = await AssessmentItem.findAll({
-          where: { AssessmentId: assessment.id },
-          include: [{ model: StigData, attributes: ["vuln_num", "rule_id"] }],
-        });
-        const newChecks = await AssessmentItem.findAll({
-          where: { AssessmentId: newAssessment.id },
-          include: [{ model: StigData, attributes: ["vuln_num", "rule_id"] }],
-        });
-
-        for (const check of newChecks) {
-          const matchingCheck = findMatch(check, oldChecks);
-
-          if (matchingCheck) {
-            check.status = matchingCheck?.status;
-            check.comments = matchingCheck?.comments;
-            check.finding_details = matchingCheck?.finding_details;
-            check.severityOverride = matchingCheck?.severityOverride;
-            check.severityOverrideJustification = matchingCheck?.severityOverrideJustification;
-            check.AssessmentId = newAssessment.id;
-            await check.save();
-          }
+        if (matchingCheck) {
+          check.status = matchingCheck?.status;
+          check.comments = matchingCheck?.comments;
+          check.finding_details = matchingCheck?.finding_details;
+          check.severityOverride = matchingCheck?.severityOverride;
+          check.severityOverrideJustification = matchingCheck?.severityOverrideJustification;
+          check.AssessmentId = newAssessment.id;
+          await check.save();
         }
       }
     }
@@ -104,37 +125,14 @@ export const checkBoundary = async (
   boundaryId: number,
   newStigLibraryId: number,
 ): Promise<{ results: { stigid: string; version: string }[] }> => {
-  console.log("Check Boundary Starting...");
   try {
-    const reviewStigs = [];
-    const boundarySystems = await System.findAll({ where: { BoundaryId: boundaryId } });
-    for (const system of boundarySystems) {
-      const currentAssessments = await Assessment.findAll({
-        where: {
-          SystemId: system.id,
-          succeededByAssessmentId: { [Op.is]: null },
-        },
+    const reviewStigs: { stigid: string; version: string }[] = [];
+    for await (const { oldStig, newStig } of walkCurrentAssessments(boundaryId, newStigLibraryId)) {
+      if (newStig || !oldStig) continue;
+      reviewStigs.push({
+        stigid: oldStig.stigid,
+        version: `v${oldStig.version}r${oldStig.stigRelease}`,
       });
-      for (const assessment of currentAssessments) {
-        const oldStig = await Stig.findOne({ where: { id: assessment.StigId } });
-        const newStig = await Stig.findOne({
-          where: { stigid: oldStig?.stigid },
-          include: [
-            {
-              model: StigLibrary,
-              where: { id: newStigLibraryId },
-              required: true,
-            },
-          ],
-        });
-        if (!newStig && oldStig) {
-          reviewStigs.push({
-            stigid: oldStig.stigid,
-            version: `v${oldStig.version}r${oldStig.stigRelease}`,
-          });
-          continue;
-        }
-      }
     }
     return { results: reviewStigs };
   } catch (error) {
