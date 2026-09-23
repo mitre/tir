@@ -84,6 +84,7 @@ export interface OIDCProviderConfig {
   groupClaimType: OIDCGroupClaimType;
   groupClaimPath: string;
   sslInsecure: boolean;
+  requireVerifiedEmail: boolean;
 }
 
 export const OIDC_PROVIDER_SCHEMA = {
@@ -97,6 +98,7 @@ export const OIDC_PROVIDER_SCHEMA = {
   groupClaimType: { type: "str", default: "scope" },
   groupClaimPath: { type: "str", default: "" },
   sslInsecure: { type: "bool", default: false },
+  requireVerifiedEmail: { type: "bool", default: true },
 } as const;
 
 export type OAuthProviderType = "github" | "gitlab" | "bitbucket" | "custom";
@@ -115,6 +117,7 @@ export interface OAuthProviderConfig {
   tokenUrl: string;
   userInfoUrl: string;
   groupClaimPath: string;
+  requireVerifiedEmail: boolean;
 }
 
 export const OAUTH_PROVIDER_SCHEMA = {
@@ -130,6 +133,7 @@ export const OAUTH_PROVIDER_SCHEMA = {
   tokenUrl: { type: "str", default: "" },
   userInfoUrl: { type: "str", default: "" },
   groupClaimPath: { type: "str", default: "" },
+  requireVerifiedEmail: { type: "bool", default: true },
 } as const;
 
 export type AuthConfig = {

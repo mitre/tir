@@ -117,6 +117,25 @@
           </p>
         </div>
       </div>
+      <div
+        class="flex items-start gap-4"
+      >
+        <label
+          :for="`oidc-${provider.id}-require-verified-email`"
+          class="w-48 pt-1 text-left text-sm font-medium"
+          >Require Verified Email</label
+        >
+        <div class="flex flex-1 flex-col gap-1">
+          <UISlideSwitch
+            :id="`oidc-${provider.id}-require-verified-email`"
+            v-model="provider.requireVerifiedEmail"
+          />
+          <p class="text-xs text-gray-400">
+            Rejects sign-in when the provider reports the email as unverified. Turn off only for a provider
+            that never verifies emails, since an unverified address can match an existing TIR account.
+          </p>
+        </div>
+      </div>
       <div class="flex items-start gap-4">
         <label
           :for="`oidc-${provider.id}-ssl-insecure`"

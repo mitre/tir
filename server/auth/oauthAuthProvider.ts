@@ -1,5 +1,5 @@
 import { H3Event, H3Error } from "h3";
-import { AuthProvider } from "./authProvider";
+import { AuthProvider, assertEmailVerified } from "./authProvider";
 import type { TestLoginResult } from "./authProvider";
 import type { OAuthProviderConfig, OAuthProviderType } from "~/types/auth";
 
@@ -121,6 +121,7 @@ export class OAuthAuthProvider extends AuthProvider {
       const token = await this.exchangeToken(code, "json");
       const userInfo = await this.fetchUserInfo(this.config.userInfoUrl, token);
       profile = extractCustomProfile(userInfo);
+      assertEmailVerified(userInfo, this.config.requireVerifiedEmail);
       userGroups = extractClaimGroups(userInfo, this.config.groupClaimPath);
     }
 

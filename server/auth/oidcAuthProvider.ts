@@ -2,7 +2,7 @@ import { webcrypto } from "crypto";
 import https from "node:https";
 import http from "node:http";
 import { H3Error } from "h3";
-import { AuthProvider } from "./authProvider";
+import { AuthProvider, assertEmailVerified } from "./authProvider";
 import type { TestLoginResult } from "./authProvider";
 import { GroupClaimExtractor } from "./groupClaimExtractor";
 import type { AuthEvent, OIDCProviderConfig } from "~/types/auth";
@@ -206,6 +206,7 @@ export class OIDCAuthProvider extends AuthProvider {
     const lastName = String(idTokenClaims.family_name || "Unknown");
 
     if (!email) throw new Error("ID token is missing an email claim.");
+    assertEmailVerified(idTokenClaims, config.requireVerifiedEmail);
 
     return { email, firstName, lastName, groups, userRoleId };
   }

@@ -253,6 +253,7 @@ function addOIDC() {
     groupClaimType: "claim",
     groupClaimPath: "groups",
     sslInsecure: false,
+    requireVerifiedEmail: true,
   });
 }
 
@@ -281,6 +282,7 @@ function addOAuth() {
     tokenUrl: "",
     userInfoUrl: "",
     groupClaimPath: "",
+    requireVerifiedEmail: true,
   });
 }
 

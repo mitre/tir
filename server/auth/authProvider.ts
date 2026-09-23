@@ -15,6 +15,15 @@ export interface TestLoginResult {
 
 const sessionService = new SessionService();
 
+/** Rejects a profile whose provider reports email_verified as anything but true. A missing claim is allowed. */
+export function assertEmailVerified(claims: Record<string, any>, required: boolean): void {
+  if (!required) return;
+  const verified = claims?.email_verified;
+  if (verified === undefined || verified === null) return;
+  if (verified === true || verified === "true") return;
+  throw new Error("The identity provider has not verified this email address.");
+}
+
 export abstract class AuthProvider {
   abstract init(): Promise<void>;
   abstract authenticate(event: AuthEvent, credentials?: any): Promise<any>;
