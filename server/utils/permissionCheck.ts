@@ -109,3 +109,32 @@ export async function userCheck(
   const checkResults = { user, UserRoleId: user?.UserRoleId, BoundaryRoleId, TierRoleId };
   return checkResults;
 }
+
+export async function requireBoundaryEditor(event: any, boundaryId: number) {
+  const checkResult = await userCheck(event, undefined, boundaryId, undefined);
+
+  const boundary = await Boundary.findByPk(boundaryId);
+  if (!boundary) {
+    logger.error(`No Boundary found for id: ${boundaryId}.`);
+    throw createError({
+      statusCode: 404,
+      statusMessage: `No Boundary found for id: ${boundaryId}.`,
+    });
+  }
+
+  const isEditor =
+    checkResult.BoundaryRoleId === 1 ||
+    checkResult.BoundaryRoleId === 2 ||
+    checkResult.UserRoleId === 1;
+  if (!isEditor) {
+    logger.error(
+      `${checkResult.user?.email} must be an Admin, Owner, or Co-Owner of ${boundary.name} to Edit.`,
+    );
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Must be an Admin, Owner, or Co-Owner of this Enclave to Edit.",
+    });
+  }
+
+  return { checkResult, boundary };
+}
