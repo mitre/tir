@@ -111,7 +111,7 @@ export async function userCheck(
 }
 
 export async function requireAdmin(event: any) {
-  const checkResult = await userCheck(event, undefined, undefined, undefined);
+  const checkResult = await userCheck(event);
   if (checkResult.UserRoleId !== 1) {
     throw createError({ statusCode: 403, statusMessage: "Administrator role required." });
   }
