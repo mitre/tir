@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
 
   const ignoreOverrides = query.IgnoreOverrides === "true";
 
-  if (checkResult.BoundaryRoleId || query.BoundaryId !== null) {
+  if (checkResult.BoundaryRoleId) {
     const system = await System.findAll({ where: { BoundaryId: query.BoundaryId as number } });
     // Get Checklist Array
     const checklists = await convertToCKL3(system, query.SingleStigPerCkl as string, ignoreOverrides);
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
       // using ckl.target_data.host_name / as folder containing each file to be zipped
       if (query.groupValue === "host") {
         zip.addFile(
-          ckl.target_data.host_name + "/" + ckl.title + ".cklb",
+          (ckl.target_data.host_name || ckl.target_data.tir_name) + "/" + ckl.title + ".cklb",
           Buffer.from(pretty, "utf8"),
           "Entering checklist v3 for " + ckl.title,
         );
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     return willSendThis;
   } else {
     throw createError({
-      statusCode: 401,
+      statusCode: 403,
       statusMessage: "Insufficient Permissions.",
     });
   }
