@@ -1,5 +1,4 @@
 import { DataTypes } from "sequelize";
-import { sequelize } from "../umzug.js";
 
 const NessusPluginTypes = {
   Combined: "combined",
@@ -8,7 +7,7 @@ const NessusPluginTypes = {
   Summary: "summary",
 };
 
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("NessusPlugins", {
     id: {
       type: DataTypes.INTEGER,
@@ -21,22 +20,22 @@ export const up = async () => {
       allowNull: false,
     },
     pluginPublicationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     pluginModificationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     pluginName: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     fname: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     scriptVersion: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     severity: {
@@ -62,7 +61,7 @@ export const up = async () => {
       allowNull: false,
     },
     synopsis: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     NessusPluginFamilyId: {
@@ -76,11 +75,11 @@ export const up = async () => {
       onUpdate: "CASCADE",
     },
     lastUpdate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
@@ -108,7 +107,7 @@ export const up = async () => {
   });
 };
 
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("Cve_NessusPlugins");
   await sequelize.getQueryInterface().dropTable("NessusPlugins");
 };

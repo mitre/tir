@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("EvaluationItems", {
     id: {
       type: DataTypes.INTEGER,
@@ -14,10 +13,10 @@ export const up = async () => {
       allowNull: false,
     },
     finding_details: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     comments: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     severity_override: {
       type: DataTypes.ENUM,
@@ -25,25 +24,25 @@ export const up = async () => {
       allowNull: true,
     },
     severity_justification: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
     },
     Office_Org: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     Resources_Required: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     Scheduled_Completion_Date: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
     },
     Milestone_Changes: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     Poam_Comments: {
-      type: DataTypes.STRING(1024),
+      type: DataTypes.TEXT,
     },
     Mitigations: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     Severity: {
       type: DataTypes.ENUM,
@@ -66,7 +65,7 @@ export const up = async () => {
       allowNull: true,
     },
     Impact_Description: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     Residual_Risk_Level: {
       type: DataTypes.ENUM,
@@ -74,14 +73,14 @@ export const up = async () => {
       allowNull: true,
     },
     Recommendations: {
-      type: DataTypes.STRING(256),
+      type: DataTypes.TEXT,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     EvaluationId: {
@@ -111,19 +110,19 @@ export const up = async () => {
       allowNull: false,
     },
     item: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     completion_date: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     EvaluationItemId: {
@@ -160,7 +159,7 @@ export const up = async () => {
     },
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().dropTable("Milestones");
   await sequelize.getQueryInterface().dropTable("EvaluationItems");
   await sequelize.getQueryInterface().dropTable("EvaluationItem_Milestones");

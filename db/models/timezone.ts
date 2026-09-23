@@ -21,14 +21,14 @@ Timezone.init(
       type: DataTypes.INTEGER,
       primaryKey: true,
     },
-    name: DataTypes.STRING(64),
-    abbreviation: DataTypes.STRING(5),
+    name: DataTypes.TEXT,
+    abbreviation: DataTypes.TEXT,
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   },

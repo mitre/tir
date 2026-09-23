@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 
-import { sequelize, DATETIME_LENGTH } from "../umzug.js";
-export const up = async () => {
+export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("Classifications", {
     id: {
       type: DataTypes.INTEGER,
@@ -10,23 +9,23 @@ export const up = async () => {
       autoIncrement: true,
     },
     name: {
-      type: DataTypes.STRING(50),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     abbreviation: {
-      type: DataTypes.STRING(5),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     color: {
-      type: DataTypes.STRING(6),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     lastUpdate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     creationDate: {
-      type: DataTypes.STRING(DATETIME_LENGTH),
+      type: DataTypes.TEXT,
       allowNull: false,
     },
   });
@@ -40,24 +39,24 @@ export const up = async () => {
     onDelete: "RESTRICT",
   });
   await sequelize.getQueryInterface().addColumn("Boundaries", "caveats", {
-    type: DataTypes.STRING(50),
+    type: DataTypes.TEXT,
     allowNull: true,
   });
 };
-export const down = async () => {
+export const down = async ({ context: sequelize }) => {
   if (sequelize.getDialect() !== "sqlite") {
     await sequelize.getQueryInterface().removeColumn("Boundaries", "ClassificationId");
     await sequelize.getQueryInterface().removeColumn("Boundaries", "caveats");
   } else {
     await sequelize.query(
-      "CREATE TABLE `Boundaries_backup` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` VARCHAR(255) NOT NULL UNIQUE, `lastUpdate` VARCHAR(29) NOT NULL, `creationDate` VARCHAR(29) NOT NULL, `ownerId` INTEGER REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `TierId` INTEGER NOT NULL REFERENCES `Tiers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `StigLibraryId` INTEGER REFERENCES `StigLibraries` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE, `PolicyDocumentId` INTEGER NOT NULL REFERENCES `PolicyDocuments` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE);",
+      "CREATE TABLE `Boundaries_backup` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL UNIQUE, `lastUpdate` TEXT NOT NULL, `creationDate` TEXT NOT NULL, `ownerId` INTEGER REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `TierId` INTEGER NOT NULL REFERENCES `Tiers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `StigLibraryId` INTEGER REFERENCES `StigLibraries` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE, `PolicyDocumentId` INTEGER NOT NULL REFERENCES `PolicyDocuments` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE);",
     );
     await sequelize.query(
       "INSERT INTO `Boundaries_backup` SELECT `id`, `name`, `lastUpdate`, `creationDate`, `ownerId`, `TierId`, `StigLibraryId`, `PolicyDocumentId` FROM `Boundaries`;",
     );
     await sequelize.query("DROP TABLE `Boundaries`;");
     await sequelize.query(
-      "CREATE TABLE `Boundaries` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` VARCHAR(255) NOT NULL UNIQUE, `lastUpdate` VARCHAR(29) NOT NULL, `creationDate` VARCHAR(29) NOT NULL, `ownerId` INTEGER REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `TierId` INTEGER NOT NULL REFERENCES `Tiers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `StigLibraryId` INTEGER REFERENCES `StigLibraries` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE, `PolicyDocumentId` INTEGER NOT NULL REFERENCES `PolicyDocuments` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE);",
+      "CREATE TABLE `Boundaries` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL UNIQUE, `lastUpdate` TEXT NOT NULL, `creationDate` TEXT NOT NULL, `ownerId` INTEGER REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, `TierId` INTEGER NOT NULL REFERENCES `Tiers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, `StigLibraryId` INTEGER REFERENCES `StigLibraries` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE, `PolicyDocumentId` INTEGER NOT NULL REFERENCES `PolicyDocuments` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE);",
     );
     await sequelize.query(
       "INSERT INTO `Boundaries` SELECT `id`, `name`, `lastUpdate`, `creationDate`, `ownerId`, `TierId`, `StigLibraryId`, `PolicyDocumentId` FROM `Boundaries_backup`;",
