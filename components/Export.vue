@@ -529,6 +529,19 @@ const checkedSctmStatus = ref<SctmStatus>("eMASS");
 
 const { boundaryId, open, boundaryName } = props;
 
+async function downloadBlob(url: string, filename: string, init?: RequestInit) {
+  const response = await fetch(url, init);
+  const blob = await response.blob();
+  const objectUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(objectUrl);
+}
+
 const poamDownload = async () => {
   const bodyData = {
     BoundaryId: boundaryId,
@@ -673,23 +686,7 @@ const nessusDownload = async () => {
   const queryParams = new URLSearchParams();
   queryParams.append("BoundaryId", boundaryId);
   queryParams.append("selectedHeaders", selectedHeaders);
-  await fetch(`/api/boundaries/nessus?${queryParams}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  })
-    .then((response) => response.blob())
-    .then((blob) => {
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${boundaryName}_NessusExport.csv`);
-
-      document.body.appendChild(link);
-
-      link.click();
-
-      document.body.removeChild(link);
-    });
+  await downloadBlob(`/api/boundaries/nessus?${queryParams}`, `${boundaryName}_NessusExport.csv`);
 };
 
 const ppsmDownload = async () => {
@@ -698,44 +695,13 @@ const ppsmDownload = async () => {
   const queryParams = new URLSearchParams();
   queryParams.append("BoundaryId", boundaryId);
   queryParams.append("userEmail", currentUser.value.email);
-  await fetch(`/api/boundaries/ppsm?${queryParams}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  })
-    .then((response) => response.blob())
-    .then((blob) => {
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${boundaryName}_ppsm.xlsx`);
-
-      document.body.appendChild(link);
-
-      link.click();
-
-      document.body.removeChild(link);
-    });
+  await downloadBlob(`/api/boundaries/ppsm?${queryParams}`, `${boundaryName}_ppsm.xlsx`);
 };
 
 const hdfDownload = async () => {
   const queryParams = new URLSearchParams();
   queryParams.append("BoundaryId", boundaryId);
-  await fetch(`/api/export/hdf?${queryParams}`, {
-    method: "GET",
-  })
-    .then((response) => response.blob())
-    .then((blob) => {
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${boundaryName}-HDF.json`);
-
-      document.body.appendChild(link);
-
-      link.click();
-
-      document.body.removeChild(link);
-    });
+  await downloadBlob(`/api/export/hdf?${queryParams}`, `${boundaryName}-HDF.json`);
 };
 
 const softwareListDownload = async () => {
@@ -743,23 +709,7 @@ const softwareListDownload = async () => {
   const queryParams = new URLSearchParams();
   queryParams.append("BoundaryId", boundaryId);
   queryParams.append("userEmail", currentUser.value.email);
-  await fetch(`/api/export/sw?${queryParams}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  })
-    .then((response) => response.blob())
-    .then((blob) => {
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${boundaryName}_SW_HW_Export.xlsx`);
-
-      document.body.appendChild(link);
-
-      link.click();
-
-      document.body.removeChild(link);
-    });
+  await downloadBlob(`/api/export/sw?${queryParams}`, `${boundaryName}_SW_HW_Export.xlsx`);
 };
 
 const sctmDownload = async () => {
