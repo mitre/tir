@@ -7,6 +7,7 @@ import {
   type CreationOptional,
   type ForeignKey,
   type NonAttribute,
+  Association,
 } from "sequelize";
 import type { NessusPlugin } from "./nessusPlugin";
 import type { NessusReport } from "./nessusReport";
@@ -49,6 +50,11 @@ export class NessusReportItem extends Model<
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
   declare NessusReport?: NonAttribute<NessusReport>;
+  declare NessusPlugin?: NonAttribute<NessusPlugin>;
+
+  declare static associations: {
+    NessusPlugin: Association<NessusReportItem, NessusPlugin>;
+  };
 }
 
 NessusReportItem.init(
