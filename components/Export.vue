@@ -608,7 +608,7 @@ const cklDownload = async () => {
   if (singleStigPerChecklist.value) {
     queryParams.append("SingleStigPerCkl", "true");
   }
-  queryParams.append("IgnoreOverrides", ignoreOverrides.value);
+  queryParams.append("IgnoreOverrides", String(ignoreSTIGStatusOverrides.value));
   
   if (checklistVersion.value === "cklb") {
     await fetch(`/api/export/cklv3?${queryParams}`, {
