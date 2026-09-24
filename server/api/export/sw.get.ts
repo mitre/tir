@@ -352,7 +352,7 @@ export default defineEventHandler(async (event) => {
     setResponseHeader(event, "Content-Type", "application/octet-stream");
     logger.info({
       service: "Boundary",
-      message: `${body.userEmail} Downloaded Software Hardware Data for boundary ID: ${body.BoundaryId}`,
+      message: `${checkResult.user.email} Downloaded Software Hardware Data for boundary ID: ${body.BoundaryId}`,
     });
     return sendStream(event, stream);
   }
