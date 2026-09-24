@@ -30,5 +30,4 @@ tmp
 /data/
 
 # internal test
-test
 server/api/localtest
