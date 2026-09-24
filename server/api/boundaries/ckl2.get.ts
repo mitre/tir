@@ -80,7 +80,7 @@ export default defineEventHandler(async (event) => {
   for (const system of boundary.Systems ?? []) {
     let systemPath = '';
     if (query.groupValue === "host") {
-      systemPath = path.join(dirPath, system.hostName);
+      systemPath = path.join(dirPath, system.hostName || system.name);
     }
     else if(query.groupValue === "system") {
       systemPath = path.join(dirPath, system.name);
