@@ -310,7 +310,7 @@ const { data: currentUser, error: userError } = useAsyncData(
 const { data: currentAlert, refresh: refreshAlerts } = useAsyncData(
   "currentAlert",
   async () => {
-    if (!currentUser.value?.id) return null;
+    if (!currentUser.value?.id) return [];
     return await $fetch("/api/config/alert", {
       method: "GET",
       query: { userId: currentUser.value.id },
@@ -325,7 +325,7 @@ const { data: currentAbout } = useAsyncData("currentAbout", async () => {
     return await $fetch("/api/config/about", { method: "GET" });
   } catch (error) {
     console.error("Failed to fetch about data:", error);
-    return null; // Return null on error
+    return {}; // Avoid returning null (triggers Nuxt useAsyncData warning)
   }
 });
 

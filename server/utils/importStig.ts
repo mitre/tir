@@ -2,7 +2,7 @@ import * as fs from "fs";
 import { readFileSync } from "fs";
 import path from "path";
 import { parseStringPromise } from "xml2js";
-import { Transaction, UniqueConstraintError } from "sequelize";
+import { UniqueConstraintError } from "sequelize";
 import { Stig, StigIdent, StigLibrary, StigReference, StigResponsibility } from "../../db/models";
 
 export type ParseStigResults = {
@@ -39,6 +39,12 @@ export async function parseXmlStig(
       cause: error,
     });
   }
+
+  if (!jsonObj?.Benchmark) {
+    logger.debug(`Skipping non-STIG XML (no Benchmark element): ${path.basename(xmlFilePath)}`);
+    return parseResults;
+  }
+
   const stigImportTransaction = await sequelize.transaction();
 
   const [newStig, created] = await Stig.findOrBuild({
@@ -54,7 +60,6 @@ export async function parseXmlStig(
       try {
         await newStig.save({ transaction: stigImportTransaction });
       } catch (error) {
-        console.log("Error saving the model instance:", error);
         logger.error(`Error saving the model instance`, { error });
       }
     }
@@ -65,7 +70,6 @@ export async function parseXmlStig(
     if (!Array.isArray(groupArray)) {
       groupArray = [groupArray];
     }
-    console.log("Starting Group processing for :", newStig.dataValues.title);
     const perfTimer = new PerfTimer();
     // perfTimer.enable();
 
@@ -85,23 +89,22 @@ export async function parseXmlStig(
       );
     }
 
-    stigImportTransaction.commit();
+    await stigImportTransaction.commit();
 
     perfTimer.globalSummaryPrint();
     fs.rm(xmlFilePath, (err) => {
       if (err) {
-        console.log(`Error deleting file: ${err}`);
+        logger.debug(`Error deleting file: ${err}`);
       }
     });
 
-    return { error: false, new: true };
+    return parseResults;
   } catch (error) {
-    const returnStatus = { error: true, new: true };
-    stigImportTransaction.rollback();
+    await stigImportTransaction.rollback();
 
     if (error instanceof UniqueConstraintError) {
       error.errors.forEach((element) => {
-        console.log(`[ERROR] ${newStig.dataValues.filename} ${element.message}`);
+        logger.debug(`[duplicate] ${newStig.dataValues.filename} ${element.message}`);
       });
       const errorKey = error.errors?.[0]?.path;
       const errorValue = error.errors?.[0]?.value;
@@ -112,14 +115,15 @@ export async function parseXmlStig(
         });
 
         if (stig) {
-          console.log(`Found unique match on ${[errorKey]}`);
-          console.log(`Adding stig: ${stig.dataValues.id} to library: ${stigLibrary.id}`);
-
-          returnStatus.new = false;
+          parseResults.newStig = false;
         }
       }
     } else {
-      console.log(error);
+      parseResults.errorCheckCount++;
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error(`Failed to import STIG: ${newStig.dataValues.filename} - ${message}`, {
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
 
     const errorLibraryDirName = "ErrorLibraryID" + stigLibrary.id.toString(10);
@@ -130,11 +134,11 @@ export async function parseXmlStig(
     const fullNameDestination = path.join(errorLibraryDirPath, path.basename(xmlFilePath));
     fs.rename(xmlFilePath, fullNameDestination, (err) => {
       if (err) {
-        console.log(`Error moving file: ${err}`);
+        logger.error(`Error moving file: ${err}`);
       }
     });
 
-    return returnStatus;
+    return parseResults;
   }
 }
 
@@ -204,10 +208,9 @@ const populateStigModel = (stigInstance: Stig, jsonObj: any): void => {
     jsonObj.Benchmark["plain-text"],
     "release-info",
   );
-  stigInstance.dataValues.stigRelease = parseInt(
-    stigInstance.dataValues.plain_text__release_info.match(/^Release: \d{1,2}/)[0].match(/\d+/)[0],
-    10,
-  );
+  const releaseInfo = stigInstance.dataValues.plain_text__release_info ?? "";
+  const releaseMatch = releaseInfo.match(/Release:\s*(\d+)/);
+  stigInstance.dataValues.stigRelease = releaseMatch ? Number.parseInt(releaseMatch[1], 10) : 0;
   stigInstance.dataValues.plain_text__generator = getPlainTextById(
     jsonObj.Benchmark["plain-text"],
     "generator",
@@ -218,5 +221,5 @@ const populateStigModel = (stigInstance: Stig, jsonObj: any): void => {
   );
   stigInstance.dataValues.version = parseInt(jsonObj.Benchmark.version, 10);
   stigInstance.dataValues.stigDate =
-    stigInstance.dataValues.plain_text__release_info.match(/\d{1,2} ... \d{4}$/)[0];
+    releaseInfo.match(/\d{1,2}\s+\w+\s+\d{4}$/)?.[0] ?? stigInstance.dataValues.status__date ?? "";
 };
