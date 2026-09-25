@@ -10,6 +10,7 @@ import {
   ConnectionError,
 } from "sequelize";
 import { signalReady } from "../utils/startupSync";
+import { createMigrator, createSeeder, normalizeMetaTableNames } from "~/db/umzug.js";
 
 export default defineNitroPlugin(async () => {
   try {
@@ -147,7 +148,10 @@ export default defineNitroPlugin(async () => {
       };
     });
 
-    const { migrator, seeder } = await import("~/db/umzug.js");
+    await normalizeMetaTableNames(sequelize);
+    const umzugLogger = process.env.DB_DEBUG?.toLowerCase() === "true" ? console : undefined;
+    const migrator = createMigrator(sequelize, { logger: umzugLogger });
+    const seeder = createSeeder(sequelize, { logger: umzugLogger });
     const pendingMigrations = await migrator.pending();
     if (pendingMigrations.length > 0) {
       logger.info({

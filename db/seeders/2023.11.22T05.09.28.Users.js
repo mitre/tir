@@ -1,7 +1,5 @@
-import * as dotenv from "dotenv";
 import { DateTime } from "luxon";
 import { generateSalt, hashPassword } from "../../server/utils/hash.js";
-dotenv.config();
 const now = DateTime.now().toISO();
 if (!process.env.INIT_PASSWORD) {
   throw new Error("INIT_PASSWORD environment variable not set.");
