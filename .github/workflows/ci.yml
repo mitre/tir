@@ -34,7 +34,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npx nuxt prepare
+      - run: npm run postinstall
       - run: npm run lint
       - run: npm run format:check
         if: ${{ !cancelled() }}
