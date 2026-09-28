@@ -40,6 +40,7 @@ npm install
 SECRET_KEY= # Required: Secret key used password hashing
 INIT_PASSWORD= # Required: Initial Password for initial TIR admin Account
 PORT= # Optional: Dev Web Server Port Defaults to 3000
+DB_DEBUG= # Optional: Set to true to log SQL statements and migration events
 ```
 
 #### `.env` for SQLite config

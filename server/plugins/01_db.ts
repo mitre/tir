@@ -10,10 +10,13 @@ import {
   ConnectionError,
 } from "sequelize";
 import { signalReady } from "../utils/startupSync";
+import { dbDebugEnabled, loadDotEnv } from "~/db/env.js";
 import { createMigrator, createSeeder, normalizeMetaTableNames } from "~/db/umzug.js";
 
 export default defineNitroPlugin(async () => {
   try {
+    loadDotEnv();
+
     const RETRY_ATTEMPTS = 5;
     const RETRY_DELAY_MS = 500;
     const RETRY_BACKOFF_FACTOR = 2;
@@ -149,7 +152,7 @@ export default defineNitroPlugin(async () => {
     });
 
     await normalizeMetaTableNames(sequelize);
-    const umzugLogger = process.env.DB_DEBUG?.toLowerCase() === "true" ? console : undefined;
+    const umzugLogger = dbDebugEnabled() ? console : undefined;
     const migrator = createMigrator(sequelize, { logger: umzugLogger });
     const seeder = createSeeder(sequelize, { logger: umzugLogger });
     const pendingMigrations = await migrator.pending();

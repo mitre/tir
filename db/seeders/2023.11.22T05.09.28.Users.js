@@ -37,7 +37,7 @@ const users = [
   },
 ];
 export const up = async ({ context: sequelize }) => {
-  await sequelize.getQueryInterface().bulkInsert("Users", users);
+  await sequelize.getQueryInterface().bulkInsert("Users", users, { logging: false });
 
   if (sequelize.getDialect() === "postgres") {
     await sequelize.query(`
