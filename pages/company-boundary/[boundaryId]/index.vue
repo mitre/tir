@@ -389,7 +389,7 @@
                   />
                 </div>
               </div>
-              <div class="border-t border-black/5 px-4 py-6 dark:border-white/5 sm:border-l sm:px-6 lg:px-8">
+              <div class="border-t border-black/5 px-4 py-6 dark:border-white/5 sm:px-6 lg:px-8">
                 <div class="text-sm font-medium leading-6 text-gray-600 dark:text-gray-400">NIST Version</div>
                 <div class="my-1 items-baseline gap-x-2">
                   <span class="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
@@ -404,7 +404,7 @@
                 </div>
               </div>
 
-              <div class="border-t border-black/5 px-4 py-6 dark:border-white/5 sm:px-6 lg:px-8">
+              <div class="border-t border-black/5 px-4 py-6 dark:border-white/5 sm:px-6 lg:border-l lg:px-8">
                 <div class="text-sm font-medium leading-6 text-gray-600 dark:text-gray-400">
                   <SummaryCounts
                     title="Severity Counts"

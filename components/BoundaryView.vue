@@ -38,7 +38,7 @@
                     class="cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-300/5"
                     @click="[(loading = true), viewEval(evaluation)]"
                   >
-                    <td class="break-word py-4 pl-4 pr-3 text-sm font-medium text-gray-600 dark:text-white sm:pl-0">
+                    <td class="w-2/5 break-word py-4 pl-4 pr-3 text-sm font-medium text-gray-600 dark:text-white sm:pl-0">
                       {{ evaluation.title }}
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-300">
