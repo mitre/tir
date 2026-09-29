@@ -1,7 +1,5 @@
-import * as dotenv from "dotenv";
 import { DataTypes } from "sequelize";
 
-dotenv.config();
 export const up = async ({ context: sequelize }) => {
   await sequelize.getQueryInterface().createTable("Themes", {
     id: {

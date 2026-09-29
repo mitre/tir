@@ -4,7 +4,6 @@
     "esModuleInterop": true
   },
   "exclude": [
-    "../config/config.js",
     "../middleware/auth.js",
     "../stores/*.js",
     "../tailwind.config.js"    
