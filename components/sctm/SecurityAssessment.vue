@@ -54,7 +54,7 @@
             </span>
           </ListboxButton>
 
-          <transition
+          <Transition
             leave-active-class="transition ease-in duration-100"
             leave-from-class="opacity-100"
             leave-to-class="opacity-0"
@@ -93,7 +93,7 @@
                 </li>
               </ListboxOption>
             </ListboxOptions>
-          </transition>
+          </Transition>
         </div>
       </Listbox>
     </div>
@@ -180,7 +180,7 @@
             </span>
           </ListboxButton>
 
-          <transition
+          <Transition
             leave-active-class="transition ease-in duration-100"
             leave-from-class="opacity-100"
             leave-to-class="opacity-0"
@@ -219,7 +219,7 @@
                 </li>
               </ListboxOption>
             </ListboxOptions>
-          </transition>
+          </Transition>
         </div>
       </Listbox>
     </div>
@@ -255,7 +255,7 @@
 
 <script setup lang="ts">
 import { CheckIcon, ChevronDownIcon } from "@heroicons/vue/20/solid";
-import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions, Transition } from "@headlessui/vue";
+import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from "@headlessui/vue";
 
 interface DropdownItem {
   id: number;
