@@ -26,6 +26,9 @@
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-800 dark:text-white">
                       Finding Status
                     </th>
+                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-800 dark:text-white">
+                      Severity Counts
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-800">
@@ -35,7 +38,7 @@
                     class="cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-300/5"
                     @click="[(loading = true), viewEval(evaluation)]"
                   >
-                    <td class="break-word py-4 pl-4 pr-3 text-sm font-medium text-gray-600 dark:text-white sm:pl-0">
+                    <td class="w-2/5 break-word py-4 pl-4 pr-3 text-sm font-medium text-gray-600 dark:text-white sm:pl-0">
                       {{ evaluation.title }}
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-300">
@@ -57,6 +60,15 @@
                         <p class="text-sky-500">{{ evaluation.findings.Not_Applicable }}</p>
                         /
                         <p class="text-amber-500">{{ evaluation.findings.Not_Reviewed }}</p>
+                      </div>
+                    </td>
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      <div class="flex">
+                        <p class="text-red-500">{{ evaluation.severities.catI }}</p>
+                        /
+                        <p class="text-orange-500">{{ evaluation.severities.catII }}</p>
+                        /
+                        <p class="text-yellow-500">{{ evaluation.severities.catIII }}</p>
                       </div>
                     </td>
                   </tr>
