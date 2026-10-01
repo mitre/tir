@@ -69,8 +69,6 @@
                         <p class="text-orange-500">{{ evaluation.severities.catII }}</p>
                         /
                         <p class="text-yellow-500">{{ evaluation.severities.catIII }}</p>
-                        /
-                        <p class="text-grey-500">{{ evaluation.severities.notReviewed }}</p>
                       </div>
                     </td>
                   </tr>

@@ -1405,7 +1405,6 @@ const severityHoverItems = [
   { name: "catI", text: "CAT I", color: "red" },
   { name: "catII", text: "CAT II", color: "orange" },
   { name: "catIII", text: "CAT III", color: "yellow" },
-  { name: "notReviewed", text: "Not Reviewed", color: "grey" },
 ];
 
 const sctmHoverItems = [

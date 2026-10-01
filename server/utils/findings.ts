@@ -289,24 +289,21 @@ export function initializeSeverityCounts(): SeverityCounts {
     catI: 0,
     catII: 0,
     catIII: 0,
-    notReviewed: 0,
   };
 }
 
 export function uniqueTransformSeverityCounts(
   counts: SeverityCounts,
 ): SeverityCounts {
-  const { catI, catII, catIII, notReviewed } = counts;
+  const { catI, catII, catIII } = counts;
 
   if (catI) {
-    return { catI: 1, catII: 0, catIII: 0, notReviewed: 0 };
+    return { catI: 1, catII: 0, catIII: 0 };
   } else if (catII) {
-    return { catI: 0, catII: 1, catIII: 0, notReviewed: 0 };
+    return { catI: 0, catII: 1, catIII: 0 };
   } else if (catIII) {
-    return { catI: 0, catII: 0, catIII: 1, notReviewed: 0 };
-  } else if (notReviewed) {
-    return { catI: 0, catII: 0, catIII: 0, notReviewed: 1 };
+    return { catI: 0, catII: 0, catIII: 1 };
   }
 
-  return { catI: 0, catII: 0, catIII: 0, notReviewed: 0 };
+  return { catI: 0, catII: 0, catIII: 0 };
 }

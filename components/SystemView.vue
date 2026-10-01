@@ -74,8 +74,6 @@
                         <p class="text-orange-600">{{ system.severities.catII }}</p>
                         /
                         <p class="text-yellow-500">{{ system.severities.catIII }}</p>
-                        /
-                        <p class="text-grey-500">{{ system.severities.notReviewed }}</p>
                         <UTooltip
                           v-if="system.override"
                           :ui="{

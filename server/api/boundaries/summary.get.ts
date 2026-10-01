@@ -331,7 +331,6 @@ export default defineEventHandler(async (event) => {
         catI: status === "Open" && severity === "high" ? 1 : 0,
         catII: status === "Open" && severity === "medium" ? 1 : 0,
         catIII: status === "Open" && severity === "low" ? 1 : 0,
-        notReviewed: status === "Not_Reviewed" ? 1 : 0,
       };
 
       const rawSeverity = uniqueFinding.severity;
@@ -340,7 +339,6 @@ export default defineEventHandler(async (event) => {
         catI: rawStatus === "Open" && rawSeverity === "high" ? 1 : 0,
         catII: rawStatus === "Open" && rawSeverity === "medium" ? 1 : 0,
         catIII: rawStatus === "Open" && rawSeverity === "low" ? 1 : 0,
-        notReviewed: rawStatus === "Not_Reviewed" ? 1 : 0,
       };
 
       const rawFinding = {
@@ -775,6 +773,5 @@ export default defineEventHandler(async (event) => {
     target.catI += source.catI;
     target.catII += source.catII;
     target.catIII += source.catIII;
-    target.notReviewed += source.notReviewed;
   }
 });
