@@ -1,0 +1,19 @@
+name: Sweep stale slots
+
+# Removes slots other than main that were last deployed more than MAX_AGE_DAYS ago.
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sweep:
+    runs-on: tir-deploy
+    env:
+      MAX_AGE_DAYS: "7"
+    steps:
+      - name: Sweep stale slots
+        run: sweep-slots "$MAX_AGE_DAYS"

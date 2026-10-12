@@ -1,0 +1,26 @@
+name: Destroy slot
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: Slot name to remove (the subdomain, e.g. pr-247). Its database is dropped.
+        required: true
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: slot-${{ github.event.pull_request.number || inputs.name }}
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    runs-on: tir-deploy
+    steps:
+      - name: Destroy slot
+        env:
+          SLOT: ${{ inputs.name || format('pr-{0}', github.event.pull_request.number) }}
+        run: destroy-slot "$SLOT"
