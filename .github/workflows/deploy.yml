@@ -1,0 +1,271 @@
+name: Deploy
+
+# PR deploys use pull_request_target so the workflow that reaches the self-hosted runner is
+# always the base branch's copy. PRs from this repository deploy automatically. PRs from forks
+# deploy only while they carry the "deploy" label, and each of those deploys waits for approval
+# on the review-external environment.
+#
+# The deploy job runs on a self-hosted runner labeled tir-deploy that provides three commands:
+# deploy-slot <slot> <image> [source] (prints the slot URL), destroy-slot <slot> and
+# sweep-slots [days]. How those are implemented is up to whoever runs the runner.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or SHA of the source repository (ignored when pr is set)
+        required: false
+        default: main
+      pr:
+        description: Pull request number in the source repository
+        required: false
+      name:
+        description: Slot name override (the subdomain)
+        required: false
+      repository:
+        description: Source repository
+        required: true
+        default: lmco/tir
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: read
+  packages: write
+  pull-requests: write
+
+concurrency:
+  group: slot-${{ github.event.pull_request.number || inputs.name || inputs.pr || inputs.ref }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.r.outputs.proceed }}
+      repository: ${{ steps.r.outputs.repository }}
+      ref: ${{ steps.r.outputs.ref }}
+      slot: ${{ steps.r.outputs.slot }}
+      environment: ${{ steps.r.outputs.environment }}
+      pr: ${{ steps.r.outputs.pr }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: r
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          IN_REF: ${{ inputs.ref }}
+          IN_PR: ${{ inputs.pr }}
+          IN_NAME: ${{ inputs.name }}
+          IN_REPO: ${{ inputs.repository }}
+        run: |
+          proceed=true
+          environment=review
+          if [ "$EVENT_NAME" = pull_request_target ]; then
+            repository=$HEAD_REPO
+            ref=$HEAD_SHA
+            slot="pr-$PR_NUMBER"
+            pr=$PR_NUMBER
+            # Authors with write access to this repository deploy automatically, wherever
+            # their branch lives. Everyone else needs the deploy label and an approval.
+            permission=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$PR_AUTHOR/permission" --jq .permission 2>/dev/null || echo none)
+            echo "author=$PR_AUTHOR permission=$permission"
+            case "$permission" in
+              admin|write) ;;
+              *)
+                environment=review-external
+                jq -e '.pull_request.labels | map(.name) | index("deploy")' "$GITHUB_EVENT_PATH" > /dev/null || proceed=false
+                ;;
+            esac
+          else
+            repository=$IN_REPO
+            ref=$IN_REF
+            if [ -n "$IN_PR" ]; then ref="refs/pull/$IN_PR/head"; fi
+            slot=$(.github/review-app/slot-name.sh "$ref" "$IN_PR" "$IN_NAME")
+            pr=""
+          fi
+          {
+            echo "proceed=$proceed"
+            echo "repository=$repository"
+            echo "ref=$ref"
+            echo "slot=$slot"
+            echo "environment=$environment"
+            echo "pr=$pr"
+          } >> "$GITHUB_OUTPUT"
+          echo "slot=$slot repository=$repository ref=$ref environment=$environment proceed=$proceed"
+
+  build:
+    needs: resolve
+    if: needs.resolve.outputs.proceed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.tags.outputs.image }}@${{ steps.build.outputs.digest }}
+    steps:
+      - name: Check out deploy files
+        uses: actions/checkout@v4
+        with:
+          path: ops
+
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.ref }}
+          path: src
+
+      - name: Resolve image tags
+        id: tags
+        env:
+          OWNER: ${{ github.repository_owner }}
+          SLOT: ${{ needs.resolve.outputs.slot }}
+        run: |
+          sha=$(git -C src rev-parse HEAD)
+          short=${sha:0:12}
+          repo="ghcr.io/$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')/tir"
+          echo "image=$repo:sha-$short" >> "$GITHUB_OUTPUT"
+          echo "tags=$repo:sha-$short,$repo:$SLOT" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: src
+          file: ops/.github/review-app/Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ needs.resolve.outputs.repository }}
+            org.opencontainers.image.revision=${{ steps.tags.outputs.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max,ignore-error=true
+
+  deploy:
+    needs: [resolve, build]
+    runs-on: tir-deploy
+    environment:
+      name: ${{ needs.resolve.outputs.environment }}
+      url: ${{ steps.slot.outputs.url }}
+    outputs:
+      url: ${{ steps.slot.outputs.url }}
+    steps:
+      - name: Deploy slot
+        id: slot
+        env:
+          SLOT: ${{ needs.resolve.outputs.slot }}
+          IMAGE: ${{ needs.build.outputs.image }}
+          SOURCE: ${{ needs.resolve.outputs.repository }}@${{ needs.resolve.outputs.ref }}
+        run: |
+          url=$(deploy-slot "$SLOT" "$IMAGE" "$SOURCE")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on the pull request
+        if: needs.resolve.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ needs.resolve.outputs.pr }}
+          URL: ${{ steps.slot.outputs.url }}
+          REF: ${{ needs.resolve.outputs.ref }}
+        run: |
+          body="Deployed ${REF:0:12} to $URL"
+          curl -sS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
+            -d "$(jq -n --arg body "$body" '{body: $body}')" > /dev/null
+
+      - name: Summary
+        env:
+          SOURCE: ${{ needs.resolve.outputs.repository }}@${{ needs.resolve.outputs.ref }}
+          URL: ${{ steps.slot.outputs.url }}
+          IMAGE: ${{ needs.build.outputs.image }}
+        run: |
+          {
+            echo "Deployed **$SOURCE** to $URL"
+            echo
+            echo "Image: \`$IMAGE\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Runs the deployed ref's own Playwright suite against its slot, so a PR gates on the tests
+  # it carries. That code runs with INIT_PASSWORD, so the job sits behind the same environment
+  # as deploy: automatic for authors with write access, approval on review-external otherwise.
+  test:
+    needs: [resolve, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    environment:
+      name: ${{ needs.resolve.outputs.environment }}
+    env:
+      BASE_URL: ${{ needs.deploy.outputs.url }}
+      SOURCE: ${{ needs.resolve.outputs.repository }}@${{ needs.resolve.outputs.ref }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.resolve.outputs.repository }}
+          ref: ${{ needs.resolve.outputs.ref }}
+
+      - name: Look for end-to-end tests
+        id: e2e
+        run: |
+          if [ -f tests/e2e/playwright.config.ts ]; then
+            echo present=true >> "$GITHUB_OUTPUT"
+          else
+            echo present=false >> "$GITHUB_OUTPUT"
+            echo "::notice::No tests/e2e in $SOURCE, nothing to run"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.e2e.outputs.present == 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install test dependencies
+        if: steps.e2e.outputs.present == 'true'
+        run: |
+          npm ci --ignore-scripts
+          npx playwright install --with-deps chromium
+
+      - name: Wait for the slot to answer
+        if: steps.e2e.outputs.present == 'true'
+        run: |
+          for i in $(seq 1 24); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "$BASE_URL/" || true)
+            echo "attempt $i: $code"
+            [ "$code" = 200 ] && exit 0
+            sleep 5
+          done
+          echo "::error::$BASE_URL did not return 200 within 2 minutes"
+          exit 1
+
+      - name: Run Playwright
+        if: steps.e2e.outputs.present == 'true'
+        env:
+          CI: "true"
+          INIT_PASSWORD: ${{ secrets.INIT_PASSWORD }}
+        run: npx playwright test -c tests/e2e
+
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.e2e.outputs.present == 'true'
+        with:
+          name: playwright-${{ needs.resolve.outputs.slot }}-${{ github.run_attempt }}
+          path: |
+            tests/e2e/playwright-report
+            tests/e2e/test-results
+          retention-days: 7
+          if-no-files-found: ignore

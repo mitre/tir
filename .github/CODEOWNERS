@@ -1,0 +1,2 @@
+# Anything that changes what runs on the deploy runner needs the TIR team's review.
+/.github/ @lmco/tir

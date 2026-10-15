@@ -1,2 +1,2 @@
-import { seeder } from "./umzug.js";
+import { seeder } from "./cli.js";
 seeder.runAsCLI();
