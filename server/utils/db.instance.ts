@@ -1,3 +1,1 @@
-import { sequelize } from  "~/db/sequelizeInstance";
-
-export { sequelize }
+export { sequelize } from "~/db/sequelizeInstance";

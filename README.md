@@ -34,25 +34,31 @@ cd tir
 npm install
 ```
 
+#### `.env` for TIR server
+
+```ini
+SECRET_KEY= # Required: Secret key used password hashing
+INIT_PASSWORD= # Required: Initial Password for initial TIR admin Account
+PORT= # Optional: Dev Web Server Port Defaults to 3000
+```
+
 #### `.env` for SQLite config
 
 ```ini
 SQLITE=true
-SECRET_KEY= //Required
-INIT_PASSWORD= //Required:  Initial Password for initial TIR admin Account
 ```
 
 #### `.env` for Postgres config
 
 ```ini
-PORT= //Optional: Dev Web Server Port Defaults to 3000
-DATABASE_HOST= //Required: Postgres Database IP/FQDN
-DATABASE_PORT= //Optional: Defaults to 5432
-DATABASE_USER= //Required: Postgres User
-DATABASE_PASSWORD= //Required: Postgres User INIT_PASSWORD
-DATABASE_NAME= //Required: Database Name for TIR
-INIT_PASSWORD= //Required:  Initial Password for initial TIR admin Account
+DATABASE_HOST= # Required: Postgres Database IP/FQDN
+DATABASE_PORT= # Optional: Defaults to 5432
+DATABASE_USER= # Required: Postgres User
+DATABASE_PASSWORD= # Required: Postgres User Password
+DATABASE_NAME= # Required: Database Name for TIR
 ```
+
+> **Note:** If passwords (`INIT_PASSWORD`, `DATABASE_PASSWORD`) or keys contain special characters like `$` or `#`, enclose the value in single quotes (e.g., `INIT_PASSWORD='my$ecurePassword'`). This prevents Docker Compose and most environment loaders from misinterpreting `$` as a variable substitution. The Nuxt dev server still evaluates `$` within quotes, so avoid `$` and `${` followed by a letter or `_` in these values.
 
 #### Initialize Database
 
