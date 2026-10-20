@@ -2,7 +2,7 @@ import { saveAuthConfig, loadAuthConfig } from "~/server/utils/config/authConfig
 import { getAuthServiceManager } from "~/server/auth/authServiceManager";
 
 export default defineEventHandler(async (event) => {
-  await userCheck(event, undefined, undefined, undefined);
+  await requireAdmin(event);
 
   const body = await readBody(event);
   await saveAuthConfig(body);

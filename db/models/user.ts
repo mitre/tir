@@ -13,18 +13,18 @@ import {
 import type { Boundary, EvaluationItem, Milestone, Theme, Timezone, UserRole } from ".";
 
 export class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
-  declare id: number;
+  declare id: CreationOptional<number>;
   declare email: string;
-  declare password: string;
+  declare password: CreationOptional<string>;
   declare firstName: string;
   declare lastName: string;
-  declare organization: string;
-  declare passwordChangedAt: string;
-  declare forcePasswordChange: boolean;
-  declare loginCount: number;
-  declare lastLogin: string;
-  declare creationMethod: string;
-  declare salt: string;
+  declare organization: CreationOptional<string>;
+  declare passwordChangedAt: CreationOptional<string>;
+  declare forcePasswordChange: CreationOptional<boolean>;
+  declare loginCount: CreationOptional<number>;
+  declare lastLogin: CreationOptional<string>;
+  declare creationMethod: CreationOptional<string>;
+  declare salt: CreationOptional<string>;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
   declare UserRoleId: ForeignKey<UserRole["id"]>;

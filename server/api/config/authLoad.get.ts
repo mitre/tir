@@ -1,7 +1,7 @@
 import { loadAuthConfig } from "~/server/utils/config/authConfig";
 
 export default defineEventHandler(async (event) => {
-  await userCheck(event, undefined, undefined, undefined);
+  await requireAdmin(event);
 
   const settings = await loadAuthConfig();
 
