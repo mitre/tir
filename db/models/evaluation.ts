@@ -5,7 +5,10 @@ import {
   type InferAttributes,
   type InferCreationAttributes,
   type CreationOptional,
+  type ForeignKey,
 } from "sequelize";
+import { Boundary } from "./boundary";
+import { Stig } from "./stig";
 
 export class Evaluation extends Model<
   InferAttributes<Evaluation>,
@@ -17,6 +20,9 @@ export class Evaluation extends Model<
   declare comment: string;
   declare lastUpdate: CreationOptional<string>;
   declare creationDate: CreationOptional<string>;
+
+  declare BoundaryId: ForeignKey<Boundary["id"]>;
+  declare StigId: ForeignKey<Stig["id"]>;
 }
 
 Evaluation.init(

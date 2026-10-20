@@ -2,7 +2,7 @@ import { Boundary_User, BoundaryRole, System, UserRole } from "~/db/models";
 import { Boundary } from "~/db/models/boundary";
 import { AssessmentItem } from "~/db/models/assessmentItem";
 import { Assessment } from "~/db/models/assessment";
-import { catSeverityToStig } from "~/utils/stig";
+import { stigCatToSeverity, stigSeverityToCat } from "~/utils/stig";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -58,10 +58,11 @@ export default defineEventHandler(async (event) => {
     console.log("foundUser");
   }
 
+  const mySeverityOverride = stigCatToSeverity(body.severityOverride) || body.severityOverride
   const updateObject = {
     statusOverride: body.statusOverride,
     statusOverrideJustification: body.statusOverrideJustification,
-    severityOverride: catSeverityToStig(body.severityOverride) || body.severityOverride,
+    severityOverride: mySeverityOverride,
     severityOverrideJustification: body.severityOverrideJustification,
   };
 

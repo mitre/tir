@@ -1,19 +1,21 @@
-export function catSeverityToStig(catSeverity) {
-  const severityMap = {
-    "CAT I": "high",
-    "CAT II": "medium",
-    "CAT III": "low",
-  };
+const STIG_CAT_TO_SEVERITY = {
+  "CAT III": "low",
+  "CAT II": "medium",
+  "CAT I": "high",
+} as const;
+ 
+const SEVERITY_TO_STIG_CAT = Object.fromEntries(
+  Object.entries(STIG_CAT_TO_SEVERITY).map(([cat, sev]) => [sev, cat])
+) as {
+  [V in typeof STIG_CAT_TO_SEVERITY[keyof typeof STIG_CAT_TO_SEVERITY]]:
+    keyof typeof STIG_CAT_TO_SEVERITY;
+};
+ 
 
-  return severityMap[catSeverity] || null;
+export function stigCatToSeverity(stigCAT: string): string | null {
+  return STIG_CAT_TO_SEVERITY[stigCAT as keyof typeof STIG_CAT_TO_SEVERITY] ?? null;
 }
-
-export function stigSeverityToCat(stigSeverity) {
-  const severityMap = {
-    high: "CAT I",
-    medium: "CAT II",
-    low: "CAT III",
-  };
-
-  return severityMap[stigSeverity] || null;
+ 
+export function stigSeverityToCat(severity: string): string | null {
+  return SEVERITY_TO_STIG_CAT[severity as keyof typeof SEVERITY_TO_STIG_CAT] ?? null;
 }

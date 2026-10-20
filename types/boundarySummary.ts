@@ -53,7 +53,7 @@ export type SctmEntry = {
   id: number;
   controlFamilyId: number;
   controlFamilyName: string | null;
-  abbreviation: string,
+  abbreviation: string;
   date: string;
   findings: ControlFindingCounts;
 };

@@ -150,6 +150,7 @@ export function convertToV2Status(oldStatus: string): string {
 export async function convertToCKL3(
   systemData: System[],
   oneStigPerChecklist: string | null,
+  ignoreOverrides: boolean,
 ): Promise<ChecklistV3[]> {
   const cklDataV3: ChecklistV3[] = [];
   let singleStig: boolean = false;
@@ -249,6 +250,12 @@ export async function convertToCKL3(
 
               const thisRuleId = ai.StigDatum.rule_id.replace("_rule", "");
 
+              const thisVulnStatus =
+                !ignoreOverrides && ai.statusOverride
+                  ? ai.statusOverride
+                  : ai.status;
+
+
               // build rule
               const thisRule: CklStigRuleV3 = {
                 ccis: ruleCCIs,
@@ -279,7 +286,7 @@ export async function convertToCKL3(
                 rule_version: ai.StigDatum.rule_ver,
                 security_override_guidance: ai.StigDatum.security_override_guidance,
                 severity: ai.StigDatum.severity,
-                status: convertToV3Status(ai.status),
+                status: convertToV3Status(thisVulnStatus),
                 stig_uuid: STIGUUID,
                 third_party_tools: ai.StigDatum.third_party_tools,
                 uuid: ai.StigDatumId?.toString() || "",

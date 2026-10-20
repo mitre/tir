@@ -1,8 +1,8 @@
 import ExcelJS from "exceljs";
 import { generateEMass } from "../../utils/excelExport/eMassExport";
-import { generateSctm } from "../../utils/excelExport/sctmExport";
 import { generateSecurityControlAssessment } from "../../utils/excelExport/scaExport";
 import { Boundary, BoundaryInterface } from "../../../db/models";
+import { generateSctm } from "~/server/utils/excelExport/sctmExport";
 
 export default defineEventHandler(async (event) => {
   const query = await getQuery(event);
