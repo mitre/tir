@@ -616,6 +616,62 @@ ControlRevision.hasMany(ControlRecord, { onDelete: "CASCADE", onUpdate: "CASCADE
 
 ControlFamily.hasMany(Control);
 
+export interface UserInterface extends User {
+  addFavoriteTier: BelongsToManyAddAssociationMixin<Tier, number>;
+  removeFavoriteTier: BelongsToManyRemoveAssociationMixin<Tier, number>;
+
+  addFavoriteBoundary: BelongsToManyAddAssociationMixin<Boundary, number>;
+  removeFavoriteBoundary: BelongsToManyRemoveAssociationMixin<Boundary, number>;
+}
+
+export const User_FavoriteTier = sequelize.define(
+  "User_FavoriteTier",
+  {},
+  {
+    tableName: "User_FavoriteTiers",
+    timestamps: false,
+    noIsoTimestamps: true,
+  },
+);
+
+export const User_FavoriteBoundary = sequelize.define(
+  "User_FavoriteBoundary",
+  {},
+  {
+    tableName: "User_FavoriteBoundaries",
+    timestamps: false,
+    noIsoTimestamps: true,
+  },
+);
+
+User.belongsToMany(Tier, {
+  through: User_FavoriteTier,
+  as: "FavoriteTiers",
+  foreignKey: "UserId",
+  otherKey: "TierId",
+});
+
+Tier.belongsToMany(User, {
+  through: User_FavoriteTier,
+  as: "FavoritedByUsers",
+  foreignKey: "TierId",
+  otherKey: "UserId",
+});
+
+User.belongsToMany(Boundary, {
+  through: User_FavoriteBoundary,
+  as: "FavoriteBoundaries",
+  foreignKey: "UserId",
+  otherKey: "BoundaryId",
+});
+
+Boundary.belongsToMany(User, {
+  through: User_FavoriteBoundary,
+  as: "FavoritedByUsers",
+  foreignKey: "BoundaryId",
+  otherKey: "UserId",
+});
+
 export {
   User,
   Boundary,

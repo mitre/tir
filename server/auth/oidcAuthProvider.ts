@@ -4,7 +4,6 @@ import { AuthProvider } from "./authProvider";
 import { SessionService } from "./sessionService";
 import { GroupScopeProcessor, GroupRoleMapping } from "./groupScopeProcessor";
 import { User } from "~/db/models/user";
-import { UserRole } from "~/db/models";
 import { AuthEvent } from "~/types/auth";
 
 const sessionService = new SessionService();
@@ -140,6 +139,7 @@ export class OIDCAuthProvider extends AuthProvider {
         TimezoneId: 1,
         creationMethod: "oidc",
       });
+
       logger.info({
         service: "Auth",
         message: `Created new local user for OIDC user: ${tokenSet.claims().email}`,
