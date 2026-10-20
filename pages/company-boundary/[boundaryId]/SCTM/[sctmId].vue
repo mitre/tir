@@ -294,6 +294,35 @@
                     'flex h-16 w-full items-center justify-between rounded-t-lg px-4 py-2 text-left text-lg font-medium text-gray-800 hover:bg-gray-300 focus:outline-none focus-visible:ring focus-visible:ring-purple-500  focus-visible:ring-opacity-75 dark:text-white dark:hover:bg-gray-900',
                   ]"
                 >
+                  Technical Assessment
+                  <ChevronRightIcon :class="[open && 'rotate-90 transform', 'h-6 w-6']" />
+                </DisclosureButton>
+                <transition
+                  enter-active-class="transition duration-100 ease-out"
+                  enter-from-class="transform scale-95 opacity-0"
+                  enter-to-class="transform scale-100 opacity-100"
+                  leave-active-class="transition duration-75 ease-out"
+                  leave-from-class="transform scale-100 opacity-100"
+                  leave-to-class="transform scale-95 opacity-0"
+                >
+                  <DisclosurePanel
+                    class="h-84 text-md w-full rounded-b-lg bg-gray-300/5 px-4 py-4 text-left font-medium text-white focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75"
+                  >
+                    <sctmTechnicalAssessment
+                      v-if="dropdowns"
+                      :evaluation-item="controlRecordItem"
+                      :compliance-status="dropdowns['compliance-statuses'] || []"
+                    />
+                  </DisclosurePanel>
+                </transition>
+              </Disclosure>
+              <Disclosure v-slot="{ open }" :default-open="true" as="div" class="mb-2 pr-4">
+                <DisclosureButton
+                  :class="[
+                    open ? 'bg-gray-300 dark:bg-gray-900' : 'rounded-b-lg bg-gray-900/10 dark:bg-gray-300/5',
+                    'flex h-16 w-full items-center justify-between rounded-t-lg px-4 py-2 text-left text-lg font-medium text-gray-800 hover:bg-gray-300 focus:outline-none focus-visible:ring focus-visible:ring-purple-500  focus-visible:ring-opacity-75 dark:text-white dark:hover:bg-gray-900',
+                  ]"
+                >
                   Security Assessment
                   <ChevronRightIcon :class="[open && 'rotate-90 transform', 'h-6 w-6']" />
                 </DisclosureButton>
