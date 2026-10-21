@@ -1,38 +1,10 @@
 branches:
   - name: main
     channel: latest
-  - name: test
-    prerelease: rc
-    channel: rc
 
 plugins:
   - - "@semantic-release/commit-analyzer"
     - preset: conventionalcommits
-      releaseRules:
-        - type: feat
-          release: minor
-        - type: fix
-          release: patch
-        - type: docs
-          release: patch
-        - type: refactor
-          release: patch
-        - type: chore
-          release: patch
-        - type: test
-          release: patch
-        - type: build
-          release: patch
-        - type: ci
-          release: patch
-        - type: style
-          release: patch
-        - type: perf
-          release: patch
-        - type: breaking
-          release: major
-        - type: major
-          release: major
       parserOpts:
         noteKeywords:
           - BREAKING CHANGE
@@ -47,14 +19,8 @@ plugins:
           section: "Bug Fixes"
         - type: perf
           section: "Performance"
-        - type: docs
-          section: "Documentation"
-        - type: refactor
-          section: "Refactoring"
-        - type: breaking
-          section: "Breaking Changes"
-        - type: major
-          section: "Breaking Changes"
+        - type: revert
+          section: "Reverts"
 
   - - "@semantic-release/changelog"
     - changelogFile: docs/CHANGELOG.md
@@ -68,13 +34,3 @@ plugins:
         - package.json
         - package-lock.json
       message: "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-
-  - - "@semantic-release/gitlab"
-    - gitlabUrl: https://gitlab.us.lmco.com
-      gitlabApiPathPrefix: "/api/v4"
-      assets:
-        - path: README.md
-          label: Readme
-
-  - - "@saithodev/semantic-release-backmerge"
-    - backmergeBranches: [develop]
