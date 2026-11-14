@@ -11,7 +11,9 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "dbinit": "node db/migrate.js up && node db/seed.js up",
-    "start": "node .output/server/index.mjs"
+    "start": "node .output/server/index.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@nuxt/eslint-config": "^0.2.0",
@@ -28,7 +30,7 @@
     "@types/libxmljs": "^0.18.12",
     "@types/luxon": "^3.3.4",
     "@types/mustache": "^4.2.5",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.20.4",
     "@types/tar": "^6.1.11",
     "@types/uuid": "^9.0.8",
     "@types/winston-syslog": "^2.4.3",
@@ -46,7 +48,8 @@
     "prettier": "^3.1.0",
     "prettier-plugin-tailwindcss": "^0.5.7",
     "tsm": "^2.3.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^5.0.3"
   },
   "dependencies": {
     "@heroicons/vue": "^2.1.5",

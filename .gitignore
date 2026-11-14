@@ -32,3 +32,6 @@ tmp
 # internal test
 test
 server/api/localtest
+
+# Vitest reports and artifacts
+.vitest/
