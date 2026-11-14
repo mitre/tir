@@ -285,7 +285,7 @@ function setPPSSheetStyle(sheet: ExcelJS.Worksheet, myRow: number) {
 }
 
 // Sets Cover Sheet Styles
-function setCoverSheetStyle(sheet: ExcelJS.Worksheet) {
+export function SetCoverSheetStyle(sheet: ExcelJS.Worksheet, font: string) {
   // Merges
   const mergeCells: string[] = ["B2:C2", "B4:C4", "B8:C8", "B9:C9", "B11:C11", "B13:C13"];
   mergeCells.forEach((cell) => {
@@ -302,7 +302,7 @@ function setCoverSheetStyle(sheet: ExcelJS.Worksheet) {
     [11, 11, true],
   ];
   fontCells.forEach(([cellRow, cellSize, cellBold]) => {
-    sheet.getRow(cellRow).font = { name: "Times New Roman", size: cellSize, bold: cellBold };
+    sheet.getRow(cellRow).font = { name: font, size: cellSize, bold: cellBold };
   });
 
   // Alignment
@@ -589,7 +589,7 @@ export default defineEventHandler(async (event) => {
     coverSheet.insertRow(8, ["", "<Insert copyright>", "", ""]);
     coverSheet.insertRow(9, ["", "<Insert INFORMATION DISCLOSURE WARNING>", "", ""]);
     coverSheet.insertRow(11, ["", "<Insert EXPORT CONTROLLED INFORMATION NOTICE>", "", ""]);
-    setCoverSheetStyle(coverSheet);
+    SetCoverSheetStyle(coverSheet, "Times New Roman");
 
     const revSheet = workbook.addWorksheet("Revision History");
     revSheet.insertRow(3, ["Revision Log"]);
