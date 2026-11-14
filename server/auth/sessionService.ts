@@ -6,12 +6,13 @@ import { User } from "~/db/models/user";
 import { UserRole } from "~/db/models/userRole";
 
 const SESSION_COOKIE_NAME = "tirsession";
-// TODO: Move constant to ENV? Config?
 const SESSION_EXPIRY_HOURS = 2;
+const SESSION_EXPIRY_SECONDS = SESSION_EXPIRY_HOURS * 60 * 60;
+const SESSION_EXTEND_THRESHOLD_HOURS = SESSION_EXPIRY_HOURS / 2;
 
 export class SessionService {
   async createSession(UserId: number, event: H3Event, data: Record<string, any> = {}) {
-    this.deleteSessionsForUser(UserId);
+    await this.deleteSessionsForUser(UserId);
 
     const id = randomBytes(32).toString("hex");
     const expiresAt = DateTime.now().plus({ hours: SESSION_EXPIRY_HOURS }).toISO();
@@ -31,13 +32,13 @@ export class SessionService {
       path: "/",
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
+      maxAge: SESSION_EXPIRY_SECONDS,
     });
 
     return id;
   }
 
   async validateSession(event: H3Event) {
-    // TODO: Extend session on validation
     const id = getCookie(event, SESSION_COOKIE_NAME);
     if (!id) return null;
 
@@ -47,8 +48,22 @@ export class SessionService {
     });
 
     if (!session || DateTime.fromISO(session.expiresAt) < DateTime.now()) {
-      this.destroySession(id);
+      await this.destroySession(id);
       return null;
+    }
+
+    // Extend when less than half the lifetime remains limits DB writes for active users
+    const remaining = DateTime.fromISO(session.expiresAt).diff(DateTime.now(), "hours").hours;
+    if (remaining < SESSION_EXTEND_THRESHOLD_HOURS) {
+      const newExpiry = DateTime.now().plus({ hours: SESSION_EXPIRY_HOURS }).toISO();
+      await session.update({ expiresAt: newExpiry });
+      setCookie(event, SESSION_COOKIE_NAME, id, {
+        httpOnly: true,
+        path: "/",
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: SESSION_EXPIRY_SECONDS,
+      });
     }
 
     return session;
