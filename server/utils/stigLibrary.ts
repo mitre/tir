@@ -25,61 +25,89 @@ export type ProcessLibraryResults = {
   xmlsExtracted: number;
 };
 
+type AssessmentMigration = {
+  system: System;
+  assessment: Assessment;
+  oldStig: Stig | null;
+  newStig: Stig | null;
+};
+
+async function* walkCurrentAssessments(
+  boundaryId: number,
+  newStigLibraryId: number,
+): AsyncGenerator<AssessmentMigration> {
+  const boundarySystems = await System.findAll({ where: { BoundaryId: boundaryId } });
+  for (const system of boundarySystems) {
+    const currentAssessments = await Assessment.findAll({
+      where: {
+        SystemId: system.id,
+        succeededByAssessmentId: { [Op.is]: null },
+      },
+    });
+    for (const assessment of currentAssessments) {
+      const oldStig = await Stig.findOne({ where: { id: assessment.StigId } });
+      if (!oldStig) {
+        yield { system, assessment, oldStig, newStig: null };
+        continue;
+      }
+      const newStig = await Stig.findOne({
+        where: { stigid: oldStig.stigid },
+        include: [
+          {
+            model: StigLibrary,
+            where: { id: newStigLibraryId },
+            required: true,
+          },
+        ],
+      });
+      yield { system, assessment, oldStig, newStig };
+    }
+  }
+}
+
 export const migrateBoundary = async (
   boundaryId: number,
   newStigLibraryId: number,
 ): Promise<{ results: string }> => {
   try {
-    const boundarySystems = await System.findAll({ where: { BoundaryId: boundaryId } });
-    for (const system of boundarySystems) {
-      const currentAssessments = await Assessment.findAll({
-        where: {
-          SystemId: system.id,
-          succeededByAssessmentId: { [Op.is]: null },
-        },
-      });
-      for (const assessment of currentAssessments) {
-        const oldStig = await Stig.findOne({ where: { id: assessment.StigId } });
-        const newStig = await Stig.findOne({
-          where: { stigid: oldStig.stigid },
-          include: [
-            {
-              model: StigLibrary,
-              where: { id: newStigLibraryId },
-              required: true,
-            },
-          ],
-        });
-
+    for await (const { system, assessment, oldStig, newStig } of walkCurrentAssessments(
+      boundaryId,
+      newStigLibraryId,
+    )) {
+      if (oldStig) {
         await system.removeStig(oldStig);
-        await system.addStig(newStig);
+      }
+      if (!newStig) {
+        continue;
+      }
 
-        const newAssessment = await createBlankAssessment(assessment.SystemId, newStig.id);
+      await system.addStig(newStig);
 
-        assessment.succeededByAssessmentId = newAssessment.id;
-        await assessment.save();
+      const newAssessment = await createBlankAssessment(assessment.SystemId, newStig.id);
+      await createEvaluation(boundaryId, newStig.id);
+      assessment.succeededByAssessmentId = newAssessment.id;
+      await assessment.save();
 
-        const oldChecks = await AssessmentItem.findAll({
-          where: { AssessmentId: assessment.id },
-          include: [{ model: StigData, attributes: ["vuln_num", "rule_id"] }],
-        });
-        const newChecks = await AssessmentItem.findAll({
-          where: { AssessmentId: newAssessment.id },
-          include: [{ model: StigData, attributes: ["vuln_num", "rule_id"] }],
-        });
+      const oldChecks = await AssessmentItem.findAll({
+        where: { AssessmentId: assessment.id },
+        include: [{ model: StigData, attributes: ["vuln_num", "rule_id"] }],
+      });
+      const newChecks = await AssessmentItem.findAll({
+        where: { AssessmentId: newAssessment.id },
+        include: [{ model: StigData, attributes: ["vuln_num", "rule_id"] }],
+      });
 
-        for (const check of newChecks) {
-          const matchingCheck = findMatch(check, oldChecks);
+      for (const check of newChecks) {
+        const matchingCheck = findMatch(check, oldChecks);
 
-          if (matchingCheck) {
-            check.status = matchingCheck?.status;
-            check.comments = matchingCheck?.comments;
-            check.finding_details = matchingCheck?.finding_details;
-            check.severityOverride = matchingCheck?.severityOverride;
-            check.severityOverrideJustification = matchingCheck?.severityOverrideJustification;
-            check.AssessmentId = newAssessment.id;
-            await check.save();
-          }
+        if (matchingCheck) {
+          check.status = matchingCheck?.status;
+          check.comments = matchingCheck?.comments;
+          check.finding_details = matchingCheck?.finding_details;
+          check.severityOverride = matchingCheck?.severityOverride;
+          check.severityOverrideJustification = matchingCheck?.severityOverrideJustification;
+          check.AssessmentId = newAssessment.id;
+          await check.save();
         }
       }
     }
@@ -89,6 +117,29 @@ export const migrateBoundary = async (
     throw createError({
       statusCode: 400,
       statusMessage: "Error with Migration",
+    });
+  }
+};
+
+export const checkBoundary = async (
+  boundaryId: number,
+  newStigLibraryId: number,
+): Promise<{ results: { stigid: string; version: string }[] }> => {
+  try {
+    const reviewStigs: { stigid: string; version: string }[] = [];
+    for await (const { oldStig, newStig } of walkCurrentAssessments(boundaryId, newStigLibraryId)) {
+      if (newStig || !oldStig) continue;
+      reviewStigs.push({
+        stigid: oldStig.stigid,
+        version: `v${oldStig.version}r${oldStig.stigRelease}`,
+      });
+    }
+    return { results: reviewStigs };
+  } catch (error) {
+    logger.error(error);
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Error with Migration Check",
     });
   }
 };
@@ -195,7 +246,7 @@ export const processLibrary = async (
   return processLibraryResults;
 };
 
-const extractLibrary = async (sourceZip: string, outputDirectory: string): Promise<string[]> => {
+const extractLibrary = (sourceZip: string, outputDirectory: string): string[] => {
   const temporaryExtraction = path.join(outputDirectory, "tempExtraction");
   const mainZip = new AdmZip(sourceZip);
   const fileList: string[] = [];
@@ -246,7 +297,7 @@ export const parseLibraryName = (filename: string): parseResults => {
     parsedAttributes.errorMessage = "Unable to parse library classification";
   }
 
-  const dateMatches = filename.match(/\d{4}\_\d{2}/);
+  const dateMatches = filename.match(/\d{4}_\d{2}/);
   if (dateMatches && dateMatches.length > 0) {
     const paddedMatch = dateMatches[0] + "_01";
     parsedAttributes.date = DateTime.fromFormat(paddedMatch, "yyyy_LL_dd").toISODate() || "";

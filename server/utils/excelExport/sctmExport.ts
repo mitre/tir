@@ -17,7 +17,7 @@ import {
   ImplementationStatus,
   TestMethod,
   CciItem,
-  CciReference
+  CciReference,
 } from "~/db/models";
 
 export async function generateSctm(
@@ -358,13 +358,12 @@ export async function generateSctm(
     controlInformation,
     implementationStatus,
     testMethod,
-    cci, 
+    cci,
     frequency,
     narrative,
   }
 
-
-  const boundary = (await Boundary.findOne({
+  const boundary = await Boundary.findOne({
     where: { id: boundaryId },
     include: [
       {
@@ -374,38 +373,37 @@ export async function generateSctm(
         model: PolicyDocument,
       },
     ],
-  }))
+  });
 
   const cciItems = await CciItem.findAll({
-      attributes: ["cciId", "definition"],
-      include: [
-        {
-          model: CciReference,
-          attributes: ["index"],
-          through: { attributes: [] },
-          where: {
-            PolicyDocumentId: boundary?.PolicyDocumentId,
-          },
+    attributes: ["cciId", "definition"],
+    include: [
+      {
+        model: CciReference,
+        attributes: ["index"],
+        through: { attributes: [] },
+        where: {
+          PolicyDocumentId: boundary?.PolicyDocumentId,
         },
-      ],
-    });
+      },
+    ],
+  });
 
-    const cciMap = new Map<string, string[]>();
+  const cciMap = new Map<string, string[]>();
 
+  for (const cciItem of cciItems) {
+    const refs = cciItem.CciReferences ?? []; // safe fallback
+    for (const ref of refs) {
+      if (!ref.index) continue;
 
-    for (const cciItem of cciItems) {
-      const refs = cciItem.CciReferences ?? []; // safe fallback
-      for (const ref of refs) {
-        if (!ref.index) continue;
-
-        // Normalize by removing spaces for universal matching
-        const normalizedIndex = ref.index.replace(/\s+/g, "");
-        if (!cciMap.has(normalizedIndex)) {
-          cciMap.set(normalizedIndex, []);
-        }
-        cciMap.get(normalizedIndex)!.push(cciItem.cciId);
+      // Normalize by removing spaces for universal matching
+      const normalizedIndex = ref.index.replace(/\s+/g, "");
+      if (!cciMap.has(normalizedIndex)) {
+        cciMap.set(normalizedIndex, []);
       }
+      cciMap.get(normalizedIndex)!.push(cciItem.cciId);
     }
+  }
 
   const revName = `rev${boundary?.PolicyDocument?.version}`;
   const revision = await ControlRevision.findOne({ where: { name: revName } });
@@ -414,8 +412,8 @@ export async function generateSctm(
     include: [
       {
         model: ControlRecord,
-        attributes: ["controlFamilyId"],
-        where: { boundaryId, controlRevisionId: revision?.id },
+        attributes: ["ControlFamilyId"],
+        where: { BoundaryId: boundaryId, ControlRevisionId: revision?.id },
         required: true,
         include: [{ model: ControlFamily, attributes: ["name"] }],
       },
@@ -461,17 +459,13 @@ export async function generateSctm(
   sheet.headerFooter.oddHeader = classificationString;
   sheet.headerFooter.oddFooter = classificationString;
   sheet.getCell("A1").value = classificationString;
-  sheet.getCell("C2").value = boundary.name;
+  sheet.getCell("C2").value = boundary?.name;
   const bannerColor = boundary?.Classification?.color;
 
   sheet.getCell("A1").font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
   sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: bannerColor } };
 
-  const [
-    implementationStatuses,
-    testMethods,
-    frequencyTypes,
-  ] = await Promise.all([
+  const [implementationStatuses, testMethods, frequencyTypes] = await Promise.all([
     ImplementationStatus.findAll(),
     TestMethod.findAll(),
     FrequencyType.findAll(),
@@ -529,8 +523,7 @@ export async function generateSctm(
       implementationStatusMap.get(item.ImplementationStatusId ?? -1) || "";
     newRow[Columns.testMethod] = testMethodMap.get(item.TestMethodId ?? -1) || "";
     newRow[Columns.frequency] = frequencyMap.get(item.FrequencyTypeId ?? -1) || "";
-    newRow[Columns.narrative] = item.implementationNarrative  || "";
-
+    newRow[Columns.narrative] = item.implementationNarrative || "";
 
     controlArray.push(newRow);
   }

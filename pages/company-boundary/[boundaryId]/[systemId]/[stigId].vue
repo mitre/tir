@@ -131,7 +131,7 @@
                             (editId = check.id),
                             (editFinding = check.finding_details),
                             (editComments = check.comments),
-                            (editJustification = check.severity_justification),
+                            (editJustification = check.severityOverrideJustification),
                           ]
                         "
                       >
@@ -149,7 +149,7 @@
                             'flex items-center',
                           ]"
                           >{{ check.StigDatum.vuln_num }}
-                          <DocumentArrowDownIcon v-show="check.severity_override" class="ml-2 h-5 w-5"
+                          <DocumentArrowDownIcon v-show="check.severityOverride" class="ml-2 h-5 w-5"
                         /></span>
                       </a>
                     </li>
@@ -301,7 +301,7 @@
               </div>
             </div>
             <TransitionRoot appear :show="isOpen" as="template">
-              <Dialog as="div" class="relative z-10" @close="closeModal">
+              <Dialog as="div" class="relative z-10" @close="cancelModal">
                 <TransitionChild
                   as="template"
                   enter="duration-300 ease-out"
@@ -326,7 +326,7 @@
                       leave-to="opacity-0 scale-95"
                     >
                       <DialogPanel
-                        class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all dark:bg-gray-800"
+                        class="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all dark:bg-gray-800"
                       >
                         <DialogTitle
                           as="h3"
@@ -352,18 +352,29 @@
                             type="button"
                             class="inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                             @click="
-                              [(editJustification = listOfChecks[assessmentId].severity_justification), closeModal()]
+                              [
+                                (editJustification = listOfChecks[assessmentId].severityOverrideJustification),
+                                cancelModal(),
+                              ]
                             "
                           >
                             Cancel
                           </button>
                           <button
                             type="button"
-                            class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                            @click="[(editSeverity = severity.title), closeModal()]"
+                            :disabled="!editJustification || editJustification == ''"
+                            class="savebutton inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                            @click="[(editSeverity = severity.title), saveModal()]"
                           >
                             Save
                           </button>
+                          <p
+                            v-if="!editJustification || editJustification == ''"
+                            id="comments-description"
+                            class="items-center px-4 py-2 text-gray-800"
+                          >
+                            Override Reason <span class="text-red-600">(Required)</span>
+                          </p>
                         </div>
                       </DialogPanel>
                     </TransitionChild>
@@ -436,7 +447,7 @@
               <div class="mt-2 flex justify-end">
                 <button
                   class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                  @click="editAssessmentApi(editData)"
+                  @click="[(editSeverity = severity.title), editAssessmentApi(editData)]"
                 >
                   Save
                 </button>
@@ -482,6 +493,7 @@ import {
 } from "@headlessui/vue";
 import { storeToRefs } from "pinia";
 import { useIdStorageStore } from "~~/stores/IdStorage";
+import { stigSeverityToCat, stigCatToSeverity } from "~/utils/stig";
 
 const route = useRoute();
 const showErrorNotification = ref(false);
@@ -505,7 +517,6 @@ const { data: checkResults } = await useFetch("/api/assessment/get", {
 });
 
 if (checkResults?.value.error) {
-  console.log("No Assessment found.  Creating a blank one.");
   const { data: createResults } = await useFetch("/api/assessment/create", {
     method: "POST",
     body: stigSystem,
@@ -565,7 +576,99 @@ const filter = [
   },
 ];
 const selectedFilter = selectedFilterStore;
-// console.log(selectedFilter.value)
+
+////////////// From STIG
+const currentSystem = {
+  SystemId,
+};
+const { data: systemStigList } = await useFetch("/api/systems/stig/list", {
+  method: "POST",
+  body: currentSystem,
+});
+const listOfChecks = getAssessment.value.sort((a, b) => {
+  const nameA = a.StigDatum.vuln_num.toUpperCase(); // ignore upper and lowercase
+  const nameB = b.StigDatum.vuln_num.toUpperCase(); // ignore upper and lowercase
+  if (nameA < nameB) {
+    return -1;
+  }
+  if (nameA > nameB) {
+    return 1;
+  }
+
+  // names must be equal
+  return 0;
+});
+
+const stigListValue = systemStigList.value.findIndex((o) => o.id === StigId.value);
+
+/// /////////// Check View
+let checkData = ref(assessmentId.value);
+let checkStatus = ref("");
+let startingPosition = ref();
+let startingCatPosition = ref();
+
+let overrideSeverityOriginal = listOfChecks[checkData.value].severityOverride;
+let overrideSeverityJustificationOriginal = listOfChecks[checkData.value].severityOverrideJustification;
+
+checkStatus = listOfChecks[checkData.value].status;
+
+/// /////////// Finding Status
+
+const statusOptions = [
+  { title: "Open" },
+  { title: "NotAFinding" },
+  { title: "Not_Applicable" },
+  { title: "Not_Reviewed" },
+];
+const catOptions = [{ title: "CAT I" }, { title: "CAT II" }, { title: "CAT III" }];
+
+const severityMap = new Map();
+severityMap.set("low", "CAT III");
+severityMap.set("medium", "CAT II");
+severityMap.set("high", "CAT I");
+
+startingPosition = statusOptions.findIndex((o) => o.title === checkStatus);
+let selected = ref(statusOptions[startingPosition]);
+
+const currentSeverity = ref(listOfChecks[checkData.value].StigDatum.severity);
+const currentOverrideSeverityCAT = ref();
+if (listOfChecks[checkData.value].severityOverride) {
+  const myMappedSeverity = severityMap.get(listOfChecks[checkData.value].severityOverride);
+  currentOverrideSeverityCAT.value = myMappedSeverity;
+} else {
+  currentOverrideSeverityCAT.value = null;
+}
+
+if (currentOverrideSeverityCAT.value) {
+  startingCatPosition.value = catOptions.findIndex((o) => o.title === currentOverrideSeverityCAT.value);
+} else {
+  startingCatPosition.value = catOptions.findIndex((o) => o.title === severityMap.get(currentSeverity.value));
+}
+
+let severity = ref(catOptions[startingCatPosition.value]);
+
+/// /////////// Edit API
+const editId = ref(listOfChecks[assessmentId.value].id);
+const editFinding = ref(listOfChecks[assessmentId.value].finding_details);
+const editComments = ref(listOfChecks[assessmentId.value].comments);
+const editJustification = ref(listOfChecks[assessmentId.value].severityOverrideJustification);
+const editStatus = ref(selected.title);
+const editSeverity = ref(severity.title);
+
+const editData = {
+  id: editId.value,
+  finding_details: editFinding.value,
+  comments: editComments.value,
+  status: editStatus.value,
+  severity_override: editSeverity.value,
+  severity_justification: editJustification.value,
+  severityOverride: editSeverity.value,
+  severityOverrideJustification: editJustification.value,
+  BoundaryId: route.params.boundaryId,
+};
+
+const isOpen = ref(false);
+
 function getFilterItems() {
   if (selectedFilter.value.length === 0) {
     const fullList = getAssessment.value;
@@ -591,130 +694,70 @@ function addFilter(name) {
   }
 }
 
-////////////// From STIG
-const currentSystem = {
-  SystemId,
-};
-const { data: systemStigList } = await useFetch("/api/systems/stig/list", {
-  method: "POST",
-  body: currentSystem,
-});
-const listOfChecks = getAssessment.value.sort((a, b) => {
-  const nameA = a.StigDatum.vuln_num.toUpperCase(); // ignore upper and lowercase
-  const nameB = b.StigDatum.vuln_num.toUpperCase(); // ignore upper and lowercase
-  if (nameA < nameB) {
-    return -1;
-  }
-  if (nameA > nameB) {
-    return 1;
-  }
-
-  // names must be equal
-  return 0;
-});
-//  console.log("List of Checks", listOfChecks)
-
-const stigListValue = systemStigList.value.findIndex((o) => o.id === StigId.value);
-
-/// /////////// Check View
-let checkData = ref(assessmentId.value);
-let checkStatus = ref("");
-let startingPosition = ref();
-let startingCatPosition = ref();
-
-checkStatus = listOfChecks[checkData.value].status;
-// console.log('Check Data',checkData)
 function updateVar() {
   checkStatus = listOfChecks[checkData].status;
   startingPosition = statusOptions.findIndex((o) => o.title === checkStatus);
   currentSeverity.value = listOfChecks[checkData].StigDatum.severity;
   selected = statusOptions[startingPosition];
 
-  if (listOfChecks[checkData].severity_override) {
-    currentOverrideSeverity.value = listOfChecks[checkData].severity_override;
+  if (listOfChecks[checkData].severityOverride) {
+    currentOverrideSeverityCAT.value = severityMap.get(listOfChecks[checkData].severityOverride);
   } else {
-    currentOverrideSeverity.value = null;
+    currentOverrideSeverityCAT.value = null;
   }
+  const myMappedCurrentCAT = stigSeverityToCat(currentSeverity.value);
 
-  if (currentOverrideSeverity.value) {
-    startingCatPosition.value = catOptions.findIndex((o) => o.title === currentOverrideSeverity.value);
+  if (currentOverrideSeverityCAT.value) {
+    const whatPosition = catOptions.findIndex((o) => o.title === currentOverrideSeverityCAT.value);
+    startingCatPosition.value = whatPosition;
+    severity = catOptions[startingCatPosition.value];
+    const myCapturedValue = ref(listOfChecks[assessmentId.value].severityOverrideJustification);
+    editJustification.value = myCapturedValue.value;
   } else {
-    startingCatPosition.value = catOptions.findIndex((o) => o.title === severityMap.get(currentSeverity.value));
+    const myUnoverriddenIndex = catOptions.findIndex((o) => o.title === myMappedCurrentCAT);
+    severity = catOptions[myUnoverriddenIndex];
+    startingCatPosition.value = myUnoverriddenIndex;
   }
-
-  severity = catOptions[startingCatPosition.value];
 }
 
 function findCheck(checkId) {
   checkData = listOfChecks.findIndex((o) => o.id === checkId);
   assessmentId.value = checkData;
-  // console.log("Array Position", checkData)
-}
-/// /////////// Finding Status
-
-const statusOptions = [
-  { title: "Open" },
-  { title: "NotAFinding" },
-  { title: "Not_Applicable" },
-  { title: "Not_Reviewed" },
-];
-const catOptions = [{ title: "CAT I" }, { title: "CAT II" }, { title: "CAT III" }];
-
-const severityMap = new Map();
-severityMap.set("low", "CAT III");
-severityMap.set("medium", "CAT II");
-severityMap.set("high", "CAT I");
-
-startingPosition = statusOptions.findIndex((o) => o.title === checkStatus);
-let selected = ref(statusOptions[startingPosition]);
-
-const currentSeverity = ref(listOfChecks[checkData.value].StigDatum.severity);
-const currentOverrideSeverity = ref();
-if (listOfChecks[checkData.value].severity_override) {
-  currentOverrideSeverity.value = listOfChecks[checkData.value].severity_override;
-} else {
-  currentOverrideSeverity.value = null;
 }
 
-if (currentOverrideSeverity.value) {
-  startingCatPosition.value = catOptions.findIndex((o) => o.title === currentOverrideSeverity.value);
-} else {
-  startingCatPosition.value = catOptions.findIndex((o) => o.title === severityMap.get(currentSeverity.value));
-}
-
-let severity = ref(catOptions[startingCatPosition.value]);
-
-/// /////////// Edit API
-const editId = ref(listOfChecks[assessmentId.value].id);
-const editFinding = ref(listOfChecks[assessmentId.value].finding_details);
-const editComments = ref(listOfChecks[assessmentId.value].comments);
-const editJustification = ref(listOfChecks[assessmentId.value].severity_justification);
-const editStatus = ref(selected.title);
-const editSeverity = ref(severity.title);
-
-const editData = {
-  id: editId.value,
-  finding_details: editFinding.value,
-  comments: editComments.value,
-  status: editStatus.value,
-  severity_override: editSeverity.value,
-  severity_justification: editJustification.value,
-  BoundaryId: route.params.boundaryId,
-};
 async function editAssessmentApi(editData) {
   try {
-    await $fetch("/api/assessment/updateItem", {
-      method: "PUT",
-      body: {
-        id: editId.value,
-        finding_details: editFinding.value,
-        comments: editComments.value,
-        status: editStatus.value,
-        severity_override: editSeverity.value,
-        severity_justification: editJustification.value,
-        BoundaryId: route.params.boundaryId,
-      },
-    });
+    if (editJustification.value) {
+      await $fetch("/api/assessment/updateItem", {
+        method: "PUT",
+        body: {
+          id: editId.value,
+          finding_details: editFinding.value,
+          comments: editComments.value,
+          status: editStatus.value,
+          severity_override: stigCatToSeverity(editSeverity.value),
+          severity_justification: editJustification.value,
+          severityOverride: stigCatToSeverity(editSeverity.value),
+          severityOverrideJustification: editJustification.value,
+          BoundaryId: route.params.boundaryId,
+        },
+      });
+    } else {
+      await $fetch("/api/assessment/updateItem", {
+        method: "PUT",
+        body: {
+          id: editId.value,
+          finding_details: editFinding.value,
+          comments: editComments.value,
+          status: editStatus.value,
+          severity_override: null,
+          severity_justification: null,
+          severityOverride: null,
+          severityOverrideJustification: null,
+          BoundaryId: route.params.boundaryId,
+        },
+      });
+    }
     location.reload();
   } catch (err) {
     errorObject.value = err;
@@ -729,8 +772,6 @@ async function backButton() {
 /// ////// Finding Status
 
 function getStatus(findingStatus) {
-  // console.log('Finding Status',findingStatus)
-
   if (findingStatus != null) {
     const openStatus = findingStatus.filter((item) => {
       return item.status.includes("Open");
@@ -763,25 +804,51 @@ function getStatus(findingStatus) {
       notApplicableStatus[0].count,
       notReviewed[0].count,
     );
-    // console.log('Final Status',finalStatus)
+
     return finalStatus;
   }
 }
 
-const isOpen = ref(false);
-
-function closeModal() {
+function saveModal() {
+  // close page
   isOpen.value = false;
 }
+
+function cancelModal() {
+  editJustification.value = overrideSeverityJustificationOriginal;
+  startingCatPosition.value = catOptions.findIndex(
+    (o) => o.title === severityMap.get(overrideSeverityOriginal ? overrideSeverityOriginal : currentSeverity.value),
+  );
+  severity = ref(catOptions[startingCatPosition.value]);
+
+  // close page
+  isOpen.value = false;
+}
+
 function openModal() {
+  // Store current page state
+  overrideSeverityOriginal = listOfChecks[assessmentId.value].severityOverride;
+  overrideSeverityJustificationOriginal = listOfChecks[assessmentId.value].severityOverrideJustification;
+
+  // open page
   isOpen.value = true;
 }
+
 function checkSeverity(title) {
   if (title !== catOptions.find((o) => o.title === severityMap.get(currentSeverity.value)).title) {
     openModal();
   } else {
+    // severity matches stig, wipe current override states
     editSeverity.value = null;
     editJustification.value = null;
+    overrideSeverityOriginal = null;
+    overrideSeverityJustificationOriginal = null;
   }
 }
 </script>
+
+<style scoped>
+.savebutton:disabled {
+  @apply cursor-not-allowed bg-gray-400 hover:bg-gray-400;
+}
+</style>
