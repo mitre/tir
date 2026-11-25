@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import { User, Timezone } from "../../../db/models";
 
 export default defineEventHandler(async (event) => {
@@ -49,7 +50,14 @@ export default defineEventHandler(async (event) => {
     delete body.lastName;
   }
 
-  if (body.UserRoleId && user.UserRoleId !== body.UserRoleId) {
+  const roleChange = Boolean(body.UserRoleId) && user.UserRoleId !== body.UserRoleId;
+  if (roleChange && checkResult.UserRoleId !== 1) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "Only an administrator can change a user's role.",
+    });
+  }
+  if (roleChange) {
     user.UserRoleId = body.UserRoleId;
   } else {
     delete body.UserRoleId;
@@ -77,7 +85,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  user.save();
+  user.lastUpdate = DateTime.now().toISO();
+  await user.save();
 
   const attributes = Object.keys(body).filter((key) => key !== "id");
   const attributesString = attributes.join(", ");
