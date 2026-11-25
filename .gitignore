@@ -32,3 +32,7 @@ tmp
 # internal test
 test
 server/api/localtest
+
+# playwright
+tests/e2e/playwright-report
+tests/e2e/test-results
